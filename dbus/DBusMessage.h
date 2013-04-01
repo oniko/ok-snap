@@ -242,6 +242,8 @@ namespace DBus
     Hihi& operator>>(Hihi& hihi, map<string, string>& data);
     Hoho& operator<<(Hoho& hoho, const map<string, string>& data);
 
+    Hihi& operator>>(Hihi& hihi, unsigned char& data);
+    Hoho& operator<<(Hoho& hoho, unsigned char data);
 
     template <typename Type>
     Hihi& operator>>(Hihi& hihi, vector<Type>& data)

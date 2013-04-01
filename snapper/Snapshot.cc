@@ -38,6 +38,7 @@
 #include "snapper/SnapperTmpl.h"
 #include "snapper/SnapperDefines.h"
 #include "snapper/Exception.h"
+#include "snapper/ImportMetadata.h"
 
 
 namespace snapper
@@ -69,16 +70,39 @@ namespace snapper
     }
 
 
+    Snapshot::Snapshot(const Snapshot& sh)
+	: snapper(sh.snapper), type(sh.type), num(sh.num), date(sh.date), uid(sh.uid), pre_num(sh.uid),
+	  description(sh.description), info_modified(sh.info_modified), mount_checked(sh.mount_checked),
+	  mount_user_request(sh.mount_user_request), mount_use_count(sh.mount_use_count),
+	  import_policy(sh.import_policy)
+    {
+	if (sh.p_idata)
+	    p_idata = sh.p_idata->clone();
+	else
+	    p_idata = NULL;
+    }
+
+
     Snapshot::Snapshot(const Snapper* snapper, SnapshotType type, unsigned int num, time_t date)
 	: snapper(snapper), type(type), num(num), date(date), uid(0), pre_num(0),
 	  info_modified(false), mount_checked(false), mount_user_request(false),
-	  mount_use_count(0)
+	  mount_use_count(0), import_policy(NONE), p_idata(NULL)
+    {
+    }
+
+
+    Snapshot::Snapshot(const Snapper* snapper, SnapshotType type, unsigned int num, time_t date,
+		       ImportPolicy itype, const ImportMetadata* p_imdata)
+	: snapper(snapper), type(type), num(num), date(date), uid(0), pre_num(0),
+	  info_modified(false), mount_checked(false), mount_user_request(false),
+	  mount_use_count(0), import_policy(itype), p_idata(p_imdata)
     {
     }
 
 
     Snapshot::~Snapshot()
     {
+	delete p_idata;
     }
 
 
@@ -211,7 +235,44 @@ namespace snapper
 		    continue;
 		}
 
-		Snapshot snapshot(snapper, type, num, date);
+		ImportPolicy policy = NONE;
+		ImportMetadata* p_imdata = NULL;
+
+		const xmlNode *import_node = getElementNode(node, "import");
+		if (import_node)
+		{
+		    // on path xmlFile -> snapper, CLONE/NONE import policy is illegal
+		    if (!getNodePropValue(import_node, "policy", tmp) || !toValue(tmp, policy, true) || policy <= CLONE)
+		    {
+			y2err("import policy is missing or invalid. not adding imported snapshot " << *it1);
+			continue;
+		    }
+
+		    map<string,string> raw_import_metadata;
+
+		    const list<const xmlNode *> nodes = getChildNodes(getChildNode(node, "import"), "import_metadata");
+		    for (list<const xmlNode*>::const_iterator nit = nodes.begin(); nit != nodes.end(); nit++)
+		    {
+			string key, value;
+			getChildValue(*nit, "key", key);
+			getChildValue(*nit, "value", value);
+			if (!key.empty())
+			    raw_import_metadata[key] = value;
+		    }
+
+		    y2deb("raw_import_metadata: " << raw_import_metadata);
+
+		    try {
+			p_imdata = snapper->getFilesystem()->createImportMetadata(raw_import_metadata);
+		    }
+		    catch (const InvalidImportMetadataException &e)
+		    {
+			y2err("corrupted import metadata. not adding imported snapshot " << *it1);
+			continue;
+		    }
+		}
+
+		Snapshot snapshot = (policy == NONE) ? Snapshot(snapper, type, num, date) : Snapshot(snapper, type, num, date, policy, p_imdata);
 
 		*it1 >> num;
 		if (num != snapshot.num)
@@ -238,10 +299,22 @@ namespace snapper
 			snapshot.userdata[key] = value;
 		}
 
-		if (!snapper->getFilesystem()->checkSnapshot(snapshot.num))
+
+		if (snapshot.getImportPolicy() == NONE)
 		{
-		    y2err("snapshot check failed. not adding snapshot " << *it1);
-		    continue;
+		    if (!snapper->getFilesystem()->checkSnapshot(snapshot.num))
+		    {
+			y2err("snapshot check failed. not adding snapshot " << *it1);
+			continue;
+		    }
+		}
+		else
+		{
+		    if (!snapshot.p_idata->checkImportedSnapshot())
+		    {
+			y2err("snapshot check failed. not adding imported snapshot " << *it1);
+			continue;
+		    }
 		}
 
 		entries.push_back(snapshot);
@@ -461,6 +534,19 @@ namespace snapper
 	    setChildValue(userdata_node, "value", it->second);
 	}
 
+	if (getImportPolicy() == ADOPT || getImportPolicy() == ACKNOWLEDGE)
+	{
+	    xmlNode* import_node = xmlNewChild(node, "import");
+	    xmlNewAttr(import_node, "policy", toString(getImportPolicy()).c_str());
+
+	    for (map<string,string>::const_iterator cit = p_idata->info_cbegin(); cit != p_idata->info_cend(); cit++)
+	    {
+		xmlNode* imdata_node = xmlNewChild(import_node, "import_metadata");
+		setChildValue(imdata_node, "key", cit->first);
+		setChildValue(imdata_node, "value", cit->second);
+	    }
+	}
+
 	string file_name = "info.xml";
 	string tmp_name = file_name + ".tmp-XXXXXX";
 
@@ -494,7 +580,10 @@ namespace snapper
 	else
 	    mount_use_count++;
 
-	snapper->getFilesystem()->mountSnapshot(num);
+	if (getImportPolicy() == ACKNOWLEDGE  || getImportPolicy() == ADOPT)
+	    snapper->getFilesystem()->mountSnapshot(num, p_idata->getDevicePath());
+	else
+	    snapper->getFilesystem()->mountSnapshot(num);
     }
 
 
@@ -548,7 +637,33 @@ namespace snapper
 	    throw IllegalSnapshotException();
 
 	snapper->getFilesystem()->umountSnapshot(num);
-	snapper->getFilesystem()->deleteSnapshot(num);
+
+	switch (getImportPolicy())
+	{
+	    case NONE:
+	    case CLONE:
+		y2deb(toString(getImportPolicy()) + ": entering deleteSnapshot(num)");
+		snapper->getFilesystem()->deleteSnapshot(num);
+		break;
+	    case ADOPT:
+		y2deb(toString(getImportPolicy()) + ": entering deleteImportedSnapshot(num)");
+		p_idata->deleteImportedSnapshot(num);
+		break;
+	    case ACKNOWLEDGE:
+		y2deb(toString(getImportPolicy()) + ": won't touch the snapshot");
+		// TODO: remove snapshots directory only
+		break;
+	}
+    }
+
+
+    void
+    Snapshot::cloneFilesystemSnapshot() const
+    {
+	if (isCurrent())
+	    throw IllegalSnapshotException();
+
+	p_idata->cloneImportedSnapshot(getNum());
     }
 
 
@@ -591,6 +706,78 @@ namespace snapper
 
 
     Snapshots::iterator
+    Snapshots::importSingleSnapshot(const string &description, unsigned char raw_import_policy, const map<string,string> &raw_import_metadata)
+    {
+	ImportPolicy ipolicy = createImportPolicy(raw_import_policy);
+	if (ipolicy == NONE)
+	{
+	    y2err("Illegal import policy " << toString(ipolicy));
+	    throw InvalidImportMetadataException();
+	}
+
+	ImportMetadata *p_idata = snapper->getFilesystem()->createImportMetadata(raw_import_metadata);
+
+	time_t tmp_date = p_idata->getCreationTime();
+
+	Snapshot snapshot(snapper, SINGLE, nextNumber(), (tmp_date == (time_t) (-1) ? time(NULL) : tmp_date), ipolicy, p_idata);
+	snapshot.description = description;
+	snapshot.info_modified = true;
+
+	return importHelper(snapshot);
+    }
+
+
+    Snapshots::iterator
+    Snapshots::importPreSnapshot(const string &description, unsigned char raw_import_policy, const map<string,string> &raw_import_metadata)
+    {
+	ImportPolicy ipolicy = createImportPolicy(raw_import_policy);
+	if (ipolicy == NONE)
+	{
+	    y2err("Illegal import policy " << toString(ipolicy));
+	    throw InvalidImportMetadataException();
+	}
+
+	ImportMetadata *p_idata = snapper->getFilesystem()->createImportMetadata(raw_import_metadata);
+
+	time_t tmp_date = p_idata->getCreationTime();
+
+	Snapshot snapshot(snapper, PRE, nextNumber(), (tmp_date == (time_t) (-1) ? time(NULL) : tmp_date), ipolicy, p_idata);
+
+	snapshot.description = description;
+	snapshot.info_modified = true;
+
+	return importHelper(snapshot);
+    }
+
+
+    Snapshots::iterator
+    Snapshots::importPostSnapshot(const string &description, Snapshots::const_iterator pre, unsigned char raw_import_policy, const map<string,string> &raw_import_metadata)
+    {
+	if (pre == entries.end() || pre->isCurrent() || pre->getType() != PRE ||
+	    findPost(pre) != entries.end())
+	    throw IllegalSnapshotException();
+
+	ImportPolicy ipolicy = createImportPolicy(raw_import_policy);
+	if (ipolicy == NONE)
+	{
+	    y2err("Illegal import policy " << toString(ipolicy));
+	    throw InvalidImportMetadataException();
+	}
+
+	ImportMetadata *p_idata = snapper->getFilesystem()->createImportMetadata(raw_import_metadata);
+
+	time_t tmp_date = p_idata->getCreationTime();
+
+	Snapshot snapshot(snapper, POST, nextNumber(), (tmp_date == (time_t)(-1) ? time(NULL) : tmp_date), ipolicy, p_idata);
+	snapshot.description = description;
+	snapshot.pre_num = pre->getNum();
+	snapshot.info_modified = true;
+
+	return importHelper(snapshot);
+    }
+
+
+    Snapshots::iterator
     Snapshots::createHelper(Snapshot& snapshot)
     {
 	try
@@ -611,6 +798,67 @@ namespace snapper
 	catch (const IOErrorException& e)
 	{
 	    snapshot.deleteFilesystemSnapshot();
+	    SDir infos_dir = snapper->openInfosDir();
+	    infos_dir.unlink(decString(snapshot.getNum()), AT_REMOVEDIR);
+	    throw;
+	}
+
+	return entries.insert(entries.end(), snapshot);
+    }
+
+
+    Snapshots::iterator
+    Snapshots::importHelper(Snapshot& snapshot)
+    {
+	try
+	{
+	    if (snapshot.getImportPolicy() == CLONE)
+		snapshot.cloneFilesystemSnapshot();
+	    else
+	    {
+		// TODO: think about moving 'create snapshot environment' method
+		SDir info_dir = snapshot.openInfoDir();
+		int r1 = info_dir.mkdir("snapshot", 0755);
+		if (r1 != 0 && errno != EEXIST)
+		{
+		    y2err("mkdir failed errno:" << errno << " (" << strerror(errno) << ")");
+		    throw ImportSnapshotFailedException();
+		}
+
+		if (!snapshot.p_idata->checkImportedSnapshot())
+		{
+		    y2err("Invalid imported snapshot");
+		    throw ImportSnapshotFailedException();
+		}
+
+		for (Snapshots::const_iterator cit = Snapshots::begin(); cit != Snapshots::end(); cit++)
+		{
+		    if (cit->getImportPolicy() == ADOPT || cit->getImportPolicy() == ACKNOWLEDGE)
+		    {
+			if (snapshot.p_idata->isEqual(*cit->p_idata))
+			{
+			    y2err("Snapshot already imported in snapshot No. " << cit->getNum());
+			    throw ImportSnapshotFailedException();
+			}
+		    }
+		}
+	    }
+	}
+	catch (const SnapperException &e)
+	{
+	    SDir infos_dir = snapper->openInfosDir();
+	    infos_dir.unlink(decString(snapshot.getNum()), AT_REMOVEDIR);
+	    throw;
+	}
+
+	try
+	{
+	    snapshot.flushInfo();
+	}
+	catch (const IOErrorException& e)
+	{
+	    snapshot.deleteFilesystemSnapshot();
+
 	    SDir infos_dir = snapper->openInfosDir();
 	    infos_dir.unlink(decString(snapshot.getNum()), AT_REMOVEDIR);
 	    throw;

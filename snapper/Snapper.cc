@@ -190,6 +190,27 @@ namespace snapper
     }
 
 
+    Snapshots::iterator
+    Snapper::importSingleSnapshot(const string &description, unsigned char import_policy, const map<string,string>& idata)
+    {
+	return snapshots.importSingleSnapshot(description, import_policy, idata);
+    }
+
+
+    Snapshots::iterator
+    Snapper::importPreSnapshot(const string &description, unsigned char import_policy, const map<string,string>& idata)
+    {
+	return snapshots.importPreSnapshot(description, import_policy, idata);
+    }
+
+
+    Snapshots::iterator
+    Snapper::importPostSnapshot(const string &description, Snapshots::const_iterator pre, unsigned char import_policy, const map<string,string>& idata)
+    {
+	return snapshots.importPostSnapshot(description, pre, import_policy, idata);
+    }
+
+
     ConfigInfo
     Snapper::getConfig(const string& config_name)
     {

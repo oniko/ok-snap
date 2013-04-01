@@ -31,6 +31,7 @@
 
 #include "snapper/Log.h"
 #include "snapper/Snapshot.h"
+#include "snapper/ImportMetadata.h"
 
 
 namespace snapper
@@ -48,6 +49,7 @@ namespace snapper
 
     template <typename EnumType> struct EnumInfo {};
 
+    template <> struct EnumInfo<ImportPolicy> { static const vector<string> names; };
     template <> struct EnumInfo<SnapshotType> { static const vector<string> names; };
 
 

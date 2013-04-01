@@ -67,14 +67,17 @@ namespace snapper
 
     xmlNode* xmlNewNode(const char* name);
     xmlNode* xmlNewChild(xmlNode* node, const char* name);
+    void xmlNewAttr(xmlNode* node, const char* name, const char* value);
 
 
     const xmlNode* getChildNode(const xmlNode* node, const char* name);
     list<const xmlNode*> getChildNodes(const xmlNode* node, const char* name);
+    const xmlNode* getElementNode(const xmlNode* node, const char* elem_name);
 
 
     bool getChildValue(const xmlNode* node, const char* name, string& value);
     bool getChildValue(const xmlNode* node, const char* name, bool& value);
+    bool getNodePropValue(const xmlNode* node, const char* name, string& value);
 
     template<typename Type>
     bool getChildValue(const xmlNode* node, const char* name, Type& value)

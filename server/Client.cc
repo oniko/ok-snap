@@ -326,6 +326,37 @@ Client::introspect(DBus::Connection& conn, DBus::Message& msg)
 	"      <arg name='files' type='v' direction='out'/>\n"
 	"    </method>\n"
 
+	"    <method name='ImportSingleSnapshot'>\n"
+	"      <arg name='config-name' type='s' direction='in'/>\n"
+	"      <arg name='description' type='s' direction='in'/>\n"
+	"      <arg name='cleanup' type='s' direction='in'/>\n"
+	"      <arg name='userdata' type='a{ss}' direction='in'/>\n"
+	"      <arg name='import-policy' type='y' direction='in'/>\n"
+	"      <arg name='import-metadata' type='a{ss}' direction='in'/>\n"
+	"      <arg name='number' type='u' direction='out'/>\n"
+	"    </method>\n"
+
+	"    <method name='ImportPreSnapshot'>\n"
+	"      <arg name='config-name' type='s' direction='in'/>\n"
+	"      <arg name='description' type='s' direction='in'/>\n"
+	"      <arg name='cleanup' type='s' direction='in'/>\n"
+	"      <arg name='userdata' type='a{ss}' direction='in'/>\n"
+	"      <arg name='import-policy' type='y' direction='in'/>\n"
+	"      <arg name='import-metadata' type='a{ss}' direction='in'/>\n"
+	"      <arg name='number' type='u' direction='out'/>\n"
+	"    </method>\n"
+
+	"    <method name='ImportPostSnapshot'>\n"
+	"      <arg name='config-name' type='s' direction='in'/>\n"
+	"      <arg name='pre-number' type='u' direction='in'/>\n"
+	"      <arg name='description' type='s' direction='in'/>\n"
+	"      <arg name='cleanup' type='s' direction='in'/>\n"
+	"      <arg name='userdata' type='a{ss}' direction='in'/>\n"
+	"      <arg name='import-policy' type='y' direction='in'/>\n"
+	"      <arg name='import-metadata' type='a{ss}' direction='in'/>\n"
+	"      <arg name='number' type='u' direction='out'/>\n"
+	"    </method>\n"
+
 	"  </interface>\n"
 	"</node>\n";
 
@@ -1260,6 +1291,143 @@ Client::debug(DBus::Connection& conn, DBus::Message& msg) const
 
 
 void
+Client::import_single_snapshot(DBus::Connection& conn, DBus::Message& msg)
+{
+    string config_name;
+    string description;
+    string cleanup;
+    map<string, string> userdata;
+    unsigned char import_policy;
+    map<string, string> raw_import_metadata;
+
+    DBus::Hihi hihi(msg);
+    hihi >> config_name >> description >> cleanup >> userdata >> import_policy >> raw_import_metadata;
+
+    y2deb("ImportSingleSnapshot config_name:" << config_name << " description:" << description <<
+	  " cleanup:" << cleanup << " import_data:" << raw_import_metadata);
+
+    boost::unique_lock<boost::shared_mutex> lock(big_mutex);
+
+    MetaSnappers::iterator it = meta_snappers.find(config_name);
+
+    check_permission(conn, msg, *it);
+
+    Snapper* snapper = it->getSnapper();
+
+    Snapshots::iterator snap1 = snapper->importSingleSnapshot(description, import_policy, raw_import_metadata);
+    snap1->setUid(conn.get_unix_userid(msg));
+    snap1->setCleanup(cleanup);
+    snap1->setUserdata(userdata);
+    snap1->flushInfo();
+
+    DBus::MessageMethodReturn reply(msg);
+
+    DBus::Hoho hoho(reply);
+    hoho << snap1->getNum();
+
+    conn.send(reply);
+
+    // TODO: think about replacing with new signal
+    if (snap1->getImportPolicy() == CLONE)
+	signal_snapshot_created(conn, config_name, snap1->getNum());
+}
+
+
+void
+Client::import_pre_snapshot(DBus::Connection& conn, DBus::Message& msg)
+{
+    string config_name;
+    string description;
+    string cleanup;
+    map<string, string> userdata;
+    unsigned char import_policy;
+    map<string, string> raw_import_metadata;
+
+    DBus::Hihi hihi(msg);
+    hihi >> config_name >> description >> cleanup >> userdata >> import_policy >> raw_import_metadata;
+
+    y2deb("ImportPreSnapshot config_name:" << config_name << " description:" << description <<
+	  " cleanup:" << cleanup << " import_metadata:" << raw_import_metadata);
+
+    boost::unique_lock<boost::shared_mutex> lock(big_mutex);
+
+    MetaSnappers::iterator it = meta_snappers.find(config_name);
+
+    check_permission(conn, msg, *it);
+
+    Snapper* snapper = it->getSnapper();
+
+    Snapshots::iterator snap1 = snapper->importPreSnapshot(description, import_policy, raw_import_metadata);
+    snap1->setUid(conn.get_unix_userid(msg));
+    snap1->setCleanup(cleanup);
+    snap1->setUserdata(userdata);
+    snap1->flushInfo();
+
+    DBus::MessageMethodReturn reply(msg);
+
+    DBus::Hoho hoho(reply);
+    hoho << snap1->getNum();
+
+    conn.send(reply);
+
+    // TODO: think about replacing with new signal
+    if (snap1->getImportPolicy() == CLONE)
+	signal_snapshot_created(conn, config_name, snap1->getNum());
+}
+
+
+void
+Client::import_post_snapshot(DBus::Connection& conn, DBus::Message& msg)
+{
+    string config_name;
+    dbus_uint16_t pre_num;
+    string description;
+    string cleanup;
+    map<string,string> userdata;
+    unsigned char import_policy;
+    map<string,string> raw_import_metadata;
+
+    DBus::Hihi hihi(msg);
+    hihi >> config_name >> pre_num >> description >> cleanup >> userdata >> import_policy >> raw_import_metadata;
+
+    y2deb("ImportPostSnapshot config_name:" << config_name << " pre_num:" << pre_num <<
+	  " description:" << description << " cleanup:" << cleanup << " import_metadata: " << raw_import_metadata);
+
+    boost::unique_lock<boost::shared_mutex> lock(big_mutex);
+
+    MetaSnappers::iterator it = meta_snappers.find(config_name);
+
+    check_permission(conn, msg, *it);
+
+    Snapper* snapper = it->getSnapper();
+    Snapshots& snapshots = snapper->getSnapshots();
+
+    Snapshots::iterator snap1 = snapshots.find(pre_num);
+
+    Snapshots::iterator snap2 = snapper->importPostSnapshot(description, snap1, import_policy, raw_import_metadata);
+    snap2->setUid(conn.get_unix_userid(msg));
+    snap2->setCleanup(cleanup);
+    snap2->setUserdata(userdata);
+    snap2->flushInfo();
+
+    map<string, string>::const_iterator pos = it->config_info.raw.find("BACKGROUND_COMPARISON");
+    if (pos == it->config_info.raw.end() || pos->second == "yes")
+	backgrounds.add_task(it, snap1, snap2);
+
+    DBus::MessageMethodReturn reply(msg);
+
+    DBus::Hoho hoho(reply);
+    hoho << snap2->getNum();
+
+    conn.send(reply);
+
+    // TODO: think about replacing with new signal
+    if (snap1->getImportPolicy() == CLONE)
+	signal_snapshot_created(conn, config_name, snap2->getNum());
+}
+
+
+void
 Client::dispatch(DBus::Connection& conn, DBus::Message& msg)
 {
     try
@@ -1308,6 +1476,12 @@ Client::dispatch(DBus::Connection& conn, DBus::Message& msg)
 	    get_files(conn, msg);
 	else if (msg.is_method_call(INTERFACE, "Debug"))
 	    debug(conn, msg);
+	else if (msg.is_method_call(INTERFACE, "ImportSingleSnapshot"))
+	    import_single_snapshot(conn, msg);
+	else if (msg.is_method_call(INTERFACE, "ImportPreSnapshot"))
+	    import_pre_snapshot(conn, msg);
+	else if (msg.is_method_call(INTERFACE, "ImportPostSnapshot"))
+	    import_post_snapshot(conn, msg);
 	else
 	{
 	    DBus::MessageError reply(msg, "error.unknown_method", DBUS_ERROR_FAILED);
@@ -1416,6 +1590,18 @@ Client::dispatch(DBus::Connection& conn, DBus::Message& msg)
     catch (const UmountSnapshotFailedException& e)
     {
 	DBus::MessageError reply(msg, "error.umount_snapshot", DBUS_ERROR_FAILED);
+	conn.send(reply);
+    }
+    // TODO: unify exceptions related to import
+    catch (const InvalidImportMetadataException& e)
+    {
+	DBus::MessageError reply(msg, "error.import_snapshot", DBUS_ERROR_FAILED);
+	conn.send(reply);
+    }
+    // TODO: unify exceptions related to import
+    catch (const ImportSnapshotFailedException& e)
+    {
+	DBus::MessageError reply(msg, "error.import_snapshot", DBUS_ERROR_FAILED);
 	conn.send(reply);
     }
     catch (...)

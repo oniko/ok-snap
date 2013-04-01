@@ -103,6 +103,9 @@ public:
     void delete_comparison(DBus::Connection& conn, DBus::Message& msg);
     void get_files(DBus::Connection& conn, DBus::Message& msg);
     void debug(DBus::Connection& conn, DBus::Message& msg) const;
+    void import_single_snapshot(DBus::Connection& conn, DBus::Message& msg);
+    void import_pre_snapshot(DBus::Connection& conn, DBus::Message& msg);
+    void import_post_snapshot(DBus::Connection& conn, DBus::Message& msg);
 
     void dispatch(DBus::Connection& conn, DBus::Message& msg);
 

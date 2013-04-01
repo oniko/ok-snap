@@ -37,6 +37,8 @@
 #include <snapper/SystemCmd.h>
 #include <snapper/SnapperDefines.h>
 #include <snapper/XAttributes.h>
+#include <snapper/ImportMetadata.h>
+
 
 #include "utils/text.h"
 #include "utils/Table.h"
@@ -140,6 +142,35 @@ read_userdata(const string& s, const map<string, string>& old = map<string, stri
     return userdata;
 }
 
+
+/* NOTE: this for testing purpose only */
+map<string,string>
+read_import_metadata(const string& in)
+{
+    string::size_type pos = in.find_first_of('/');
+
+    if (pos == string::npos)
+    {
+	cerr << _("Invalid import metadata");
+	exit (EXIT_FAILURE);
+    }
+
+    string vg_name = boost::trim_copy(in.substr(0,pos));
+    string lv_name = boost::trim_copy(in.substr(pos + 1));
+
+    if (vg_name.empty() || lv_name.empty() || (lv_name.find_first_of('/') != string::npos))
+    {
+	cerr << _("Invalid import metadata");
+	exit (EXIT_FAILURE);
+    }
+
+    map<string,string> import_metadata = map<string,string>();
+
+    import_metadata["vg_name"] = vg_name;
+    import_metadata["lv_name"] = lv_name;
+
+    return import_metadata;
+}
 
 string
 show_userdata(const map<string, string>& userdata)
@@ -1261,6 +1292,129 @@ command_xa_diff(DBus::Connection& conn)
 
 
 void
+help_import()
+{
+    cout << _("This is useful help for import") << endl;
+}
+
+void
+command_import(DBus::Connection& conn)
+{
+    const struct option options[] = {
+	{ "type",		required_argument,	0,	't' },
+	{ "pre-number",		required_argument,	0,	0 },
+	{ "print-number",	no_argument,		0,	'p' },
+	{ "description",	required_argument,	0,	'd' },
+	{ "cleanup-algorithm",	required_argument,	0,	'c' },
+	{ "userdata",		required_argument,	0,	'u' },
+	{ "policy",		required_argument,	0,	0 },
+	{ 0, 0, 0, 0 }
+    };
+
+    GetOpts::parsed_opts opts = getopts.parse("import", options);
+    if (getopts.numArgs() != 1)
+    {
+	cerr << _("Command 'import' needs exactly 1 argument.") << endl;
+	exit(EXIT_FAILURE);
+    }
+
+    // TODO: not complete at all. maybe I'll fallback to pure string passed into dbus
+    map<string, string> import_metadata = read_import_metadata(getopts.popArg());
+
+    enum ImportType { I_SINGLE, I_PRE, I_POST };
+
+    ImportType type = I_SINGLE;
+    ImportPolicy ipolicy = CLONE;
+    unsigned int num1 = 0;
+    bool print_number = false;
+    string description;
+    string cleanup;
+    map<string, string> userdata;
+
+    GetOpts::parsed_opts::const_iterator opt;
+
+    if ((opt = opts.find("type")) != opts.end())
+    {
+	if (opt->second == "single")
+	    type = I_SINGLE;
+	else if (opt->second == "pre")
+	    type = I_PRE;
+	else if (opt->second == "post")
+	    type = I_POST;
+	else
+	{
+	    cerr << _("Unsupported type of imported snapshot.") << endl;
+	    exit(EXIT_FAILURE);
+	}
+    }
+
+    if ((opt = opts.find("policy")) != opts.end())
+    {
+	if (opt->second == "clone")
+	    ipolicy = CLONE;
+	else if (opt->second == "adopt")
+	    ipolicy = ADOPT;
+	else if (opt->second == "acknowledge")
+	    ipolicy = ACKNOWLEDGE;
+	else
+	{
+	    cerr << _("Unknown import policy of snapshot.") << endl;
+	    exit (EXIT_FAILURE);
+	}
+    }
+
+    if ((opt = opts.find("pre-number")) != opts.end())
+	num1 = read_num(opt->second);
+
+    if ((opt = opts.find("print-number")) != opts.end())
+	print_number = true;
+
+    if ((opt = opts.find("description")) != opts.end())
+	description = opt->second;
+
+    if ((opt = opts.find("cleanup-algorithm")) != opts.end())
+	cleanup = opt->second;
+
+    if ((opt = opts.find("userdata")) != opts.end())
+	userdata = read_userdata(opt->second);
+
+    if (type == I_POST && (num1 == 0))
+    {
+	cerr << _("Missing or invalid pre-number.") << endl;
+	exit(EXIT_FAILURE);
+    }
+
+
+    switch (type)
+    {
+	case I_SINGLE: {
+	    unsigned int num1 = command_import_single_xsnapshot(conn, config_name, description,
+								cleanup, userdata, ipolicy,
+								import_metadata);
+	    if (print_number)
+		cout << num1 << endl;
+	} break;
+
+	case I_PRE: {
+	    unsigned int num1 = command_import_pre_xsnapshot(conn, config_name, description,
+							     cleanup, userdata, ipolicy,
+							     import_metadata);
+	    if (print_number)
+		cout << num1 << endl;
+	} break;
+
+	case I_POST: {
+	    unsigned int num2 = command_import_post_xsnapshot(conn, config_name, num1, description,
+							      cleanup, userdata, ipolicy,
+							      import_metadata);
+	    if (print_number)
+		cout << num2 << endl;
+	} break;
+    }
+}
+
+
+void
 log_do(LogLevel level, const string& component, const char* file, const int line, const char* func,
        const string& text)
 {
@@ -1326,6 +1480,7 @@ help()
 #endif
     help_undo();
     help_cleanup();
+    help_import();
 
     exit (EXIT_SUCCESS);
 }
@@ -1355,6 +1510,7 @@ main(int argc, char** argv)
     cmds["undochange"] = command_undo;
     cmds["cleanup"] = command_cleanup;
     cmds["debug"] = command_debug;
+    cmds["import"] = command_import;
 #ifdef ENABLE_XATTRS
     cmds["xadiff"] = command_xa_diff;
 #endif

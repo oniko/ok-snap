@@ -26,6 +26,7 @@ libsnapper_la_SOURCES =					\
 	SystemCmd.cc		SystemCmd.h		\
 	AsciiFile.cc		AsciiFile.h		\
 	Regex.cc		Regex.h			\
+	ImportMetadata.cc	ImportMetadata.h	\
 	Exception.h					\
 	SnapperTmpl.h					\
 	SnapperTypes.h					\
@@ -46,7 +47,8 @@ endif
 
 if ENABLE_LVM
 libsnapper_la_SOURCES +=				\
-	Lvm.cc			Lvm.h
+	Lvm.cc			Lvm.h			\
+	LvmImportMetadata.cc	LvmImportMetadata.h
 endif
 
 

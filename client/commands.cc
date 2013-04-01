@@ -328,3 +328,71 @@ command_xdebug(DBus::Connection& conn)
 
     return lines;
 }
+
+
+unsigned int
+command_import_single_xsnapshot(DBus::Connection& conn, const string& config_name,
+				const string& description, const string& cleanup,
+				const map<string, string>& userdata,
+				unsigned char import_policy, const map<string, string>& import_metadata)
+{
+    DBus::MessageMethodCall call(SERVICE, OBJECT, INTERFACE, "ImportSingleSnapshot");
+
+    DBus::Hoho hoho(call);
+
+    hoho << config_name << description << cleanup << userdata << import_policy << import_metadata;
+
+    DBus::Message reply = conn.send_with_reply_and_block(call);
+
+    DBus::Hihi hihi(reply);
+
+    unsigned int number;
+    hihi >> number;
+
+    return number;
+}
+
+
+unsigned int
+command_import_pre_xsnapshot(DBus::Connection& conn, const string& config_name,
+			     const string& description, const string& cleanup,
+			     const map<string, string>& userdata,
+			     unsigned char import_policy, const map<string, string>& import_metadata)
+{
+    DBus::MessageMethodCall call(SERVICE, OBJECT, INTERFACE, "ImportPreSnapshot");
+
+    DBus::Hoho hoho(call);
+
+    hoho << config_name << description << cleanup << userdata << import_policy << import_metadata;
+
+    DBus::Message reply = conn.send_with_reply_and_block(call);
+
+    DBus::Hihi hihi(reply);
+
+    unsigned int number;
+    hihi >> number;
+
+    return number;
+}
+
+
+unsigned int command_import_post_xsnapshot(DBus::Connection& conn, const string& config_name,
+					   unsigned int prenum, const string& description,
+					   const string& cleanup, const map<string, string>& userdata,
+					   unsigned char import_policy, const map< string, string >& import_metadata)
+{
+    DBus::MessageMethodCall call(SERVICE, OBJECT, INTERFACE, "ImportPostSnapshot");
+
+    DBus::Hoho hoho(call);
+
+    hoho << config_name << prenum << description << cleanup << userdata << import_policy << import_metadata;
+
+    DBus::Message reply = conn.send_with_reply_and_block(call);
+
+    DBus::Hihi hihi(reply);
+
+    unsigned int number;
+    hihi >> number;
+
+    return number;
+}

@@ -30,6 +30,7 @@
 #include <map>
 
 #include "snapper/Exception.h"
+#include "snapper/ImportMetadata.h"
 
 
 namespace snapper
@@ -77,6 +78,20 @@ namespace snapper
 	virtual const char* what() const throw() { return "umount snapshot failed"; }
     };
 
+    // NOTE: temporary exception about to be removed when import feature is complete
+    struct UnsupportedSnapshotOperation : public SnapperException
+    {
+	explicit UnsupportedSnapshotOperation() throw() {}
+	virtual const char* what() const throw() { return "unsupported snapshot operation"; }
+    };
+
+
+    struct ImportSnapshotFailedException : public SnapperException
+    {
+	explicit ImportSnapshotFailedException() throw() {}
+	virtual const char* what() const throw() { return "import snapshot failed"; }
+    };
+
 
     class Snapshot
     {
@@ -84,10 +99,13 @@ namespace snapper
 
 	friend class Snapshots;
 
+	Snapshot(const Snapshot& snapshot);
 	Snapshot(const Snapper* snapper, SnapshotType type, unsigned int num, time_t date);
+	Snapshot(const Snapper* snapper, SnapshotType type, unsigned int num, time_t date, ImportPolicy ipolicy, const ImportMetadata* p_idata);
 	~Snapshot();
 
 	SnapshotType getType() const { return type; }
+	ImportPolicy getImportPolicy() const { return import_policy; }
 
 	unsigned int getNum() const { return num; }
 	bool isCurrent() const { return num == 0; }
@@ -122,7 +140,6 @@ namespace snapper
 	friend std::ostream& operator<<(std::ostream& s, const Snapshot& snapshot);
 
     private:
-
 	const Snapper* snapper;
 
 	SnapshotType type;
@@ -147,8 +164,13 @@ namespace snapper
 	mutable bool mount_user_request;
 	mutable unsigned int mount_use_count;
 
+	ImportPolicy import_policy;
+
+	const ImportMetadata* p_idata;
+
 	void writeInfo() const;
 
+	void cloneFilesystemSnapshot() const;
 	void createFilesystemSnapshot() const;
 	void deleteFilesystemSnapshot() const;
 
@@ -204,7 +226,12 @@ namespace snapper
 	iterator createPreSnapshot(string description);
 	iterator createPostSnapshot(string description, const_iterator pre);
 
+	iterator importSingleSnapshot(const string &description, unsigned char raw_import_policy, const map<string,string> &raw_import_metadata);
+	iterator importPreSnapshot(const string &description, unsigned char raw_import_policy, const map<string,string> &raw_import_metadata);
+	iterator importPostSnapshot(const string &description, Snapshots::const_iterator pre, unsigned char raw_import_policy, const map<string,string> &raw_import_metadata);
+
 	iterator createHelper(Snapshot& snapshot);
+	iterator importHelper(Snapshot& snapshot);
 
 	void deleteSnapshot(iterator snapshot);
 

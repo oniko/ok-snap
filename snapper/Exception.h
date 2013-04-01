@@ -81,6 +81,12 @@ namespace snapper
 	virtual const char* what() const throw() { return "XAttributes error"; }
     };
 
+    struct InvalidImportMetadataException : public SnapperException
+    {
+	explicit InvalidImportMetadataException() throw() {}
+        virtual const char* what() const throw() { return "invalid import metadata format"; }
+    };
+
 }
 
 

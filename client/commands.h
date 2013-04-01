@@ -101,3 +101,21 @@ command_get_xfiles(DBus::Connection& conn, const string& config_name, unsigned i
 
 vector<string>
 command_xdebug(DBus::Connection& conn);
+
+unsigned int
+command_import_single_xsnapshot(DBus::Connection& conn, const string& config_name,
+				const string& description, const string& cleanup,
+				const map<string, string>& userdata, unsigned char import_policy,
+				const map<string, string>& import_metadata);
+
+unsigned int
+command_import_pre_xsnapshot(DBus::Connection& conn, const string& config_name,
+				const string& description, const string& cleanup,
+				const map<string, string>& userdata, unsigned char import_policy,
+				const map<string, string>& import_metadata);
+
+unsigned int
+command_import_post_xsnapshot(DBus::Connection& conn, const string& config_name,
+			      unsigned int prenum, const string& description,
+			      const string& cleanup, const map<string, string>& userdata,
+			      unsigned char import_policy, const map<string, string>& import_metadata);

@@ -34,4 +34,10 @@ namespace snapper
     const vector<string> EnumInfo<SnapshotType>::names(snapshot_type_names, snapshot_type_names +
 						       lengthof(snapshot_type_names));
 
+    static const string import_type_names[] = {
+	"none", "clone", "adopt", "acknowledge"
+    };
+
+    const vector<string> EnumInfo<ImportPolicy>::names(import_type_names, import_type_names +
+						       lengthof(import_type_names));
 }

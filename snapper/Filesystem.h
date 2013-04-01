@@ -26,6 +26,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 
 #include "snapper/FileUtils.h"
 #include "snapper/Compare.h"
@@ -35,9 +36,11 @@ namespace snapper
 {
     using std::string;
     using std::vector;
+    using std::map;
 
 
     class MtabData;
+    class ImportMetadata;
 
 
     class Filesystem
@@ -48,6 +51,7 @@ namespace snapper
 	virtual ~Filesystem() {}
 
 	static Filesystem* create(const string& fstype, const string& subvolume);
+	virtual ImportMetadata* createImportMetadata(const map<string,string> &raw_data) const; // supposed to be pure virtual
 
 	virtual string fstype() const = 0;
 
@@ -66,6 +70,7 @@ namespace snapper
 
 	virtual bool isSnapshotMounted(unsigned int num) const = 0;
 	virtual void mountSnapshot(unsigned int num) const = 0;
+	virtual void mountSnapshot(unsigned int num, const string &device_path) const; // supposed to be pure virtual
 	virtual void umountSnapshot(unsigned int num) const = 0;
 
 	virtual bool checkSnapshot(unsigned int num) const = 0;

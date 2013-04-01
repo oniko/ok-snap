@@ -125,6 +125,10 @@ namespace snapper
 	Snapshots::iterator createPreSnapshot(string description);
 	Snapshots::iterator createPostSnapshot(string description, Snapshots::const_iterator pre);
 
+	Snapshots::iterator importSingleSnapshot(const string &description, unsigned char import_policy, const map<string,string> &idata);
+	Snapshots::iterator importPreSnapshot(const string &description, unsigned char import_policy, const map<string,string> &idata);
+	Snapshots::iterator importPostSnapshot(const string &description, Snapshots::const_iterator pre, unsigned char import_policy, const map<string,string> &idata);
+
 	void deleteSnapshot(Snapshots::iterator snapshot);
 
 	const vector<string>& getIgnorePatterns() const { return ignore_patterns; }

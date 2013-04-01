@@ -40,6 +40,7 @@
 #include "snapper/SystemCmd.h"
 #include "snapper/SnapperDefines.h"
 #include "snapper/Regex.h"
+#include "snapper/LvmImportMetadata.h"
 
 
 namespace snapper
@@ -253,6 +254,19 @@ namespace snapper
 
 
     void
+    Lvm::mountSnapshot(unsigned int num, const string &device_path) const
+    {
+	if (isSnapshotMounted(num))
+	    return;
+
+	SDir snapshot_dir = openSnapshotDir(num);
+
+	if (!mount(device_path, snapshot_dir.fd(), mount_type, mount_options))
+	    throw MountSnapshotFailedException();
+    }
+
+
+    void
     Lvm::umountSnapshot(unsigned int num) const
     {
 	if (!isSnapshotMounted(num))
@@ -297,6 +311,21 @@ namespace snapper
 	vg_name = boost::replace_all_copy(rx.cap(1), "--", "-");
 	lv_name = boost::replace_all_copy(rx.cap(2), "--", "-");
 
+	return detectThinVolumeNames(vg_name, lv_name);
+    }
+
+
+    string
+    Lvm::getDevice(unsigned int num) const
+    {
+	return "/dev/mapper/" + boost::replace_all_copy(vg_name, "-", "--") + "-" +
+	    boost::replace_all_copy(snapshotLvName(num), "-", "--");
+    }
+
+
+    bool
+    Lvm::detectThinVolumeNames(const string& vg_name, const string& lv_name) const
+    {
 	SystemCmd cmd(LVSBIN " -o segtype --noheadings " + quote(vg_name + "/" + lv_name));
 
 	if (cmd.retcode() != 0) {
@@ -314,11 +343,45 @@ namespace snapper
 	return true;
     }
 
-    string
-    Lvm::getDevice(unsigned int num) const
+
+    void Lvm::cloneSnapshot(unsigned int num, const string &vg_name, const string &lv_name) const
     {
-	return "/dev/mapper/" + boost::replace_all_copy(vg_name, "-", "--") + "-" +
-	    boost::replace_all_copy(snapshotLvName(num), "-", "--");
+	SystemCmd cmd(LVCREATEBIN " --permission r --snapshot --name " +
+		      quote(snapshotLvName(num)) + " " + quote(vg_name + "/" + lv_name));
+
+	if (cmd.retcode() != 0)
+	    throw CreateSnapshotFailedException();
+
+	// TODO: separete following code into special method
+	SDir info_dir = openInfoDir(num);
+	int r1 = info_dir.mkdir("snapshot", 0755);
+	if (r1 != 0 && errno != EEXIST)
+	{
+	    y2err("mkdir failed errno:" << errno << " (" << strerror(errno) << ")");
+	    throw CreateSnapshotFailedException();
+	}
+    }
+
+
+    void
+    Lvm::deleteSnapshot(unsigned int num, const string &vg_name, const string &lv_name) const
+    {
+	SystemCmd cmd(LVREMOVEBIN " --force " + quote(vg_name + "/" + lv_name));
+	if (cmd.retcode() != 0)
+	    throw DeleteSnapshotFailedException();
+
+	// TODO: separete following into special method
+	SDir info_dir = openInfoDir(num);
+	info_dir.unlink("snapshot", AT_REMOVEDIR);
+
+	SDir infos_dir = openInfosDir();
+	infos_dir.unlink(decString(num), AT_REMOVEDIR);
+    }
+
+
+    ImportMetadata* Lvm::createImportMetadata(const map<string,string> &raw_data) const
+    {
+	return new LvmImportMetadata(raw_data, this);
     }
 
 

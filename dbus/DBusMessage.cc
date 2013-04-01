@@ -437,4 +437,26 @@ namespace DBus
 	return hoho;
     }
 
+
+    Hihi&
+    operator>>(Hihi& hihi, unsigned char& data)
+    {
+	if (hihi.get_type() != DBUS_TYPE_BYTE)
+	    throw MarshallingException();
+
+	dbus_message_iter_get_basic(hihi.top(), &data);
+	dbus_message_iter_next(hihi.top());
+
+	return hihi;
+    }
+
+
+    Hoho&
+    operator<<(Hoho& hoho, unsigned char data)
+    {
+	if (!dbus_message_iter_append_basic(hoho.top(), DBUS_TYPE_BYTE, &data))
+	    throw FatalException();
+
+	return hoho;
+    }
 }

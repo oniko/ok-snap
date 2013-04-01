@@ -101,6 +101,13 @@ namespace snapper
     }
 
 
+    void
+    xmlNewAttr(xmlNode* node, const char* name, const char* value)
+    {
+	::xmlNewProp(node, (const xmlChar*) name, (const xmlChar*) value);
+    }
+
+
     const xmlNode*
     getChildNode(const xmlNode* node, const char* name)
     {
@@ -136,6 +143,23 @@ namespace snapper
     }
 
 
+    const xmlNode*
+    getElementNode(const xmlNode* node, const char* elem_name)
+    {
+
+	for (const xmlNode* cur_node = node; cur_node; cur_node = cur_node->next)
+	{
+	    if ((strcmp(elem_name, (const char*) cur_node->name) == 0) &&
+		cur_node->type == XML_ELEMENT_NODE)
+	    {
+		return cur_node;
+	    }
+	}
+
+	return NULL;
+    }
+
+
     bool
     getChildValue(const xmlNode* node, const char* name, string& value)
     {
@@ -165,6 +189,21 @@ namespace snapper
 	    return false;
 
 	value = tmp == "true";
+	return true;
+    }
+
+
+    bool
+    getNodePropValue(const xmlNode* node, const char* name, string& value)
+    {
+	xmlChar *xml_value = xmlGetProp((const xmlNodePtr) node, (const xmlChar *) name);
+
+	if (!xml_value)
+	    return false;
+
+	value = (const char *)xml_value;
+	xmlFree(xml_value);
+
 	return true;
     }
 
