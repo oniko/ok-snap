@@ -38,37 +38,49 @@ namespace snapper
     {
 	y2deb("LvmImportMetadata constructor");
 
-	map<string,string>::const_iterator cit;
 	imd_map = map<string,string>();
 	string vg_name, lv_name;
 
-	cit = input.find("vg_name");
+	map<string,string>::const_iterator cit = input.find(KEY_VG_NAME);
 	if (cit == input.end())
 	{
-	    y2err("can't get vg_name from raw import metadata");
+	    y2err("can't get volume group name from raw import metadata");
 	    throw InvalidImportMetadataException();
 	}
 	imd_map[cit->first] = vg_name = cit->second;
 
-	cit = input.find("lv_name");
+	cit = input.find(KEY_LV_NAME);
 	if (cit == input.end())
 	{
-	    y2err("can't get lv_name from raw import metadata");
+	    y2err("can't get logical volume name from raw import metadata");
 	    throw InvalidImportMetadataException();
 	}
 	imd_map[cit->first] = lv_name = cit->second;
 
+	// TODO: LVM will support format options for time string later.
+	//	 use "%F %T" output format instead of hardcoded "%F %T %z"
 	SystemCmd cmd(LVSBIN " --noheading -o lv_time " + quote(vg_name + "/" + lv_name));
 	if (cmd.retcode() != 0)
 	{
-	    // NOTE: This  feature has been added in later versions of LVM2
-	    y2war("cannot get time from imported snapshot");
+	    // NOTE: Time option is not available before LVM2.02.89
+	    y2war("can't get time from imported snapshot");
 	}
 	else
 	{
-	    // TODO: need to cut off TZ info at the end of LV time string (i.e. +0200)
 	    string time_string = boost::trim_copy(cmd.getLine(0));
-	    creation_time = scan_datetime(time_string, false);
+	    /*
+	     * TODO: Temporary hack removing time zone info.
+	     *	     See previous Todo.
+	     */
+	    Regex rx("(.*)[[:space:]]+[+-][0-9]{4}$");
+	    if (!rx.match(time_string))
+		y2war("Unexpected time output from lvs command: " << time_string);
+	    else
+	    {
+		string time_string = rx.cap(1);
+		y2deb("time_string with striped time zone info: " << time_string);
+		creation_time = scan_datetime(time_string, false);
+	    }
 	}
 
 	this->lvm = lvm;

@@ -21,6 +21,9 @@
 #ifndef SNAPPER_LVMIMPORTMETADATA_H
 #define SNAPPER_LVMIMPORTMETADATA_H
 
+#define KEY_VG_NAME "vg_name"
+#define KEY_LV_NAME "lv_name"
+
 #include "snapper/ImportMetadata.h"
 
 namespace snapper
