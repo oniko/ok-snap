@@ -657,6 +657,22 @@ namespace snapper
     }
 
 
+    // TODO: Is this code fs specific? Move it to Filesystem class?
+    void
+    Snapshot::createEnvironment() const
+    {
+	SDir info_dir = openInfoDir();
+
+	int r1 = info_dir.mkdir("snapshot", 0755);
+	if (r1 != 0 && errno != EEXIST)
+	{
+	    y2err("mkdir failed errno:" << errno << " (" << strerror(errno) << ")");
+	    // TODO: possibly throw CreateSnapshotDirectoryException instead
+	    throw ImportSnapshotFailedException();
+	}
+    }
+
+
     void
     Snapshot::cloneFilesystemSnapshot() const
     {
@@ -812,40 +828,41 @@ namespace snapper
     {
 	try
 	{
-	    if (snapshot.getImportPolicy() == CLONE)
-		snapshot.cloneFilesystemSnapshot();
-	    else
+	    switch (snapshot.getImportPolicy())
 	    {
-		// TODO: think about moving 'create snapshot environment' method
-		SDir info_dir = snapshot.openInfoDir();
-		int r1 = info_dir.mkdir("snapshot", 0755);
-		if (r1 != 0 && errno != EEXIST)
-		{
-		    y2err("mkdir failed errno:" << errno << " (" << strerror(errno) << ")");
-		    throw ImportSnapshotFailedException();
-		}
+		case NONE:
+		    y2err("Illegal import policy");
+		    throw IllegalSnapshotException();
+		case CLONE:
+		    // throws CreateSnapshotFailed()
+		    snapshot.cloneFilesystemSnapshot();
+		    break;
 
-		if (!snapshot.p_idata->checkImportedSnapshot())
-		{
-		    y2err("Invalid imported snapshot");
-		    throw ImportSnapshotFailedException();
-		}
+		case ADOPT:
+		case ACKNOWLEDGE:
+		    //TODO: temporary only: throws CreateSnapshotFailedException
+		    snapshot.createEnvironment();
 
-		for (Snapshots::const_iterator cit = Snapshots::begin(); cit != Snapshots::end(); cit++)
-		{
-		    if (cit->getImportPolicy() == ADOPT || cit->getImportPolicy() == ACKNOWLEDGE)
+		    for (Snapshots::const_iterator cit = Snapshots::begin(); cit != Snapshots::end(); cit++)
 		    {
-			if (snapshot.p_idata->isEqual(*cit->p_idata))
+			if (cit->getImportPolicy() == ADOPT || cit->getImportPolicy() == ACKNOWLEDGE)
 			{
-			    y2err("Snapshot already imported in snapshot No. " << cit->getNum());
-			    throw ImportSnapshotFailedException();
+			    if (snapshot.p_idata->isEqual(*cit->p_idata))
+			    {
+				y2err("Snapshot already imported in snapshot No. " << cit->getNum());
+				throw ImportSnapshotFailedException();
+			    }
 			}
 		    }
-		}
+
+		    break;
 	    }
 	}
-	catch (const SnapperException &e)
+	catch (const ImportSnapshotFailedException &e)
 	{
+	    SDir info_dir = snapshot.openInfoDir();
+	    info_dir.unlink("snapshot", AT_REMOVEDIR);
+
 	    SDir infos_dir = snapper->openInfosDir();
 	    infos_dir.unlink(decString(snapshot.getNum()), AT_REMOVEDIR);
 	    throw;

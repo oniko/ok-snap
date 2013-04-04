@@ -350,7 +350,7 @@ namespace snapper
 		      quote(snapshotLvName(num)) + " " + quote(vg_name + "/" + lv_name));
 
 	if (cmd.retcode() != 0)
-	    throw CreateSnapshotFailedException();
+	    throw ImportSnapshotFailedException();
 
 	// TODO: separete following code into special method
 	SDir info_dir = openInfoDir(num);
@@ -358,7 +358,7 @@ namespace snapper
 	if (r1 != 0 && errno != EEXIST)
 	{
 	    y2err("mkdir failed errno:" << errno << " (" << strerror(errno) << ")");
-	    throw CreateSnapshotFailedException();
+	    throw ImportSnapshotFailedException();
 	}
     }
 
