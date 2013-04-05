@@ -157,4 +157,16 @@ namespace snapper
     {
 	throw UnsupportedSnapshotOperation();
     }
+
+
+    void Filesystem::createSnapshotEnvironment(unsigned int num) const
+    {
+	throw UnsupportedSnapshotOperation();
+    }
+
+
+    void Filesystem::removeSnapshotEnvironment(unsigned int num) const
+    {
+	throw UnsupportedSnapshotOperation();
+    }
 }

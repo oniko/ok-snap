@@ -97,6 +97,9 @@ namespace snapper
 	virtual SDir openInfosDir() const;
 	virtual SDir openSnapshotDir(unsigned int num) const;
 
+	virtual void createSnapshotEnvironment(unsigned int num) const;
+	virtual void removeSnapshotEnvironment(unsigned int num) const;
+
 	virtual void createSnapshot(unsigned int num) const;
 	virtual void deleteSnapshot(unsigned int num) const;
 

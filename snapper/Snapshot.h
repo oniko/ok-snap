@@ -171,6 +171,7 @@ namespace snapper
 	void writeInfo() const;
 
 	void createEnvironment() const;
+	void removeEnvironemt() const;
 
 	void cloneFilesystemSnapshot() const;
 	void createFilesystemSnapshot() const;

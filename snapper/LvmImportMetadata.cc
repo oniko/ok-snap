@@ -124,7 +124,7 @@ namespace snapper
 
     bool LvmImportMetadata::checkImportedSnapshot() const
     {
-	// TODO: think about adding UUID check
+	// TODO: think about adding fs UUID check
 	return lvm->detectThinVolumeNames(getVgName(), getLvName());
     }
 

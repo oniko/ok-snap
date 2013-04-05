@@ -641,35 +641,33 @@ namespace snapper
 	switch (getImportPolicy())
 	{
 	    case NONE:
+		y2deb(toString(getImportPolicy()) + " delete milestone");
 	    case CLONE:
-		y2deb(toString(getImportPolicy()) + ": entering deleteSnapshot(num)");
+		y2deb(toString(getImportPolicy()) + " delete milestone: entering deleteSnapshot(num)");
 		snapper->getFilesystem()->deleteSnapshot(num);
 		break;
 	    case ADOPT:
-		y2deb(toString(getImportPolicy()) + ": entering deleteImportedSnapshot(num)");
+		y2deb(toString(getImportPolicy()) + " delete milestone: entering deleteImportedSnapshot(num)");
 		p_idata->deleteImportedSnapshot(num);
-		break;
 	    case ACKNOWLEDGE:
-		y2deb(toString(getImportPolicy()) + ": won't touch the snapshot");
-		// TODO: remove snapshots directory only
+		y2deb(toString(getImportPolicy()) + " delete milestone: entering removeEnvironment()");
+		removeEnvironemt();
 		break;
 	}
     }
 
 
-    // TODO: Is this code fs specific? Move it to Filesystem class?
+    void
+    Snapshot::removeEnvironemt() const
+    {
+	snapper->getFilesystem()->removeSnapshotEnvironment(num);
+    }
+
+
     void
     Snapshot::createEnvironment() const
     {
-	SDir info_dir = openInfoDir();
-
-	int r1 = info_dir.mkdir("snapshot", 0755);
-	if (r1 != 0 && errno != EEXIST)
-	{
-	    y2err("mkdir failed errno:" << errno << " (" << strerror(errno) << ")");
-	    // TODO: possibly throw CreateSnapshotDirectoryException instead
-	    throw ImportSnapshotFailedException();
-	}
+	snapper->getFilesystem()->createSnapshotEnvironment(num);
     }
 
 
@@ -725,11 +723,6 @@ namespace snapper
     Snapshots::importSingleSnapshot(const string &description, unsigned char raw_import_policy, const map<string,string> &raw_import_metadata)
     {
 	ImportPolicy ipolicy = createImportPolicy(raw_import_policy);
-	if (ipolicy == NONE)
-	{
-	    y2err("Illegal import policy " << toString(ipolicy));
-	    throw InvalidImportMetadataException();
-	}
 
 	ImportMetadata *p_idata = snapper->getFilesystem()->createImportMetadata(raw_import_metadata);
 
@@ -747,11 +740,6 @@ namespace snapper
     Snapshots::importPreSnapshot(const string &description, unsigned char raw_import_policy, const map<string,string> &raw_import_metadata)
     {
 	ImportPolicy ipolicy = createImportPolicy(raw_import_policy);
-	if (ipolicy == NONE)
-	{
-	    y2err("Illegal import policy " << toString(ipolicy));
-	    throw InvalidImportMetadataException();
-	}
 
 	ImportMetadata *p_idata = snapper->getFilesystem()->createImportMetadata(raw_import_metadata);
 
@@ -774,11 +762,6 @@ namespace snapper
 	    throw IllegalSnapshotException();
 
 	ImportPolicy ipolicy = createImportPolicy(raw_import_policy);
-	if (ipolicy == NONE)
-	{
-	    y2err("Illegal import policy " << toString(ipolicy));
-	    throw InvalidImportMetadataException();
-	}
 
 	ImportMetadata *p_idata = snapper->getFilesystem()->createImportMetadata(raw_import_metadata);
 
@@ -834,13 +817,12 @@ namespace snapper
 		    y2err("Illegal import policy");
 		    throw IllegalSnapshotException();
 		case CLONE:
-		    // throws CreateSnapshotFailed()
 		    snapshot.cloneFilesystemSnapshot();
 		    break;
 
 		case ADOPT:
 		case ACKNOWLEDGE:
-		    //TODO: temporary only: throws CreateSnapshotFailedException
+		    // TODO: throws exception SnapshotEnvironment...
 		    snapshot.createEnvironment();
 
 		    for (Snapshots::const_iterator cit = Snapshots::begin(); cit != Snapshots::end(); cit++)

@@ -192,11 +192,24 @@ namespace snapper
 	if (cmd.retcode() != 0)
 	    throw CreateSnapshotFailedException();
 
+	try {
+	    createSnapshotEnvironment(num);
+	}
+	catch(const CreateSnapshotFailedException &e)
+	{
+	    throw;
+	}
+    }
+
+
+    void Lvm::createSnapshotEnvironment(unsigned int num) const
+    {
 	SDir info_dir = openInfoDir(num);
 	int r1 = info_dir.mkdir("snapshot", 0755);
 	if (r1 != 0 && errno != EEXIST)
 	{
 	    y2err("mkdir failed errno:" << errno << " (" << strerror(errno) << ")");
+	    // TODO: SnapshotEnvironmentException...
 	    throw CreateSnapshotFailedException();
 	}
     }
@@ -209,6 +222,12 @@ namespace snapper
 	if (cmd.retcode() != 0)
 	    throw DeleteSnapshotFailedException();
 
+	removeSnapshotEnvironment(num);
+    }
+
+
+    void Lvm::removeSnapshotEnvironment(unsigned int num) const
+    {
 	SDir info_dir = openInfoDir(num);
 	info_dir.unlink("snapshot", AT_REMOVEDIR);
 
@@ -369,13 +388,6 @@ namespace snapper
 	SystemCmd cmd(LVREMOVEBIN " --force " + quote(vg_name + "/" + lv_name));
 	if (cmd.retcode() != 0)
 	    throw DeleteSnapshotFailedException();
-
-	// TODO: separete following into special method
-	SDir info_dir = openInfoDir(num);
-	info_dir.unlink("snapshot", AT_REMOVEDIR);
-
-	SDir infos_dir = openInfosDir();
-	infos_dir.unlink(decString(num), AT_REMOVEDIR);
     }
 
 
