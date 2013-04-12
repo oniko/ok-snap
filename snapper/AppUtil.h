@@ -58,6 +58,8 @@ namespace snapper
     string dirname(const string& name);
     string basename(const string& name);
 
+    string get_fs_uuid(const string& device_path);
+    string get_fs_uuid(dev_t dev);
 
     struct MtabData
     {

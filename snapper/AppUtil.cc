@@ -36,6 +36,7 @@
 #include <dirent.h>
 #include <mntent.h>
 #include <boost/algorithm/string.hpp>
+#include <libudev.h>
 
 #include "snapper/Log.h"
 #include "snapper/AppUtil.h"
@@ -303,6 +304,53 @@ namespace snapper
     std::ostream& operator<<(std::ostream& s, const StopWatch& sw)
     {
 	return s << fixed << sw.read() << "s";
+    }
+
+
+    string
+    get_fs_uuid_from_udevdb(dev_t dev)
+    {
+	struct udev_device *p_device;
+	udev *p_udev;
+
+	if (!(p_udev = udev_new()))
+	    return "";
+
+	if (!(p_device = udev_device_new_from_devnum(p_udev, 'b', dev)))
+	{
+	    udev_unref(p_udev);
+	    return "";
+	}
+
+	const char* tmp = udev_device_get_property_value(p_device, "ID_FS_UUID");
+	string ret_str = tmp ? string(tmp) : "";
+
+	udev_device_unref(p_device);
+	udev_unref(p_udev);
+
+	return ret_str;
+    }
+
+
+    string
+    get_fs_uuid(const string& device_path)
+    {
+	struct stat buf;
+
+	if (stat(device_path.c_str(), &buf))
+	    return "";
+
+	if (!S_ISBLK(buf.st_mode))
+	    return "";
+
+	return get_fs_uuid_from_udevdb(buf.st_rdev);
+    }
+
+
+    string
+    get_fs_uuid(dev_t dev)
+    {
+	return get_fs_uuid_from_udevdb(dev);
     }
 
 }

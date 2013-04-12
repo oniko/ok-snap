@@ -1297,6 +1297,7 @@ help_import()
     cout << _("This is useful help for import") << endl;
 }
 
+
 void
 command_import(DBus::Connection& conn)
 {

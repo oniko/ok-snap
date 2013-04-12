@@ -109,23 +109,19 @@ namespace snapper
 
 
     bool
-    LvmImportMetadata::isEqual(const ImportMetadata& a) const
+    LvmImportMetadata::isEqualImpl(const ImportMetadata& a) const
     {
-	const LvmImportMetadata* p_a = dynamic_cast<const LvmImportMetadata*>(&a);
-	if (!p_a)
-	{
-	    y2err("FATAL: tried to comapare LvmImportMetadata w/ incompatible type!");
-	    throw InvalidImportMetadataException();
-	}
+	y2deb("LvmImportMetadata::isEqualImpl");
+	const LvmImportMetadata* p_a = static_cast<const LvmImportMetadata*>(&a);
 
 	return (p_a->getVgName() == getVgName() && p_a->getLvName() == getLvName());
     }
 
 
+    // TODO: think about it later
     bool LvmImportMetadata::checkImportedSnapshot() const
     {
-	// TODO: think about adding fs UUID check
-	return lvm->detectThinVolumeNames(getVgName(), getLvName());
+	return (lvm->checkImportedSnapshot(getVgName(), getLvName()) && get_fs_uuid(getDevicePath()) == lvm->getFsUuid());
     }
 
 
@@ -139,7 +135,7 @@ namespace snapper
     void
     LvmImportMetadata::deleteImportedSnapshot(unsigned int num) const
     {
-	lvm->deleteSnapshot(num, getVgName(), getLvName());
+	lvm->deleteSnapshot(getVgName(), getLvName());
     }
 
 
@@ -154,6 +150,12 @@ namespace snapper
     LvmImportMetadata::info_cend() const
     {
 	return imd_map.end();
+    }
+
+
+    bool LvmImportMetadata::isEqual(const ImportMetadata& b) const
+    {
+	throw LogicErrorException();
     }
 
 }

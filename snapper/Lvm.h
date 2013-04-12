@@ -115,6 +115,7 @@ namespace snapper
 	const string mount_type;
 	const LvmCapabilities* caps;
 
+	bool checkImportedSnapshot(const string &vg_name, const string& lv_name) const;
 	bool detectThinVolumeNames(const MtabData& mtab_data);
 	bool detectThinVolumeNames(const string& vg_name, const string& lv_name) const;
 	void activateSnapshot(const string& vg_name, const string& lv_name) const;
@@ -122,15 +123,16 @@ namespace snapper
 	bool detectInactiveSnapshot(const string& vg_name, const string& lv_name) const;
 
 	void cloneSnapshot(unsigned int num, const string &vg_name, const string &lv_name) const;
-	void deleteSnapshot(unsigned int num, const string &vg_name, const string &lv_name) const;
+	void deleteSnapshot(const string &vg_name, const string &lv_name) const;
+	string getFsUuid() const { return fs_uuid; }
 
 	string getDevice(unsigned int num) const;
 
 	string vg_name;
 	string lv_name;
+	string fs_uuid;
 
 	vector<string> mount_options;
-
     };
 
 }

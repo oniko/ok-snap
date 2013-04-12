@@ -43,7 +43,8 @@ namespace snapper
 
 	virtual string getDevicePath() const;
 
-	virtual bool isEqual(const ImportMetadata &a) const;
+	virtual ImportTypeId getImportMetadataId() const { return type_id; }
+	virtual bool isEqualImpl(const ImportMetadata &a) const;
 
 	virtual bool checkImportedSnapshot() const;
 	virtual void cloneImportedSnapshot(unsigned int num) const;
@@ -51,7 +52,13 @@ namespace snapper
 
 	virtual map<string,string>::const_iterator info_cbegin() const;
 	virtual map<string,string>::const_iterator info_cend() const;
+
+	//TODO: remove this ugly test
+	bool isEqual(const ImportMetadata& b) const;
+
     private:
+	static const ImportMetadata::ImportTypeId type_id = ImportMetadata::ImportTypeId::LVM2;
+
 	const Lvm* lvm;
 	map<string,string> imd_map;
 

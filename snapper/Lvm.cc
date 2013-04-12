@@ -41,6 +41,7 @@
 #include "snapper/SnapperDefines.h"
 #include "snapper/Regex.h"
 #include "snapper/LvmImportMetadata.h"
+#include "snapper/AppUtil.h"
 
 
 namespace snapper
@@ -94,6 +95,10 @@ namespace snapper
 	mount_options = filter_mount_options(mtab_data.options);
 	if (mount_type == "xfs")
 	    mount_options.push_back("nouuid");
+
+	fs_uuid = get_fs_uuid(mtab_data.device);
+	if (fs_uuid.empty())
+	    y2war("Empty fs uuid");
     }
 
 
@@ -202,19 +207,6 @@ namespace snapper
     }
 
 
-    void Lvm::createSnapshotEnvironment(unsigned int num) const
-    {
-	SDir info_dir = openInfoDir(num);
-	int r1 = info_dir.mkdir("snapshot", 0755);
-	if (r1 != 0 && errno != EEXIST)
-	{
-	    y2err("mkdir failed errno:" << errno << " (" << strerror(errno) << ")");
-	    // TODO: SnapshotEnvironmentException...
-	    throw CreateSnapshotFailedException();
-	}
-    }
-
-
     void
     Lvm::deleteSnapshot(unsigned int num) const
     {
@@ -223,16 +215,6 @@ namespace snapper
 	    throw DeleteSnapshotFailedException();
 
 	removeSnapshotEnvironment(num);
-    }
-
-
-    void Lvm::removeSnapshotEnvironment(unsigned int num) const
-    {
-	SDir info_dir = openInfoDir(num);
-	info_dir.unlink("snapshot", AT_REMOVEDIR);
-
-	SDir infos_dir = openInfosDir();
-	infos_dir.unlink(decString(num), AT_REMOVEDIR);
     }
 
 
@@ -268,19 +250,6 @@ namespace snapper
 	SDir snapshot_dir = openSnapshotDir(num);
 
 	if (!mount(getDevice(num), snapshot_dir, mount_type, mount_options))
-	    throw MountSnapshotFailedException();
-    }
-
-
-    void
-    Lvm::mountSnapshot(unsigned int num, const string &device_path) const
-    {
-	if (isSnapshotMounted(num))
-	    return;
-
-	SDir snapshot_dir = openSnapshotDir(num);
-
-	if (!mount(device_path, snapshot_dir.fd(), mount_type, mount_options))
 	    throw MountSnapshotFailedException();
     }
 
@@ -334,11 +303,72 @@ namespace snapper
     }
 
 
-    string
-    Lvm::getDevice(unsigned int num) const
+    void Lvm::cloneSnapshot(unsigned int num, const string &vg_name, const string &lv_name) const
     {
-	return "/dev/mapper/" + boost::replace_all_copy(vg_name, "-", "--") + "-" +
-	    boost::replace_all_copy(snapshotLvName(num), "-", "--");
+	SystemCmd cmd(LVCREATEBIN " --permission r --snapshot --name " +
+		      quote(snapshotLvName(num)) + " " + quote(vg_name + "/" + lv_name));
+
+	if (cmd.retcode() != 0)
+	    throw ImportSnapshotFailedException();
+
+	try {
+	    createSnapshotEnvironment(num);
+	}
+	catch(const CreateSnapshotFailedException &e)
+	{
+	    throw;
+	}
+    }
+
+
+    void
+    Lvm::deleteSnapshot(const string &vg_name, const string &lv_name) const
+    {
+	SystemCmd cmd(LVREMOVEBIN " --force " + quote(vg_name + "/" + lv_name));
+	if (cmd.retcode() != 0)
+	    throw DeleteSnapshotFailedException();
+    }
+
+
+    ImportMetadata* Lvm::createImportMetadata(const map<string,string> &raw_data) const
+    {
+	return new LvmImportMetadata(raw_data, this);
+    }
+
+
+    void Lvm::createSnapshotEnvironment(unsigned int num) const
+    {
+	SDir info_dir = openInfoDir(num);
+	int r1 = info_dir.mkdir("snapshot", 0755);
+	if (r1 != 0 && errno != EEXIST)
+	{
+	    y2err("mkdir failed errno:" << errno << " (" << strerror(errno) << ")");
+	    // TODO: SnapshotEnvironmentException...
+	    throw CreateSnapshotFailedException();
+	}
+    }
+
+
+    void Lvm::removeSnapshotEnvironment(unsigned int num) const
+    {
+	SDir info_dir = openInfoDir(num);
+	info_dir.unlink("snapshot", AT_REMOVEDIR);
+
+	SDir infos_dir = openInfosDir();
+	infos_dir.unlink(decString(num), AT_REMOVEDIR);
+    }
+
+
+    void
+    Lvm::mountSnapshot(unsigned int num, const string &device_path) const
+    {
+	if (isSnapshotMounted(num))
+	    return;
+
+	SDir snapshot_dir = openSnapshotDir(num);
+
+	if (!mount(device_path, snapshot_dir.fd(), mount_type, mount_options))
+	    throw MountSnapshotFailedException();
     }
 
 
@@ -363,37 +393,17 @@ namespace snapper
     }
 
 
-    void Lvm::cloneSnapshot(unsigned int num, const string &vg_name, const string &lv_name) const
+    bool Lvm::checkImportedSnapshot(const string& vg_name, const string& lv_name) const
     {
-	SystemCmd cmd(LVCREATEBIN " --permission r --snapshot --name " +
-		      quote(snapshotLvName(num)) + " " + quote(vg_name + "/" + lv_name));
-
-	if (cmd.retcode() != 0)
-	    throw ImportSnapshotFailedException();
-
-	// TODO: separete following code into special method
-	SDir info_dir = openInfoDir(num);
-	int r1 = info_dir.mkdir("snapshot", 0755);
-	if (r1 != 0 && errno != EEXIST)
-	{
-	    y2err("mkdir failed errno:" << errno << " (" << strerror(errno) << ")");
-	    throw ImportSnapshotFailedException();
-	}
+	return (vg_name == this->vg_name) && detectThinVolumeNames(vg_name, lv_name);
     }
 
 
-    void
-    Lvm::deleteSnapshot(unsigned int num, const string &vg_name, const string &lv_name) const
+    string
+    Lvm::getDevice(unsigned int num) const
     {
-	SystemCmd cmd(LVREMOVEBIN " --force " + quote(vg_name + "/" + lv_name));
-	if (cmd.retcode() != 0)
-	    throw DeleteSnapshotFailedException();
-    }
-
-
-    ImportMetadata* Lvm::createImportMetadata(const map<string,string> &raw_data) const
-    {
-	return new LvmImportMetadata(raw_data, this);
+	return "/dev/mapper/" + boost::replace_all_copy(vg_name, "-", "--") + "-" +
+	    boost::replace_all_copy(snapshotLvName(num), "-", "--");
     }
 
 

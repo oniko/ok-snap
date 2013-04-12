@@ -21,6 +21,8 @@
 #ifndef SNAPPER_IMPORTMETADATA_H
 #define SNAPPER_IMPORTMETADATA_H
 
+#include "config.h"
+
 #include <stdint.h>
 #include <sys/time.h>
 
@@ -45,6 +47,8 @@ namespace snapper
      * 
      * ACKNOWLEDGE:	add snapshot into snapper's environement but do not manipulate the snapshot (e.g. delete it)
      */
+
+    // keep it 1 byte as it's supposed to be transfered via dbus as the BYTE type
     enum ImportPolicy : unsigned char { NONE = 0, CLONE, ADOPT, ACKNOWLEDGE };
 
     ImportPolicy createImportPolicy(unsigned char raw);
@@ -52,9 +56,16 @@ namespace snapper
     class ImportMetadata
     {
     protected:
+
+	enum ImportTypeId : unsigned int { BTRFS, LVM2 };
+
 	time_t creation_time;
 
+	virtual bool isEqualImpl(const ImportMetadata& idata) const = 0;
+	virtual ImportTypeId getImportMetadataId() const = 0;
+
     public:
+
 	ImportMetadata(const ImportMetadata& idata) { creation_time = idata.creation_time; }
 	ImportMetadata() { creation_time = (time_t)(-1); }
 	virtual ~ImportMetadata() {}
@@ -70,13 +81,8 @@ namespace snapper
 	// used only during mount operation on ADOPT/ACKNOWLEDGE types of import
 	virtual string getDevicePath() const = 0;
 
-	/*
-	 * used when we want to reassure we're not about to import
-	 * snapshot being already part of snapper's context
-	 * throws InvalidMetataException (i.e. when comparing Lvm and
-	 * Btrfs ImportMetadata)
-	 */
-	virtual bool isEqual(const ImportMetadata &b) const = 0;
+	// TODO: think about it. still looks like a design issue
+	bool isEqual(const ImportMetadata &b) const;
 
 	// check if the metadata desribes valid snapshot
 	virtual bool checkImportedSnapshot() const = 0;

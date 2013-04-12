@@ -18,8 +18,11 @@
  *
  */
 
+#include <assert.h>
+
 #include "snapper/ImportMetadata.h"
 #include "snapper/Exception.h"
+#include "snapper/Log.h"
 
 namespace snapper
 {
@@ -40,6 +43,16 @@ namespace snapper
 	    default:
 		throw InvalidImportMetadataException();
 	}
+    }
+
+
+    bool
+    ImportMetadata::isEqual(const ImportMetadata& b) const
+    {
+	y2deb("ImportMetadata::isEqual");
+	assert(getImportMetadataId() == b.getImportMetadataId());
+
+	return (isEqualImpl(b));
     }
 
 }
