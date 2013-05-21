@@ -57,7 +57,7 @@ namespace snapper
     {
     protected:
 
-	enum ImportTypeId : unsigned int { BTRFS, LVM2 };
+	enum ImportTypeId : unsigned int { BTRFS, EXT4, LVM2 };
 
 	time_t creation_time;
 

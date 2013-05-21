@@ -1,0 +1,12 @@
+
+To run testsuite:
+
+- read the CAUTION file
+
+* testing import feature with LVM:
+
+- create volume group named vg_snapper_tests with at least $$G in size (man vgcreate)
+
+- create mount point for testsuite /testsuite-imort
+
+- run ./lvm-all

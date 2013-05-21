@@ -210,10 +210,7 @@ namespace snapper
     void
     Lvm::deleteSnapshot(unsigned int num) const
     {
-	SystemCmd cmd(LVREMOVEBIN " --force " + quote(vg_name + "/" + snapshotLvName(num)));
-	if (cmd.retcode() != 0)
-	    throw DeleteSnapshotFailedException();
-
+	deleteSnapshot(vg_name, snapshotLvName(num));
 	removeSnapshotEnvironment(num);
     }
 
@@ -339,12 +336,32 @@ namespace snapper
     void Lvm::createSnapshotEnvironment(unsigned int num) const
     {
 	SDir info_dir = openInfoDir(num);
-	int r1 = info_dir.mkdir("snapshot", 0755);
-	if (r1 != 0 && errno != EEXIST)
+
+	// TODO: think about flags!
+	int fd = info_dir.open("snapshot", O_RDONLY | O_CLOEXEC | O_NOFOLLOW);
+	if (fd < 0)
 	{
-	    y2err("mkdir failed errno:" << errno << " (" << strerror(errno) << ")");
-	    // TODO: SnapshotEnvironmentException...
-	    throw CreateSnapshotFailedException();
+	    if (info_dir.mkdir("snapshot", 0755))
+	    {
+		y2err("mkdir failed with errno:" << errno << " (" << strerror(errno) << ")");
+		// TODO: SnapshotEnvironmentException...
+		throw CreateSnapshotFailedException();
+	    }
+	}
+	else
+	{
+	    struct stat buff;
+
+	    if (fstat(fd, &buff) || !S_ISDIR(buff.st_mode))
+	    {
+		close(fd);
+
+		y2err("stat failed or dentry 'snapshot' exists but it's not actually a directory!");
+		// TODO: SnapshotEnvironmentException...
+		throw CreateSnapshotFailedException();
+	    }
+
+	    close(fd);
 	}
     }
 
@@ -352,9 +369,11 @@ namespace snapper
     void Lvm::removeSnapshotEnvironment(unsigned int num) const
     {
 	SDir info_dir = openInfoDir(num);
+	/// hmm. try to test errors related to 'directory is mounted...'
 	info_dir.unlink("snapshot", AT_REMOVEDIR);
 
 	SDir infos_dir = openInfosDir();
+	// directory '<num>' will be most propably not empty
 	infos_dir.unlink(decString(num), AT_REMOVEDIR);
     }
 
@@ -367,7 +386,7 @@ namespace snapper
 
 	SDir snapshot_dir = openSnapshotDir(num);
 
-	if (!mount(device_path, snapshot_dir.fd(), mount_type, mount_options))
+	if (!mount(device_path, snapshot_dir, mount_type, mount_options))
 	    throw MountSnapshotFailedException();
     }
 
@@ -395,15 +414,17 @@ namespace snapper
 
     bool Lvm::checkImportedSnapshot(const string& vg_name, const string& lv_name) const
     {
-	return (vg_name == this->vg_name) && detectThinVolumeNames(vg_name, lv_name);
+	return (vg_name == this->vg_name) &&
+	       (lv_name != this->lv_name) &&
+	       detectThinVolumeNames(vg_name, lv_name);
     }
 
 
     string
     Lvm::getDevice(unsigned int num) const
     {
-	return "/dev/mapper/" + boost::replace_all_copy(vg_name, "-", "--") + "-" +
-	    boost::replace_all_copy(snapshotLvName(num), "-", "--");
+	return "/dev/mapper/" + boost::replace_all_copy(vg_name, "-", "--")
+	       + "-" + boost::replace_all_copy(snapshotLvName(num), "-", "--");
     }
 
 

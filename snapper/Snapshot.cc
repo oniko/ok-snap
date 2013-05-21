@@ -732,7 +732,10 @@ namespace snapper
 
 	time_t tmp_date = p_idata->getCreationTime();
 
-	Snapshot snapshot(snapper, SINGLE, nextNumber(), (tmp_date == (time_t) (-1) ? time(NULL) : tmp_date), ipolicy, p_idata);
+	if (ipolicy == CLONE || tmp_date == (time_t) (-1))
+	    tmp_date = time(NULL);
+
+	Snapshot snapshot(snapper, SINGLE, nextNumber(), tmp_date, ipolicy, p_idata);
 	snapshot.description = description;
 	snapshot.info_modified = true;
 
@@ -749,8 +752,10 @@ namespace snapper
 
 	time_t tmp_date = p_idata->getCreationTime();
 
-	Snapshot snapshot(snapper, PRE, nextNumber(), (tmp_date == (time_t) (-1) ? time(NULL) : tmp_date), ipolicy, p_idata);
+	if (ipolicy == CLONE || tmp_date == (time_t) (-1))
+	    tmp_date = time(NULL);
 
+	Snapshot snapshot(snapper, PRE, nextNumber(), tmp_date, ipolicy, p_idata);
 	snapshot.description = description;
 	snapshot.info_modified = true;
 
@@ -771,7 +776,10 @@ namespace snapper
 
 	time_t tmp_date = p_idata->getCreationTime();
 
-	Snapshot snapshot(snapper, POST, nextNumber(), (tmp_date == (time_t)(-1) ? time(NULL) : tmp_date), ipolicy, p_idata);
+	if (ipolicy == CLONE || tmp_date == (time_t) (-1))
+	    tmp_date = time(NULL);
+
+	Snapshot snapshot(snapper, POST, nextNumber(), tmp_date, ipolicy, p_idata);
 	snapshot.description = description;
 	snapshot.pre_num = pre->getNum();
 	snapshot.info_modified = true;

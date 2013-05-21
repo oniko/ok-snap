@@ -56,14 +56,13 @@ namespace snapper
 	//TODO: remove this ugly test
 	bool isEqual(const ImportMetadata& b) const;
 
+	string getVgName() const { return imd_map.find("vg_name")->second; }
+	string getLvName() const { return imd_map.find("lv_name")->second; }
     private:
 	static const ImportMetadata::ImportTypeId type_id = ImportMetadata::ImportTypeId::LVM2;
 
 	const Lvm* lvm;
 	map<string,string> imd_map;
-
-	string getVgName() const { return imd_map.find("vg_name")->second; }
-	string getLvName() const { return imd_map.find("lv_name")->second; }
     };
 
 }

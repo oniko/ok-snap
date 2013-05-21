@@ -118,10 +118,10 @@ namespace snapper
     }
 
 
-    // TODO: think about it later
     bool LvmImportMetadata::checkImportedSnapshot() const
     {
-	return (lvm->checkImportedSnapshot(getVgName(), getLvName()) && get_fs_uuid(getDevicePath()) == lvm->getFsUuid());
+	return (lvm->checkImportedSnapshot(getVgName(), getLvName()) &&
+		get_fs_uuid(getDevicePath()) == lvm->getFsUuid());
     }
 
 

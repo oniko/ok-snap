@@ -18,41 +18,9 @@
  *
  */
 
-#include <assert.h>
+#include "snapper/LvmImportMetadata.h"
 
-#include "snapper/ImportMetadata.h"
-#include "snapper/Exception.h"
-#include "snapper/Log.h"
-
-namespace snapper
+BOOST_AUTO_TEST_CASE ( import_metadata_test )
 {
-
-    ImportPolicy
-    createImportPolicy(unsigned char raw)
-    {
-	switch(raw)
-	{
-	    case NONE:
-		return NONE;
-	    case CLONE:
-		return CLONE;
-	    case ADOPT:
-		return ADOPT;
-	    case ACKNOWLEDGE:
-		return ACKNOWLEDGE;
-	    default:
-		throw InvalidImportMetadataException();
-	}
-    }
-
-
-    bool
-    ImportMetadata::isEqual(const ImportMetadata& b) const
-    {
-	y2deb("ImportMetadata::isEqual");
-	assert(getImportMetadataId() == b.getImportMetadataId());
-
-	return this->isEqualImpl(b);
-    }
-
+    ImportMetata im = LvmImportMetadata(
 }

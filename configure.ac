@@ -145,5 +145,6 @@ AC_OUTPUT(
 	testsuite/Makefile
 	testsuite-real/Makefile
 	testsuite-cmp/Makefile
+	testsuite-import/Makefile
 	package/snapper.spec:snapper.spec.in
 )
