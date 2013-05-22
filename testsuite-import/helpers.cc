@@ -8,14 +8,13 @@
 #include <sys/wait.h>
 
 #include <iostream>
-//#include <sstream>
-#include <iosfwd>
+#include <sstream>
 #include <vector>
 #include <algorithm>
 #include <iterator>
 //#include <cstring>
 
-//#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/split.hpp>
 
 #include "testsuite-import/helpers.h"
@@ -100,17 +99,18 @@ namespace lvmimporttest
 	std::ostringstream oss;
 	oss << "-qq ";
 
-/*	if (readonly)
+	if (readonly)
 	{
 	    oss << "--permission r ";
 	}
 
 	oss << "--snapshot --name " << snapshot_name << " " << vg_name
-	    << "/" + origin_lv_name;*/
+	    << "/" + origin_lv_name;
 
+	string tmp(oss.str());
 	vector<string> args;
-	boost::split(args, oss.str(), boost::is_any_of(" \t\n"), boost::token_compress_on);
-/*
+	boost::split(args, tmp, boost::is_any_of(" \t\n"), boost::token_compress_on);
+
 	try
 	{
 	    SimpleSystemCmd cmd("/usr/sbin/lvcreate", args);
@@ -127,7 +127,7 @@ namespace lvmimporttest
 	{
 	    std::cerr << "SimpleSystemCmd(\"/usr/sbin/lvcreate\") failed" << std::endl;
 	    throw;
-	}*/
+	}
     }
 
     void lvremove_wrapper(const string& vg_name, const string& lv_name)

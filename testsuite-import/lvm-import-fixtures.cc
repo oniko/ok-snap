@@ -341,4 +341,9 @@ namespace lvmimporttest
 
 	modify_fs_uuid(f_vg_name, f_lv_name, lvm->mount_type);
     }
+
+    CheckImportedSnapshotFsUuidMismatch::~CheckImportedSnapshotFsUuidMismatch()
+    {
+	lvremove_wrapper(f_vg_name, f_lv_name);
+    }
 }
