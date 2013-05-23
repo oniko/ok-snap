@@ -7,7 +7,7 @@
 
 #include <boost/noncopyable.hpp>
 
-namespace lvmimporttest
+namespace lvm
 {
     using std::string;
     using std::vector;
@@ -18,6 +18,7 @@ namespace lvmimporttest
     bool check_is_mounted(const string& vg_name, const string& lv_name);
 
     void lvcreate_thin_snapshot_wrapper(const string& vg_name, const string& origin_lv_name, const string& snapshot_name, const bool readonly = true);
+    void lvcreate_non_thin_lv_wrapper(const string& vg_name, const string& lv_name);
     void lvremove_wrapper(const string& vg_name, const string& lv_name);
 
     void modify_fs_uuid(const string& vg_name, const string& lv_name, const string& fs_type, const string& new_uuid = "");

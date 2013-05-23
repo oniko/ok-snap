@@ -1,4 +1,5 @@
 #include <dirent.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
@@ -9,68 +10,19 @@
 
 #include <iostream>
 #include <sstream>
-#include <map>
 
 #include <boost/test/unit_test.hpp>
 
-#include "testsuite-import/lvm-import-fixtures.h"
+#include "testsuite-import/lvm-fixtures.h"
 #include "testsuite-import/helpers.h"
 
-namespace lvmimporttest
+namespace testsuiteimport { namespace lvm
 {
     using std::cout;
     using std::cerr;
-//    using std::map;
-    using std::make_pair;
-
-    const string GeneralFixture::f_snapshots_prefix =  "/testsuite-import/.snapshots/";
-
-    LvmGlobalConfig::LvmGlobalConfig()
-    {
-	snapper::Snapper::createConfig("testsuite-import", "/testsuite-import", "lvm(ext4)", "default");
-    }
-
-    LvmGlobalConfig::~LvmGlobalConfig()
-    {
-	snapper::Snapper::deleteConfig("testsuite-import");
-    }
-
-    GeneralFixture::GeneralFixture()
-    {
-	BOOST_TEST_MESSAGE( "GeneralFixture ctor" );
-
-	sh = new snapper::Snapper("testsuite-import");
-	lvm = static_cast<const snapper::Lvm *>(sh->getFilesystem());
-    }
-
-    GeneralFixture::~GeneralFixture()
-    {
-	BOOST_TEST_MESSAGE( "GeneralFixture dtor" );
-
-	delete sh;
-    }
-
-    ValidMetadata::ValidMetadata() : GeneralFixture()
-    {
-	raw_data.insert(make_pair("vg_name", "some_string"));
-	raw_data.insert(make_pair("lv_name", "some_string"));
-	raw_data.insert(make_pair("the_answer", "42"));
-    }
-
-    MissingVgName::MissingVgName() : GeneralFixture()
-    {
-	raw_data.insert(make_pair("lv_name", "some_string"));
-	raw_data.insert(make_pair("the_answer", "42"));
-    }
-
-    MissingLvName::MissingLvName() : GeneralFixture()
-    {
-	raw_data.insert(make_pair("vg_name", "some_string"));
-	raw_data.insert(make_pair("the_answer", "42"));
-    }
 
     CreateSnapshotEnvironment::CreateSnapshotEnvironment()
-	: GeneralFixture(), num(0)
+	: LvmGeneralFixture(), num(0)
     {
 	std::cout << "CreateSnapshotEnvironment ctor" << std::endl;
 
@@ -227,11 +179,11 @@ namespace lvmimporttest
 	}
 
 	try {
-	    lvremove_wrapper(f_vg_name, lvm->snapshotLvName(num));
+	    lvremove_wrapper(f_vg_name, f_lvm->snapshotLvName(num));
 	}
 	catch (const LvmImportTestsuiteException &e)
 	{
-	    std::cerr << "lvremove_wrapper( " << f_vg_name << ", " << lvm->snapshotLvName(num) << " ) failed" << std::endl;
+	    std::cerr << "lvremove_wrapper( " << f_vg_name << ", " << f_lvm->snapshotLvName(num) << " ) failed" << std::endl;
 	}
     }
 
@@ -278,7 +230,7 @@ namespace lvmimporttest
 	std::cout << "MountSnapshotByDeviceAlreadyMounted ctor" << std::endl;
 
 	int ret = mount(dev_path.c_str(), mountpoint.c_str(),
-			lvm->mount_type.c_str(),
+			f_lvm->mount_type.c_str(),
 			MS_NOATIME | MS_NODEV | MS_NOEXEC | MS_RDONLY,
 			NULL);
 
@@ -299,7 +251,7 @@ namespace lvmimporttest
     }
 
     CheckImportedSnapshotValid::CheckImportedSnapshotValid()
-	: GeneralFixture(), f_vg_name("vg_test"), f_lv_name("lv_test_snapshot_01"),
+	: LvmGeneralFixture(), f_vg_name("vg_test"), f_lv_name("lv_test_snapshot_01"),
 	  f_origin_name("lv_test_thin_1")
     {
 	std::cout << "CheckImportedSnapshotValid ctor" << std::endl;
@@ -320,30 +272,63 @@ namespace lvmimporttest
     }
 
     CheckImportedSnapshotWrongVg::CheckImportedSnapshotWrongVg()
-	: GeneralFixture(), f_vg_name("vg_test_2"), f_lv_name("lv_test_thin_2")
+	: LvmGeneralFixture(), f_vg_name("vg_test_2"), f_lv_name("lv_test_thin_2")
     {
 	std::cout << "CheckImportedSnapshotWrongVg ctor" << std::endl;
     }
 
     CheckImportedSnapshotVolumeImport::CheckImportedSnapshotVolumeImport()
-	: GeneralFixture(), f_vg_name(lvm->vg_name), f_lv_name(lvm->lv_name)
+	: LvmGeneralFixture(), f_vg_name(f_lvm->vg_name), f_lv_name(f_lvm->lv_name)
     {
 	std::cout << "CheckImportedSnapshotVolumeImport ctor" << std::endl;
     }
 
     CheckImportedSnapshotFsUuidMismatch::CheckImportedSnapshotFsUuidMismatch()
-	: GeneralFixture(), f_vg_name("vg_test"), f_lv_name("lv_test_snapshot_01"),
+	: LvmGeneralFixture(), f_vg_name("vg_test"), f_lv_name("lv_test_snapshot_01"),
 	  f_origin_name("lv_test_thin_1")
     {
 	std::cout << "CheckImportedSnapshotFsUuidMismatch ctor" << std::endl;
 
 	lvcreate_thin_snapshot_wrapper( f_vg_name, f_origin_name, f_lv_name, false);
 
-	modify_fs_uuid(f_vg_name, f_lv_name, lvm->mount_type);
+	modify_fs_uuid(f_vg_name, f_lv_name, f_lvm->mount_type);
     }
 
     CheckImportedSnapshotFsUuidMismatch::~CheckImportedSnapshotFsUuidMismatch()
     {
 	lvremove_wrapper(f_vg_name, f_lv_name);
     }
-}
+
+    CheckImportedSnapshotNonThinLv::CheckImportedSnapshotNonThinLv()
+	: LvmGeneralFixture(), f_vg_name("vg_test"), f_lv_name("lv_non_thin")
+    {
+	lvcreate_non_thin_lv_wrapper(f_vg_name, f_lv_name);
+    }
+
+    CheckImportedSnapshotNonThinLv::~CheckImportedSnapshotNonThinLv()
+    {
+	lvremove_wrapper(f_vg_name, f_lv_name);
+    }
+
+    DeleteSnapshotByVgLv::DeleteSnapshotByVgLv()
+	: LvmGeneralFixture(), f_vg_name("vg_test"), f_lv_name("lv_test_volume"),
+	f_origin_name("lv_test_thin_1")
+    {
+	lvcreate_thin_snapshot_wrapper(f_vg_name, f_origin_name, f_lv_name);
+    }
+
+    DeleteSnapshotByVgLv::~DeleteSnapshotByVgLv()
+    {
+	try
+	{
+	    lvremove_wrapper(f_vg_name, f_lv_name);
+	}
+	// in case of failure, remove volume that should be deleted by Lvm class
+	catch (const LvmImportTestsuiteException& e) {}
+    }
+
+    DeleteSnapshotByVgLvMissing::DeleteSnapshotByVgLvMissing()
+	: LvmGeneralFixture(), f_vg_name("vg_blahblah"), f_lv_name("lv_blahblah")
+    {
+    }
+}}

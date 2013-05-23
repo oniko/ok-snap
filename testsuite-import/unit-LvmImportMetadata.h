@@ -1,17 +1,8 @@
-#ifndef UNIT_LVM_IMPORT_METADATA_H
-#define UNIT_LVM_IMPORT_METADATA_H
+#include <boost/test/unit_test.hpp>
 
-//#include <boost/test/unit_test.hpp>
+#include "snapper/LvmImportMetadata.h"
 
-//#include "testsuite-import/lvm-import-fixtures.h"
-
-/* #include "snapper/Snapper.h"
-
-// ouch !!
-//#define private public
-    #include "snapper/LvmImportMetadata.h"
-//#define private private
-*/
+#include "testsuite-import/lvmimportmetadata-fixtures.h"
 
 BOOST_FIXTURE_TEST_CASE ( tc_import_ctor_valid, ValidMetadata )
 {
@@ -43,4 +34,3 @@ BOOST_FIXTURE_TEST_CASE ( tc_import_clone_method, ValidMetadata )
     BOOST_CHECK_EQUAL(p_data->getLvName(), imdata.getLvName());
     BOOST_CHECK_EQUAL(p_data->getCreationTime(), imdata.getCreationTime());
 }
-#endif

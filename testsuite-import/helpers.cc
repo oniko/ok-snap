@@ -12,14 +12,12 @@
 #include <vector>
 #include <algorithm>
 #include <iterator>
-//#include <cstring>
 
 #include <boost/algorithm/string.hpp>
-#include <boost/algorithm/string/split.hpp>
 
 #include "testsuite-import/helpers.h"
 
-namespace lvmimporttest
+namespace lvm
 
 {
     using std::string;
@@ -126,6 +124,33 @@ namespace lvmimporttest
 	catch (const SimpleSystemCmdException &e)
 	{
 	    std::cerr << "SimpleSystemCmd(\"/usr/sbin/lvcreate\") failed" << std::endl;
+	    throw;
+	}
+    }
+
+    void lvcreate_non_thin_lv_wrapper(const string& vg_name, const string& lv_name)
+    {
+	string tmp("-qq --name " + lv_name + " -L100M " + vg_name);
+
+	vector<string> args;
+	boost::split(args, tmp, boost::is_any_of(" \t\n"), boost::token_compress_on);
+
+	try
+	{
+	    SimpleSystemCmd cmd("/usr/sbin/lvcreate", args);
+
+	    if (cmd.retcode())
+	    {
+		std::cerr << "lvcreate failed with ret_code: " << cmd.retcode() << std::endl;
+		for (vector<string>::const_iterator cit = cmd.stderr_cbegin(); cit != cmd.stderr_cend(); cit++)
+		    std::cerr << "lvcreate err: " << *cit << std::endl;
+		throw LvmImportTestsuiteException();
+	    }
+	}
+	catch (const SimpleSystemCmdException &e)
+	{
+	    std::cerr << "SimpleSystemCmd(\"/usr/sbin/lvcreate\", \"" << tmp
+		      << "\") failed" << std::endl;
 	    throw;
 	}
     }

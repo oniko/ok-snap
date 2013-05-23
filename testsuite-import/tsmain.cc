@@ -17,9 +17,9 @@
 #include <boost/test/unit_test.hpp>
 
 #include "testsuite-import/helpers.h"
-#include "testsuite-import/lvm-import-fixtures.h"
+#include "testsuite-import/general-fixtures.h"
 
-using namespace lvmimporttest;
+using namespace testsuiteimport::lvm;
 
 BOOST_GLOBAL_FIXTURE( LvmGlobalConfig )
 

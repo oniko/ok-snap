@@ -1,7 +1,6 @@
 #ifndef UNIT_LVM_H
 #define UNIT_LVM_H
 
-/*
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -13,7 +12,6 @@
 #include <boost/test/unit_test.hpp>
 
 #include "testsuite-import/helpers.h"
-*/
 
 /*
  * Lvm.cc should create directories where snapshots
@@ -114,17 +112,31 @@ BOOST_FIXTURE_TEST_CASE ( tc_check_imported_snapshot_volume_import, CheckImporte
 /*
  * NOTE: this test assume snapper shouldn't allow importing snapshot
  * with different fs_uuid from original volume.
+ *
+ * NOTE: 1 expected failure. Possibly move this test to Snapshot unit
  */
+BOOST_AUTO_TEST_CASE_EXPECTED_FAILURES ( tc_check_imported_snapshot_fs_uuid_mismatch, 1 )
+
 BOOST_FIXTURE_TEST_CASE ( tc_check_imported_snapshot_fs_uuid_mismatch, CheckImportedSnapshotFsUuidMismatch )
 {
     BOOST_CHECK( !lvm->checkImportedSnapshot(f_vg_name, f_lv_name) );
 }
 
+BOOST_FIXTURE_TEST_CASE ( tc_check_imported_snapshot_non_thin_lv, CheckImportedSnapshotNonThinLv )
+{
+    BOOST_CHECK( !lvm->checkImportedSnapshot(f_vg_name, f_lv_name) );
+}
 
-// bool checkImportedSnapshot(const string &vg_name, const string& lv_name) const;
-// bool detectThinVolumeNames(const string& vg_name, const string& lv_name) const;
+BOOST_FIXTURE_TEST_CASE ( tc_check_delete_snapshot_by_vg_lv, DeleteSnapshotByVgLv )
+{
+    BOOST_CHECK_NO_THROW( lvm->deleteSnapshot(f_vg_name, f_lv_name) );
 
-// void cloneSnapshot(unsigned int num, const string &vg_name, const string &lv_name) const;
-// void deleteSnapshot(const string &vg_name, const string &lv_name) const;
-// string getFsUuid() const
+    BOOST_CHECK( !check_lv_exists(f_vg_name, f_lv_name) );
+}
+
+BOOST_FIXTURE_TEST_CASE ( tc_check_delete_snapshot_by_vg_lv_missing, DeleteSnapshotByVgLvMissing )
+{
+    BOOST_CHECK_THROW( lvm->deleteSnapshot(f_vg_name, f_lv_name), snapper::DeleteSnapshotFailedException );
+}
+
 #endif

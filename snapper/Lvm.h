@@ -133,6 +133,7 @@ namespace snapper
 	string fs_uuid;
 
 	vector<string> mount_options;
+
     };
 
 }
