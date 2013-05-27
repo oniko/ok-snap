@@ -17,7 +17,7 @@
 
 #include "testsuite-import/helpers.h"
 
-namespace lvm
+namespace testsuiteimport { namespace lvm
 
 {
     using std::string;
@@ -330,4 +330,4 @@ namespace lvm
 	    exit(EXIT_FAILURE);
 	}
     }
-}
+}}

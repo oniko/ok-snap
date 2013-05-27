@@ -22,20 +22,20 @@ namespace testsuiteimport { namespace lvm
     using std::cerr;
 
     CreateSnapshotEnvironment::CreateSnapshotEnvironment()
-	: LvmGeneralFixture(), num(0)
+	: LvmGeneralFixture(), f_num(0)
     {
 	std::cout << "CreateSnapshotEnvironment ctor" << std::endl;
 
 	std::ostringstream oss;
-	oss << f_snapshots_prefix << num;
+	oss << f_snapshots_prefix << f_num;
 
-	while (mkdir(oss.str().c_str(), 0755) && num < 100)
+	while (mkdir(oss.str().c_str(), 0755) && f_num < 100)
 	{
-	    num++;
+	    f_num++;
 
 	    oss.str(f_snapshots_prefix);
 	    oss.clear();
-	    oss << f_snapshots_prefix << num;
+	    oss << f_snapshots_prefix << f_num;
 
 	    if (errno == EEXIST)
 		continue;
@@ -43,36 +43,36 @@ namespace testsuiteimport { namespace lvm
 	    BOOST_FAIL( "Couldn't create the info directory" );
 	}
 
-	if (num >= 100)
+	if (f_num >= 100)
 	    BOOST_FAIL( "Something went terribly wrong" );
 
-	snapshot_dir = oss.str();
+	f_snapshot_dir = oss.str();
 
-	dirfd = open(oss.str().c_str(), O_RDONLY | O_CLOEXEC | O_NOFOLLOW);
+	f_dirfd = open(oss.str().c_str(), O_RDONLY | O_CLOEXEC | O_NOFOLLOW);
 
-	if (dirfd < 0)
+	if (f_dirfd < 0)
 	    BOOST_FAIL( "Can't open: " << oss );
 
 	struct stat buff;
 
-	if (fstat(dirfd, &buff) || !S_ISDIR(buff.st_mode))
+	if (fstat(f_dirfd, &buff) || !S_ISDIR(buff.st_mode))
 	{
-	    close(dirfd);
+	    close(f_dirfd);
 	    BOOST_FAIL( "Can't stat dir: /testsuite-import/.snapshots/" << num << " or the d-entry is not a directory" );
 	}
     }
 
     CreateSnapshotEnvironment::~CreateSnapshotEnvironment()
     {
-	DIR *dr = fdopendir(dirfd);
+	DIR *dr = fdopendir(f_dirfd);
 	if (!dr)
 	{
 	    BOOST_TEST_MESSAGE( "Can't open directory stream" );
-	    close(dirfd);
+	    close(f_dirfd);
 	    return;
 	}
 
-	long name_max = fpathconf(dirfd, _PC_NAME_MAX);
+	long name_max = fpathconf(f_dirfd, _PC_NAME_MAX);
 	if (name_max < 0)
 	    name_max = 255;
 
@@ -84,47 +84,47 @@ namespace testsuiteimport { namespace lvm
 	{
 	    if (strcmp(de->d_name, ".") != 0 && strcmp(de->d_name, "..") != 0)
 	    {
-		std::cout << "going to remove: " << snapshot_dir << "/" << de->d_name << std::endl;
+		std::cout << "going to remove: " << f_snapshot_dir << "/" << de->d_name << std::endl;
 
 		struct stat buff;
 
-		if (fstatat(dirfd, de->d_name, &buff, AT_SYMLINK_NOFOLLOW))
+		if (fstatat(f_dirfd, de->d_name, &buff, AT_SYMLINK_NOFOLLOW))
 		{
 		    perror("fstatat");
-		    BOOST_TEST_MESSAGE( "Can't fstatat: " << snapshot_dir << de->d_name );
+		    BOOST_TEST_MESSAGE( "Can't fstatat: " << f_snapshot_dir << de->d_name );
 		}
 
 		if (S_ISDIR(buff.st_mode))
 		{
-		    if (unlinkat(dirfd, de->d_name, AT_REMOVEDIR))
+		    if (unlinkat(f_dirfd, de->d_name, AT_REMOVEDIR))
 		    {
 			perror("unlinkat");
-			BOOST_TEST_MESSAGE( "Can't remove (dir): " << snapshot_dir << de->d_name );
+			BOOST_TEST_MESSAGE( "Can't remove (dir): " << f_snapshot_dir << de->d_name );
 		    }
 		    continue;
 		}
 
 		if (S_ISREG(buff.st_mode))
 		{
-		    if (unlinkat(dirfd, de->d_name, 0))
+		    if (unlinkat(f_dirfd, de->d_name, 0))
 		    {
 			perror("unlinkat");
-			BOOST_TEST_MESSAGE( "Can't remove: " << snapshot_dir << de->d_name );
+			BOOST_TEST_MESSAGE( "Can't remove: " << f_snapshot_dir << de->d_name );
 		    }
 		    continue;
 		}
-		BOOST_TEST_MESSAGE( "WARN: what file type is this? : " << snapshot_dir << de->d_name );
+		BOOST_TEST_MESSAGE( "WARN: what file type is this? : " << f_snapshot_dir << de->d_name );
 	    }
 	}
 
 	closedir(dr);
 	free(de);
-	close(dirfd);
+	close(f_dirfd);
 
-	if (rmdir(snapshot_dir.c_str()))
+	if (rmdir(f_snapshot_dir.c_str()))
 	{
 	    perror("rmdir");
-	    BOOST_TEST_MESSAGE( "Can't remove: " << snapshot_dir );
+	    BOOST_TEST_MESSAGE( "Can't remove: " << f_snapshot_dir );
 	}
 
     }
@@ -134,7 +134,7 @@ namespace testsuiteimport { namespace lvm
     {
 	std::cout << "CreateSnapshotEnvironmentDirExists ctor" << std::endl;
 
-	if (mkdirat(dirfd, "snapshot", 0755))
+	if (mkdirat(f_dirfd, "snapshot", 0755))
 	    BOOST_FAIL( "Can't create snapshot directory in test environment" );
     }
 
@@ -145,7 +145,7 @@ namespace testsuiteimport { namespace lvm
 
 	int fd;
 
-	fd = openat(dirfd, "snapshot", O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0755);
+	fd = openat(f_dirfd, "snapshot", O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0755);
 	if (fd < 0)
 	    BOOST_FAIL( "Can't create 'snapshot' file");
 
@@ -179,11 +179,11 @@ namespace testsuiteimport { namespace lvm
 	}
 
 	try {
-	    lvremove_wrapper(f_vg_name, f_lvm->snapshotLvName(num));
+	    lvremove_wrapper(f_vg_name, f_lvm->snapshotLvName(f_num));
 	}
 	catch (const LvmImportTestsuiteException &e)
 	{
-	    std::cerr << "lvremove_wrapper( " << f_vg_name << ", " << f_lvm->snapshotLvName(num) << " ) failed" << std::endl;
+	    std::cerr << "lvremove_wrapper( " << f_vg_name << ", " << f_lvm->snapshotLvName(f_num) << " ) failed" << std::endl;
 	}
     }
 
@@ -203,16 +203,16 @@ namespace testsuiteimport { namespace lvm
 	lvcreate_thin_snapshot_wrapper( f_vg_name, f_origin_name, f_lv_name );
 
 	std::ostringstream oss;
-	oss << "/testsuite-import/.snapshots/" << num << "/snapshot";
+	oss << "/testsuite-import/.snapshots/" << f_num << "/snapshot";
 
-	dev_path = "/dev/mapper/" + f_vg_name + "-" + f_lv_name;
-	mountpoint = oss.str();
+	f_dev_path = "/dev/mapper/" + f_vg_name + "-" + f_lv_name;
+	f_mountpoint = oss.str();
     }
 
     MountSnapshotByDeviceValid::~MountSnapshotByDeviceValid()
     {
-	if (umount2(mountpoint.c_str(), MNT_DETACH))
-	    std::cerr << "umount2( \"" << mountpoint << "\", MNT_DETACH) failed!" << std::endl;
+	if (umount2(f_mountpoint.c_str(), MNT_DETACH))
+	    std::cerr << "umount2( \"" << f_mountpoint << "\", MNT_DETACH) failed!" << std::endl;
 
 	try
 	{
@@ -229,7 +229,7 @@ namespace testsuiteimport { namespace lvm
     {
 	std::cout << "MountSnapshotByDeviceAlreadyMounted ctor" << std::endl;
 
-	int ret = mount(dev_path.c_str(), mountpoint.c_str(),
+	int ret = mount(f_dev_path.c_str(), f_mountpoint.c_str(),
 			f_lvm->mount_type.c_str(),
 			MS_NOATIME | MS_NODEV | MS_NOEXEC | MS_RDONLY,
 			NULL);
@@ -247,7 +247,7 @@ namespace testsuiteimport { namespace lvm
     {
 	std::cout << "MountSnapshotByDeviceInvalidDevice ctor" << std::endl;
 
-	missing_dev_path = "/dev/mapper/this_device_do_not_exists";
+	f_missing_dev_path = "/dev/mapper/this_device_do_not_exists";
     }
 
     CheckImportedSnapshotValid::CheckImportedSnapshotValid()

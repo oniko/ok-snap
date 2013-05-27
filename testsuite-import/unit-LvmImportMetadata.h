@@ -1,18 +1,25 @@
 #include <boost/test/unit_test.hpp>
+#include <boost/scoped_ptr.hpp>
 
-#include "snapper/LvmImportMetadata.h"
+#include "snapper/Lvm.h"
+
+#define private public
+    #include "snapper/LvmImportMetadata.h"
+#define private private
 
 #include "testsuite-import/lvmimportmetadata-fixtures.h"
 
 BOOST_FIXTURE_TEST_CASE ( tc_import_ctor_valid, ValidMetadata )
 {
-    snapper::LvmImportMetadata imdata(raw_data, lvm);
+    boost::scoped_ptr<snapper::LvmImportMetadata> p_imdata;
 
-    BOOST_CHECK_EQUAL( imdata.getVgName().empty(), false );
-    BOOST_CHECK_EQUAL( imdata.getLvName().empty(), false );
+    BOOST_CHECK_NO_THROW( p_imdata.reset(new snapper::LvmImportMetadata(f_raw_data, static_cast<const snapper::Lvm *>(123456789))));
 
-    BOOST_CHECK_EQUAL( imdata.getVgName(), raw_data["vg_name"] );
-    BOOST_CHECK_EQUAL( imdata.getLvName(), raw_data["lv_name"] );
+    BOOST_CHECK_EQUAL( *p_imdata.getVgName(), f_raw_data["vg_name"] );
+    BOOST_CHECK_EQUAL( *p_imdata.getLvName(), f_raw_data["lv_name"] );
+
+    // TODO: delete me?
+    BOOST_CHECK_EQUAL( *p_imdata.getImportMetadataId(), snapper::ImportMetadata::ImportTypeId::LVM2 );
 }
 
 BOOST_FIXTURE_TEST_CASE ( tc_import_ctor_missing_vg, MissingVgName )
@@ -25,12 +32,40 @@ BOOST_FIXTURE_TEST_CASE ( tc_import_ctor_missing_lv, MissingLvName )
     BOOST_CHECK_THROW( snapper::LvmImportMetadata imdata(raw_data, lvm), snapper::InvalidImportMetadataException );
 }
 
-BOOST_FIXTURE_TEST_CASE ( tc_import_clone_method, ValidMetadata )
+// TODO: depends on basic ctor
+BOOST_FIXTURE_TEST_CASE ( tc_import_copy_ctor, CopyConstructor )
 {
-    snapper::LvmImportMetadata imdata(raw_data, lvm);
-    snapper::LvmImportMetadata *p_data = static_cast<snapper::LvmImportMetadata *>(imdata.clone());
+    boost::scoped_ptr<snapper::LvmImportMetadata> p_copy;
 
-    BOOST_CHECK_EQUAL(p_data->getVgName(), imdata.getVgName());
-    BOOST_CHECK_EQUAL(p_data->getLvName(), imdata.getLvName());
-    BOOST_CHECK_EQUAL(p_data->getCreationTime(), imdata.getCreationTime());
+    BOOST_CHECK_NO_THROW( p_copy.reset(new snapper::LvmImportMetadata(f_origin)) );
+
+    BOOST_CHECK_EQUAL( *p_copy.getVgName(), f_origin.getVgName() );
+    BOOST_CHECK_EQUAL( *p_copy.getLvName(), f_origin.getLvName() );
+    BOOST_CHECK_EQUAL( *p_copy.getCreationTime(), f_origin.getCreationTime() );
+}
+
+// TODO: depends on copy ctor
+BOOST_FIXTURE_TEST_CASE ( tc_import_clone_method, CopyConstructor )
+{
+    boost::scoped_ptr<snapper::LvmImportMetadata> p_copy;
+
+    BOOST_CHECK_NO_THROW( p_copy.reset(static_cast<snapper::LvmImportMetadata *>(f_origin.clone())) );
+
+    BOOST_CHECK_EQUAL( *p_copy.getVgName(), f_origin.getVgName() );
+    BOOST_CHECK_EQUAL( *p_copy.getLvName(), f_origin.getLvName() );
+    BOOST_CHECK_EQUAL( *p_copy.getCreationTime(), f_origin.getCreationTime() );
+}
+
+// TODO: depends on copy ctor
+BOOST_FIXTURE_TEST_CASE ( tc_import_equal_method_true, EqualMethodTrue )
+{
+    BOOST_CHECK( f_origin.isEqualImpl(f_origin_copy) );
+}
+
+// TODO: depends on basic ctor
+BOOST_FIXTURE_TEST_CASE (tc_import_equal_method_false, EqualMethodFalse )
+{
+    BOOST_CHECK ( !f_origin.isEqualImpl(f_data_diff_in_vg) );
+    BOOST_CHECK ( !f_origin.isEqualImpl(f_data_diff_in_lv) );
+    BOOST_CHECK ( !f_origin.isEqualImpl(f_data_different) );
 }

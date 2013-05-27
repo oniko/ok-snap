@@ -6,7 +6,8 @@
 #include "snapper/Lvm.h"
 #include "snapper/Snapper.h"
 
-namespace testsuiteimport {
+namespace testsuiteimport { namespace lvm
+{
     using std::string;
 
 // NOTE: do not add any fork/execs with childs possibly returning non-zero codes
@@ -22,9 +23,12 @@ namespace testsuiteimport {
 	~LvmGeneralFixture();
 
 	static const string f_snapshots_prefix;
+	static const string f_conf_vg_name;
+	static const string f_conf_origin_name;
+	static const string f_test_snapshot_01;
 
-	snapper::Snapper *f_sh;
+	snapper::Snapper *f_snapper;
 	const snapper::Lvm *f_lvm;
     };
-}
+}}
 #endif //GENERAL_FIXTURES_H

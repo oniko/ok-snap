@@ -678,10 +678,11 @@ namespace snapper
     void
     Snapshot::cloneFilesystemSnapshot() const
     {
+	// TODO: Why? What's wrong with that? hmm... sure. it's same like createSnapshot...
 	if (isCurrent())
 	    throw IllegalSnapshotException();
 
-	p_idata->cloneImportedSnapshot(getNum());
+	p_idata->cloneImportedSnapshot(num);
     }
 
 

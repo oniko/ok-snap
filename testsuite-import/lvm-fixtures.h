@@ -15,10 +15,10 @@ namespace testsuiteimport { namespace lvm
 	CreateSnapshotEnvironment();
 	~CreateSnapshotEnvironment();
 
-	string snapshot_dir;
+	string f_snapshot_dir;
 
-	int dirfd;
-	unsigned int num;
+	int f_dirfd;
+	unsigned int f_num;
     };
 
     struct CreateSnapshotEnvironmentDirExists : public CreateSnapshotEnvironment {
@@ -57,8 +57,8 @@ namespace testsuiteimport { namespace lvm
 	const string f_lv_name;
 	const string f_origin_name;
 
-	string dev_path;
-	string mountpoint;
+	string f_dev_path;
+	string f_mountpoint;
     };
 
     struct MountSnapshotByDeviceAlreadyMounted : public MountSnapshotByDeviceValid
@@ -71,7 +71,7 @@ namespace testsuiteimport { namespace lvm
 	MountSnapshotByDeviceInvalidDevice();
 	~MountSnapshotByDeviceInvalidDevice() {}
 
-	string missing_dev_path;
+	string f_missing_dev_path;
     };
 
     struct CheckImportedSnapshotValid : public LvmGeneralFixture

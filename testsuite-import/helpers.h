@@ -7,7 +7,7 @@
 
 #include <boost/noncopyable.hpp>
 
-namespace lvm
+namespace testsuiteimport { namespace lvm
 {
     using std::string;
     using std::vector;
@@ -58,5 +58,5 @@ namespace lvm
 	vector<string>::const_iterator stderr_cbegin() const { return err_vec.begin(); }
 	vector<string>::const_iterator stderr_cend() const { return err_vec.end(); }
     };
-}
+}}
 #endif // TESTSUITE_IMPORT_LVM_HELPERS_H
