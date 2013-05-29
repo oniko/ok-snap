@@ -127,9 +127,130 @@ BOOST_FIXTURE_TEST_CASE ( tc_delete_filesystem_snapshot_origin, DeleteFileSystem
     BOOST_CHECK( check_lv_exists( f_conf_vg_name, f_conf_origin_name) );
 }
 
-BOOST_FIXTURE_TEST_CASE ( tc_mount_filesystem_snapshot, MountFileSystemSnapshotImportNone )
+BOOST_FIXTURE_TEST_CASE ( tc_mount_filesystem_snapshot_import_none_non_user_request, MountFileSystemSnapshotImportNone )
 {
+    unsigned int mount_count = f_sh.mount_use_count;
+
     BOOST_CHECK_NO_THROW( f_sh.mountFilesystemSnapshot(false) );
 
-    BOOST_CHECK ( check_is_mounted(f_vg_name, f_lv_name) );
+    BOOST_CHECK ( check_is_mounted(f_vg_name, f_snapshot_lv_name) );
+
+    BOOST_CHECK_EQUAL ( mount_count + 1, f_sh.mount_use_count );
 }
+
+BOOST_FIXTURE_TEST_CASE ( tc_mount_filesystem_snapshot_import_none_user_request, MountFileSystemSnapshotImportNone )
+{
+    unsigned int mount_count = f_sh.mount_use_count;
+
+    BOOST_CHECK_NO_THROW( f_sh.mountFilesystemSnapshot(true) );
+
+    BOOST_CHECK ( check_is_mounted(f_vg_name, f_snapshot_lv_name) );
+
+    BOOST_CHECK_NO_THROW( f_sh.mountFilesystemSnapshot(true) );
+
+    BOOST_CHECK_EQUAL ( mount_count, f_sh.mount_use_count );
+    BOOST_CHECK ( f_sh.mount_user_request );
+}
+
+BOOST_FIXTURE_TEST_CASE ( tc_mount_filesystem_snapshot_import_clone_non_user_request, MountFileSystemSnapshotImportClone )
+{
+    unsigned int mount_count = f_sh.mount_use_count;
+
+    BOOST_CHECK_NO_THROW( f_sh.mountFilesystemSnapshot(false) );
+
+    BOOST_CHECK ( check_is_mounted(f_vg_name, f_snapshot_lv_name) );
+    BOOST_CHECK ( !check_is_mounted(f_vg_name, f_clone_origin_name) );
+
+    BOOST_CHECK_EQUAL ( mount_count + 1, f_sh.mount_use_count );
+}
+
+BOOST_FIXTURE_TEST_CASE ( tc_mount_filesystem_snapshot_import_clone_user_request, MountFileSystemSnapshotImportClone )
+{
+    unsigned int mount_count = f_sh.mount_use_count;
+
+    BOOST_CHECK_NO_THROW( f_sh.mountFilesystemSnapshot(true) );
+
+    BOOST_CHECK ( check_is_mounted(f_vg_name, f_snapshot_lv_name) );
+    BOOST_CHECK ( !check_is_mounted(f_vg_name, f_clone_origin_name) );
+
+    BOOST_CHECK_NO_THROW( f_sh.mountFilesystemSnapshot(true) );
+
+    BOOST_CHECK_EQUAL ( mount_count, f_sh.mount_use_count );
+    BOOST_CHECK ( f_sh.mount_user_request );
+}
+
+BOOST_FIXTURE_TEST_CASE ( tc_mount_filesystem_snapshot_import_adopt_non_user_request, MountFileSystemSnapshotImportAdoptOrAck )
+{
+    unsigned int mount_count = f_sh.mount_use_count;
+
+    BOOST_CHECK_NO_THROW( f_sh.mountFilesystemSnapshot(false) );
+
+    BOOST_CHECK ( check_is_mounted(f_vg_name, f_snapshot_lv_name) );
+
+    BOOST_CHECK_EQUAL ( mount_count + 1, f_sh.mount_use_count );
+}
+
+BOOST_FIXTURE_TEST_CASE ( tc_mount_filesystem_snapshot_import_adopt_user_request, MountFileSystemSnapshotImportAdoptOrAck )
+{
+    unsigned int mount_count = f_sh.mount_use_count;
+
+    BOOST_CHECK_NO_THROW( f_sh.mountFilesystemSnapshot(true) );
+
+    BOOST_CHECK ( check_is_mounted(f_vg_name, f_snapshot_lv_name) );
+
+    BOOST_CHECK_NO_THROW( f_sh.mountFilesystemSnapshot(true) );
+
+    BOOST_CHECK_EQUAL ( mount_count, f_sh.mount_use_count );
+    BOOST_CHECK ( f_sh.mount_user_request );
+}
+
+BOOST_FIXTURE_TEST_CASE ( tc_mount_filesystem_snapshot_import_ack_non_user_request, MountFileSystemSnapshotImportAdoptOrAck )
+{
+    unsigned int mount_count = f_sh.mount_use_count;
+
+    BOOST_CHECK_NO_THROW( f_sh.mountFilesystemSnapshot(false) );
+
+    BOOST_CHECK ( check_is_mounted(f_vg_name, f_snapshot_lv_name) );
+
+    BOOST_CHECK_EQUAL ( mount_count + 1, f_sh.mount_use_count );
+}
+
+BOOST_FIXTURE_TEST_CASE ( tc_mount_filesystem_snapshot_import_ack_user_request, MountFileSystemSnapshotImportAdoptOrAck )
+{
+    unsigned int mount_count = f_sh.mount_use_count;
+
+    BOOST_CHECK_NO_THROW( f_sh.mountFilesystemSnapshot(true) );
+
+    BOOST_CHECK ( check_is_mounted(f_vg_name, f_snapshot_lv_name) );
+
+    BOOST_CHECK_NO_THROW( f_sh.mountFilesystemSnapshot(true) );
+
+    BOOST_CHECK_EQUAL ( mount_count, f_sh.mount_use_count );
+    BOOST_CHECK ( f_sh.mount_user_request );
+}
+
+BOOST_FIXTURE_TEST_CASE ( tc_umount_filesystem_snapshot_import_none_non_user_request, UmountFilesystemSnapshotImportNone )
+{
+    unsigned int mount_count = f_sh.mount_count = 1;
+
+    BOOST_CHECK_NO_THROW( f_sh.umountFilesystemSnapshot(false) );
+
+    BOOST_CHECK_EQUAL( mount_count - 1, f_sh.mount_count );
+
+    BOOST_CHECK( check_is_mounted(f_vg_name, f_snapshot_lv_name) );
+}
+
+BOOST_FIXTURE_TEST_CASE ( tc_umount_filesystem_snapshot_import_none_non_user_request, UmountFilesystemSnapshotImportNone )
+{
+    unsigned int mount_count = f_sh.mount_count = 1;
+
+    BOOST_CHECK_NO_THROW( f_sh.umountFilesystemSnapshot(true) );
+
+    BOOST_CHECK_EQUAL( mount_count, f_sh.mount_count );
+
+    mount_count = f_sh.mount_count = 0;
+
+    BOOST_CHECK( !check_is_mounted(f_vg_name, f_snapshot_lv_name) );
+    BOOST_CHECK( !f_sh.mount_user_request );
+}
+

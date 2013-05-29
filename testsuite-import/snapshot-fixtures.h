@@ -141,12 +141,77 @@ namespace testsuiteimport { namespace lvm
 	const snapper::Snapshot f_sh;
     };
 
-    struct MountFileSystemSnapshotImportNone : public MountSnapshotByDeviceValid
+    struct MountFileSystemSnapshotSimpleBase : public CreateSnapshotEnvironmentDirExists
+    {
+	MountFileSystemSnapshotSimpleBase();
+	~MountFileSystemSnapshotSimpleBase();
+
+	const string f_snapshot_lv_name;
+
+	string f_mountpoint;
+    };
+
+    struct MountFileSystemSnapshotImportNone : public MountFileSystemSnapshotSimpleBase
     {
 	MountFileSystemSnapshotImportNone();
 	~MountFileSystemSnapshotImportNone() {}
 
 	const snapper::Snapshot f_sh;
+    };
+
+    struct MountFileSystemSnapshotImportClone : public MountFileSystemSnapshotSimpleBase
+    {
+	MountFileSystemSnapshotImportClone();
+	~MountFileSystemSnapshotImportClone();
+
+	const string f_clone_origin_name;
+	const snapper::LvmImportMetadata* f_p_lvm_idata;
+	const snapper::Snapshot f_sh;
+    };
+
+    struct MountFileSystemSnapshotImportBase : public CreateSnapshotEnvironmentDirExists
+    {
+	MountFileSystemSnapshotImportBase();
+	virtual ~MountFileSystemSnapshotImportBase();
+
+	const string f_snapshot_lv_name;
+
+	string f_mountpoint;
+    };
+
+    struct MountFileSystemSnapshotImportAdoptOrAck : public MountFileSystemSnapshotImportBase
+    {
+	MountFileSystemSnapshotImportAdoptOrAck();
+	~MountFileSystemSnapshotImportAdoptOrAck() {}
+
+	const snapper::LvmImportMetadata* f_p_lvm_idata;
+	const snapper::Snapshot f_sh;
+    };
+
+    struct UmountFilesystemSnapshotBase
+    {
+	UmountFilesystemSnapshotBase(const string& dev, const string& mount_point, const string& mount_type);
+
+	const string f_dev_path;
+    };
+
+    struct UmountFilesystemSnapshotImportNone : public MountFileSystemSnapshotImportNone, UmountFilesystemSnapshotBase
+    {
+	UmountFilesystemSnapshotImportNone();
+    };
+
+    struct UmountFilesystemSnapshotImportClone : public MountFileSystemSnapshotImportClone, UmountFilesystemSnapshotBase
+    {
+	UmountFilesystemSnapshotImportClone();
+	~UmountFilesystemSnapshotImportClone();
+
+	const string f_dev_origin_path;
+	const string f_origin_mount_point;
+    };
+
+    struct UmountFilesystemSnapshotImportAdoptOrAck : public MountFileSystemSnapshotImportAdoptOrAck, UmountFilesystemSnapshotBase
+    {
+	UmountFilesystemSnapshotImportAdoptOrAck();
     };
 
 }}

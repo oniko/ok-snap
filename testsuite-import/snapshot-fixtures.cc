@@ -1,4 +1,11 @@
+#include <errno.h>
+#include <stdio.h>
+#include <sys/mount.h>
+
 #include <iostream>
+#include <sstream>
+
+#include <boost/test/unit_test.hpp>
 
 #include "testsuite-import/snapshot-fixtures.h"
 #include "testsuite-import/helpers.h"
@@ -171,8 +178,154 @@ namespace testsuiteimport { namespace lvm
     {
     }
 
+    MountFileSystemSnapshotSimpleBase::MountFileSystemSnapshotSimpleBase()
+	: CreateSnapshotEnvironmentDirExists(),
+	f_snapshot_lv_name(f_lvm->snapshotLvName(f_num))
+    {
+	lvcreate_thin_snapshot_wrapper(f_conf_vg_name, f_conf_origin_name, f_snapshot_lv_name);
+
+	std::ostringstream oss;
+	oss << f_snapshots_prefix << f_num << "/snapshot";
+
+	f_mountpoint = oss.str();
+    }
+
+    MountFileSystemSnapshotSimpleBase::~MountFileSystemSnapshotSimpleBase()
+    {
+	if (umount2(f_mountpoint.c_str(), MNT_DETACH))
+	    std::cerr << "umount2( \"" << f_mountpoint << "\", MNT_DETACH) failed!" << std::endl;
+
+	try
+	{
+	    lvremove_wrapper(f_conf_vg_name, f_snapshot_lv_name );
+	}
+	catch (const LvmImportTestsuiteException &e)
+	{
+	    std::cerr << "lvremove_wrapper( " << f_conf_vg_name << ", " << f_snapshot_lv_name << " ) failed" << std::endl;
+	}
+    }
+
     MountFileSystemSnapshotImportNone::MountFileSystemSnapshotImportNone()
-	: MountSnapshotByDeviceValid(), f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t)-1)
+	: MountFileSystemSnapshotSimpleBase(),
+	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t)-1)
+    {
+    }
+
+    MountFileSystemSnapshotImportClone::MountFileSystemSnapshotImportClone()
+	: MountFileSystemSnapshotSimpleBase(),
+	f_clone_origin_name("lv_clone_origin_name"),
+	f_p_lvm_idata(new snapper::LvmImportMetadata(f_conf_vg_name, f_clone_origin_name)),
+	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t)-1, snapper::ImportPolicy::CLONE, f_p_lvm_idata)
+    {
+	lvcreate_thin_snapshot_wrapper(f_conf_vg_name, f_conf_origin_name, f_clone_origin_name);
+    }
+
+    MountFileSystemSnapshotImportClone::~MountFileSystemSnapshotImportClone()
+    {
+	try
+	{
+	    lvremove_wrapper(f_conf_vg_name, f_clone_origin_name);
+	}
+	catch (const LvmImportTestsuiteException &e)
+	{
+	    std::cerr << "lvremove_wrapper( " << f_conf_vg_name << ", " << f_clone_origin_name << " ) failed" << std::endl;
+	}
+    }
+
+    MountFileSystemSnapshotImportBase::MountFileSystemSnapshotImportBase()
+	: CreateSnapshotEnvironmentDirExists(),
+	f_snapshot_lv_name("lv_test_import_snapshot")
+    {
+	lvcreate_thin_snapshot_wrapper(f_conf_vg_name, f_conf_origin_name, f_snapshot_lv_name);
+
+	std::ostringstream oss;
+	oss << f_snapshots_prefix << f_num << "/snapshot";
+
+	f_mountpoint = oss.str();
+    }
+
+    MountFileSystemSnapshotImportBase::~MountFileSystemSnapshotImportBase()
+    {
+	if (umount2(f_mountpoint.c_str(), MNT_DETACH))
+		std::cerr << "umount2( \"" << f_mountpoint << "\", MNT_DETACH) failed!" << std::endl;
+
+	try
+	{
+	    lvremove_wrapper(f_conf_vg_name, f_snapshot_lv_name );
+	}
+	catch (const LvmImportTestsuiteException &e)
+	{
+	    std::cerr << "lvremove_wrapper( " << f_conf_vg_name << ", " << f_snapshot_lv_name << " ) failed" << std::endl;
+	}
+    }
+
+    MountFileSystemSnapshotImportAdoptOrAck::MountFileSystemSnapshotImportAdoptOrAck()
+	: MountFileSystemSnapshotImportBase(),
+	f_p_lvm_idata(new snapper::LvmImportMetadata(f_conf_vg_name, f_snapshot_lv_name)),
+	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1, snapper::ImportPolicy::ADOPT, f_p_lvm_idata)
+    {
+    }
+
+    UmountFilesystemSnapshotBase::UmountFilesystemSnapshotBase(const string& dev, const string& mount_point, const string& mount_type)
+	: f_dev_path(dev)
+    {
+	std::cout << "UmountFilesystemSnapshotBase ctor" << std::endl;
+
+	int ret = mount(f_dev_path.c_str(), mount_point.c_str(),
+			mount_type.c_str(),
+			MS_NOATIME | MS_NODEV | MS_NOEXEC | MS_RDONLY,
+			NULL);
+
+	if (ret)
+	{
+	    perror("mount");
+	    BOOST_FAIL( "Can't mount filesystem for testing purposes: \"" <<
+			f_dev_path << "\" -> \"" << mount_point << "\"");
+	}
+    }
+
+    UmountFilesystemSnapshotImportNone::UmountFilesystemSnapshotImportNone()
+	: MountFileSystemSnapshotImportNone(),
+	UmountFilesystemSnapshotBase("/dev/mapper/" + f_conf_vg_name + "/" + f_snapshot_lv_name, f_mountpoint, f_lvm->mount_type)
+    {
+    }
+
+    UmountFilesystemSnapshotImportClone::UmountFilesystemSnapshotImportClone()
+	: MountFileSystemSnapshotImportClone(),
+	UmountFilesystemSnapshotBase("/dev/mapper/" + f_conf_vg_name + "/" + f_snapshot_lv_name, f_mountpoint, f_lvm->mount_type),
+	f_dev_origin_path("/dev/mapper/" + f_conf_vg_name + "/" + f_clone_origin_name),
+	f_origin_mount_point(f_snapshot_dir + "/tmp_mnt_point")
+    {
+	std::cout << "UmountFilesystemSnapshotImportClone ctor" << std::endl;
+
+	if (mkdirat(f_dirfd, "tmp_mnt_point", 0755))
+	    BOOST_FAIL( "Can't tmp_mnt_point directory in test environment" );
+
+	int ret = mount(f_dev_origin_path.c_str(), f_origin_mount_point.c_str(),
+			f_lvm->mount_type.c_str(),
+			MS_NOATIME | MS_NODEV | MS_NOEXEC | MS_RDONLY,
+			NULL);
+
+	if (ret)
+	{
+	    perror("mount");
+	    BOOST_FAIL( "Can't mount filesystem for testing purposes: \"" <<
+			f_dev_origin_path << "\" -> \"" << f_origin_mount_point << "\"");
+	}
+    }
+
+    UmountFilesystemSnapshotImportClone::~UmountFilesystemSnapshotImportClone()
+    {
+	// NOTE: the f_origin_mount_point will deleted by CreateSnapshotEnvironment dtor
+	std::cout << "UmountFilesystemSnapshotImportClone dtor" << std::endl;
+
+	if (umount2(f_origin_mount_point.c_str(), MNT_DETACH))
+		std::cerr << "umount2( \"" << f_origin_mount_point << "\", MNT_DETACH) failed!" << std::endl;
+    }
+
+    UmountFilesystemSnapshotImportAdoptOrAck::UmountFilesystemSnapshotImportAdoptOrAck()
+	: MountFileSystemSnapshotImportAdoptOrAck(),
+	UmountFilesystemSnapshotBase("/dev/mapper/" + f_conf_vg_name + "/" + f_snapshot_lv_name, f_mountpoint, f_lvm->mount_type)
     {
     }
 }}
