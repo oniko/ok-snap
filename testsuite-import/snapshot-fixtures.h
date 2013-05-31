@@ -179,10 +179,19 @@ namespace testsuiteimport { namespace lvm
 	string f_mountpoint;
     };
 
-    struct MountFileSystemSnapshotImportAdoptOrAck : public MountFileSystemSnapshotImportBase
+    struct MountFileSystemSnapshotImportAdopt : public MountFileSystemSnapshotImportBase
     {
-	MountFileSystemSnapshotImportAdoptOrAck();
-	~MountFileSystemSnapshotImportAdoptOrAck() {}
+	MountFileSystemSnapshotImportAdopt();
+	~MountFileSystemSnapshotImportAdopt() {}
+
+	const snapper::LvmImportMetadata* f_p_lvm_idata;
+	const snapper::Snapshot f_sh;
+    };
+
+    struct MountFileSystemSnapshotImportAck : public MountFileSystemSnapshotImportBase
+    {
+	MountFileSystemSnapshotImportAck();
+	~MountFileSystemSnapshotImportAck() {}
 
 	const snapper::LvmImportMetadata* f_p_lvm_idata;
 	const snapper::Snapshot f_sh;
@@ -209,9 +218,22 @@ namespace testsuiteimport { namespace lvm
 	const string f_origin_mount_point;
     };
 
-    struct UmountFilesystemSnapshotImportAdoptOrAck : public MountFileSystemSnapshotImportAdoptOrAck, UmountFilesystemSnapshotBase
+    struct UmountFilesystemSnapshotImportAdopt : public MountFileSystemSnapshotImportAdopt, UmountFilesystemSnapshotBase
     {
-	UmountFilesystemSnapshotImportAdoptOrAck();
+	UmountFilesystemSnapshotImportAdopt();
+    };
+
+    struct UmountFilesystemSnapshotImportAck : public MountFileSystemSnapshotImportAck, UmountFilesystemSnapshotBase
+    {
+	UmountFilesystemSnapshotImportAck();
+    };
+
+    struct UmountFilesystemInvalid : public DeleteFileSystemSnapshotOrigin
+    {
+    };
+
+    struct HandleUmountFilesystemSnapshot : public UmountFilesystemSnapshotImportNone
+    {
     };
 
 }}

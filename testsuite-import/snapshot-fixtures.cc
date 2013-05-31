@@ -259,10 +259,17 @@ namespace testsuiteimport { namespace lvm
 	}
     }
 
-    MountFileSystemSnapshotImportAdoptOrAck::MountFileSystemSnapshotImportAdoptOrAck()
+    MountFileSystemSnapshotImportAdopt::MountFileSystemSnapshotImportAdopt()
 	: MountFileSystemSnapshotImportBase(),
 	f_p_lvm_idata(new snapper::LvmImportMetadata(f_conf_vg_name, f_snapshot_lv_name)),
 	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1, snapper::ImportPolicy::ADOPT, f_p_lvm_idata)
+    {
+    }
+
+    MountFileSystemSnapshotImportAck::MountFileSystemSnapshotImportAck()
+	: MountFileSystemSnapshotImportBase(),
+	f_p_lvm_idata(new snapper::LvmImportMetadata(f_conf_vg_name, f_snapshot_lv_name)),
+	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1, snapper::ImportPolicy::ACKNOWLEDGE, f_p_lvm_idata)
     {
     }
 
@@ -288,6 +295,7 @@ namespace testsuiteimport { namespace lvm
 	: MountFileSystemSnapshotImportNone(),
 	UmountFilesystemSnapshotBase("/dev/mapper/" + f_conf_vg_name + "/" + f_snapshot_lv_name, f_mountpoint, f_lvm->mount_type)
     {
+	f_sh.mount_use_count = 1;
     }
 
     UmountFilesystemSnapshotImportClone::UmountFilesystemSnapshotImportClone()
@@ -312,6 +320,8 @@ namespace testsuiteimport { namespace lvm
 	    BOOST_FAIL( "Can't mount filesystem for testing purposes: \"" <<
 			f_dev_origin_path << "\" -> \"" << f_origin_mount_point << "\"");
 	}
+
+	f_sh.mount_use_count = 1;
     }
 
     UmountFilesystemSnapshotImportClone::~UmountFilesystemSnapshotImportClone()
@@ -323,9 +333,17 @@ namespace testsuiteimport { namespace lvm
 		std::cerr << "umount2( \"" << f_origin_mount_point << "\", MNT_DETACH) failed!" << std::endl;
     }
 
-    UmountFilesystemSnapshotImportAdoptOrAck::UmountFilesystemSnapshotImportAdoptOrAck()
-	: MountFileSystemSnapshotImportAdoptOrAck(),
+    UmountFilesystemSnapshotImportAdopt::UmountFilesystemSnapshotImportAdopt()
+	: MountFileSystemSnapshotImportAdopt(),
 	UmountFilesystemSnapshotBase("/dev/mapper/" + f_conf_vg_name + "/" + f_snapshot_lv_name, f_mountpoint, f_lvm->mount_type)
     {
+	f_sh.mount_use_count = 1;
+    }
+
+    UmountFilesystemSnapshotImportAck::UmountFilesystemSnapshotImportAck()
+	: MountFileSystemSnapshotImportAck(),
+	UmountFilesystemSnapshotBase("/dev/mapper/" + f_conf_vg_name + "/" + f_snapshot_lv_name, f_mountpoint, f_lvm->mount_type)
+    {
+	f_sh.mount_use_count = 1;
     }
 }}

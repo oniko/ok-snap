@@ -584,7 +584,7 @@ namespace snapper
 	else
 	    mount_use_count++;
 
-	if (getImportPolicy() == ACKNOWLEDGE  || getImportPolicy() == ADOPT)
+	if (import_policy == ACKNOWLEDGE  || import_policy == ADOPT)
 	    snapper->getFilesystem()->mountSnapshot(num, p_idata->getDevicePath());
 	else
 	    snapper->getFilesystem()->mountSnapshot(num);
