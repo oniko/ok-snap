@@ -192,17 +192,21 @@ namespace snapper
     void
     Lvm::createSnapshot(unsigned int num) const
     {
-	SystemCmd cmd(LVCREATEBIN " --permission r --snapshot --name " +
-		      quote(snapshotLvName(num)) + " " + quote(vg_name + "/" + lv_name));
-	if (cmd.retcode() != 0)
-	    throw CreateSnapshotFailedException();
-
 	try {
 	    createSnapshotEnvironment(num);
 	}
 	catch(const CreateSnapshotFailedException &e)
 	{
+	    // TODO: catch CreateSnapshotEnvironmentException
 	    throw;
+	}
+
+	SystemCmd cmd(LVCREATEBIN " --permission r --snapshot --name " +
+		      quote(snapshotLvName(num)) + " " + quote(vg_name + "/" + lv_name));
+	if (cmd.retcode() != 0)
+	{
+	    removeSnapshotEnvironment(num);
+	    throw CreateSnapshotFailedException();
 	}
     }
 
@@ -302,21 +306,24 @@ namespace snapper
 
     void Lvm::cloneSnapshot(unsigned int num, const string &vg_name, const string &lv_name) const
     {
-	SystemCmd cmd(LVCREATEBIN " --permission r --snapshot --name " +
-		      quote(snapshotLvName(num)) + " " + quote(vg_name + "/" + lv_name));
-
-	if (cmd.retcode() != 0)
-	    throw ImportSnapshotFailedException();
-
 	try {
 	    createSnapshotEnvironment(num);
 	}
 	catch(const CreateSnapshotFailedException &e)
 	{
-	    throw;
+	    // TODO: catch CreateSnapshotEnvironmentException isntead
+	    throw ImportSnapshotFailedException;
+	}
+
+	SystemCmd cmd(LVCREATEBIN " --permission r --snapshot --name " +
+		      quote(snapshotLvName(num)) + " " + quote(vg_name + "/" + lv_name));
+
+	if (cmd.retcode() != 0)
+	{
+	    removeSnapshotEnvironment(num);
+	    throw ImportSnapshotFailedException();
 	}
     }
-
 
     void
     Lvm::deleteSnapshot(const string &vg_name, const string &lv_name) const
@@ -369,11 +376,9 @@ namespace snapper
     void Lvm::removeSnapshotEnvironment(unsigned int num) const
     {
 	SDir info_dir = openInfoDir(num);
-	/// hmm. try to test errors related to 'directory is mounted...'
 	info_dir.unlink("snapshot", AT_REMOVEDIR);
 
 	SDir infos_dir = openInfosDir();
-	// directory '<num>' will be most propably not empty
 	infos_dir.unlink(decString(num), AT_REMOVEDIR);
     }
 

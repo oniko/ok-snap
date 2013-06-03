@@ -23,12 +23,14 @@ namespace testsuiteimport { namespace lvm
 
     struct CreateSnapshotEnvironmentDirExists : public CreateSnapshotEnvironment {
 	CreateSnapshotEnvironmentDirExists();
-	~CreateSnapshotEnvironmentDirExists() {}
     };
 
     struct CreateSnapshotEnvironmentFailure : public CreateSnapshotEnvironment {
 	CreateSnapshotEnvironmentFailure();
-	~CreateSnapshotEnvironmentFailure() {}
+    };
+
+    struct CreateSnapshotFailOnEnvironment : public CreateSnapshotEnvironmentFailure
+    {
     };
 
     struct CloneSnapshotValid : public CreateSnapshotEnvironment {

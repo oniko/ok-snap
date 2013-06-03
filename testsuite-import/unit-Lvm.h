@@ -45,6 +45,13 @@ BOOST_FIXTURE_TEST_CASE( tc_create_snapshot_environment_failure, CreateSnapshotE
     BOOST_CHECK_THROW( lvm->createSnapshotEnvironment(num), snapper::CreateSnapshotFailedException );
 }
 
+BOOST_FIXTURE_TEST_CASE( tc_create_snapshot_fail_on_environment, CreateSnapshotFailOnEnvironment )
+{
+    BOOST_REQUIRE_THROW( f_lvm->createSnapshot(f_num), CreateSnapshotFailedException );
+
+    BOOST_CHECK( !check_lv_exists(f_conf_vg_name, f_lvm->snapshotLvName(f_num)) );
+}
+
 BOOST_AUTO_TEST_CASE ( tc_remove_snapshot_environment )
 {
     // nothing to test right now
