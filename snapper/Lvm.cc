@@ -192,7 +192,8 @@ namespace snapper
     void
     Lvm::createSnapshot(unsigned int num) const
     {
-	try {
+	try
+	{
 	    createSnapshotEnvironment(num);
 	}
 	catch(const CreateSnapshotFailedException &e)
@@ -203,11 +204,10 @@ namespace snapper
 
 	SystemCmd cmd(LVCREATEBIN " --permission r --snapshot --name " +
 		      quote(snapshotLvName(num)) + " " + quote(vg_name + "/" + lv_name));
+
+	// NOTE: we don't have to remove snapshot environment on failure (createHelper will do so)
 	if (cmd.retcode() != 0)
-	{
-	    removeSnapshotEnvironment(num);
 	    throw CreateSnapshotFailedException();
-	}
     }
 
 
@@ -318,11 +318,9 @@ namespace snapper
 	SystemCmd cmd(LVCREATEBIN " --permission r --snapshot --name " +
 		      quote(snapshotLvName(num)) + " " + quote(vg_name + "/" + lv_name));
 
+	// NOTE: we don't have to remove snapshot environment on failure (createHelper will do so)
 	if (cmd.retcode() != 0)
-	{
-	    removeSnapshotEnvironment(num);
 	    throw ImportSnapshotFailedException();
-	}
     }
 
     void

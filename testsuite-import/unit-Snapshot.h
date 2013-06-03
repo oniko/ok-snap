@@ -3,7 +3,6 @@
 
 #include "testsuite-import/snapshot-fixtures.h"
 #include "testsuite-import/helpers.h"
-#include <client/utils/text.h>
 
 // FIXME: Move this test case outside Lvm dependant unit tests
 BOOST_FIXTURE_TEST_CASE ( tc_snapshot_simple_ctor, SimpleConstructorValid )
