@@ -28,6 +28,9 @@
 
 namespace snapper
 {
+    using std::map;
+    using std::string;
+
     class Lvm;
 
     class LvmImportMetadata : public ImportMetadata
@@ -59,7 +62,7 @@ namespace snapper
 	string getVgName() const { return imd_map.find("vg_name")->second; }
 	string getLvName() const { return imd_map.find("lv_name")->second; }
     private:
-	static const ImportMetadata::ImportTypeId type_id = ImportMetadata::ImportTypeId::LVM2;
+	static const ImportTypeId type_id = ImportTypeId::LVM2;
 
 	const Lvm* lvm;
 	map<string,string> imd_map;

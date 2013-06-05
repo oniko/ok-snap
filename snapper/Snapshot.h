@@ -98,6 +98,7 @@ namespace snapper
     public:
 
 	friend class Snapshots;
+	friend class ImportHelper;
 
 	Snapshot(const Snapshot& snapshot);
 	Snapshot(const Snapper* snapper, SnapshotType type, unsigned int num, time_t date);
@@ -246,7 +247,17 @@ namespace snapper
 
     };
 
-}
+    class ImportHelper
+    {
+    private:
+	const Snapshot& snapshot;
+	const Snapshots& snapshots;
+    public:
+	ImportHelper(const Snapshot& snapshot, const Snapshots& snapshots)
+	    : snapshot(snapshot), snapshots(snapshots) {}
 
+	void importSnapshot() const;
+    };
+}
 
 #endif

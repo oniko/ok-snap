@@ -50,14 +50,13 @@ namespace snapper
 
     // keep it 1 byte as it's supposed to be transfered via dbus as the BYTE type
     enum ImportPolicy : unsigned char { NONE = 0, CLONE, ADOPT, ACKNOWLEDGE };
+    enum ImportTypeId : unsigned int { BTRFS, EXT4, LVM2 };
 
     ImportPolicy createImportPolicy(unsigned char raw);
 
     class ImportMetadata
     {
     protected:
-
-	enum ImportTypeId : unsigned int { BTRFS, EXT4, LVM2 };
 
 	time_t creation_time;
 

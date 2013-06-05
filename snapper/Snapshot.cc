@@ -822,49 +822,9 @@ namespace snapper
     Snapshots::iterator
     Snapshots::importHelper(Snapshot& snapshot)
     {
-	try
-	{
-	    switch (snapshot.getImportPolicy())
-	    {
-		case NONE:
-		    y2err("Illegal import policy");
-		    throw IllegalSnapshotException();
-		case CLONE:
-		    if (!snapshot.p_idata->checkImportedSnapshot())
-			throw IllegalSnapshotException();
-		    snapshot.cloneFilesystemSnapshot();
-		    break;
+	ImportHelper ihelper(snapshot, *this);
 
-		case ADOPT:
-		case ACKNOWLEDGE:
-		    if (!snapshot.p_idata->checkImportedSnapshot())
-			throw IllegalSnapshotException();
-		    // TODO: throws exception SnapshotEnvironment...
-		    snapshot.createEnvironment();
-
-		    for (Snapshots::const_iterator cit = Snapshots::begin(); cit != Snapshots::end(); cit++)
-		    {
-			if (cit->getImportPolicy() == ADOPT || cit->getImportPolicy() == ACKNOWLEDGE)
-			{
-			    if (snapshot.p_idata->isEqual(*cit->p_idata))
-			    {
-				y2err("Snapshot already imported in snapshot No. " << cit->getNum());
-				throw ImportSnapshotFailedException();
-			    }
-			}
-		    }
-		    break;
-	    }
-	}
-	catch (const ImportSnapshotFailedException &e)
-	{
-	    SDir info_dir = snapshot.openInfoDir();
-	    info_dir.unlink("snapshot", AT_REMOVEDIR);
-
-	    SDir infos_dir = snapper->openInfosDir();
-	    infos_dir.unlink(decString(snapshot.getNum()), AT_REMOVEDIR);
-	    throw;
-	}
+	ihelper.importSnapshot();
 
 	try
 	{
@@ -874,7 +834,7 @@ namespace snapper
 	{
 	    snapshot.deleteFilesystemSnapshot();
 
-	    SDir infos_dir = snapper->openInfosDir();
+	    SDir infos_dir = snapshot.snapper->openInfosDir();
 	    infos_dir.unlink(decString(snapshot.getNum()), AT_REMOVEDIR);
 	    throw;
 	}
@@ -943,6 +903,54 @@ namespace snapper
     Snapshots::find(unsigned int num) const
     {
 	return find_if(entries.begin(), entries.end(), num_is(num));
+    }
+
+
+    void ImportHelper::importSnapshot() const
+    {
+	try
+	{
+	    switch (snapshot.getImportPolicy())
+	    {
+		case NONE:
+		    y2err("Illegal import policy");
+		    throw IllegalSnapshotException();
+		case CLONE:
+		    if (!snapshot.p_idata->checkImportedSnapshot())
+			throw IllegalSnapshotException();
+		    snapshot.cloneFilesystemSnapshot();
+		    break;
+
+		case ADOPT:
+		case ACKNOWLEDGE:
+		    if (!snapshot.p_idata->checkImportedSnapshot())
+			throw IllegalSnapshotException();
+		    // TODO: throws exception SnapshotEnvironment...
+		    snapshot.createEnvironment();
+
+		    for (Snapshots::const_iterator cit = snapshots.begin(); cit != snapshots.end(); cit++)
+		    {
+			if (cit->getImportPolicy() == ADOPT || cit->getImportPolicy() == ACKNOWLEDGE)
+			{
+			    if (snapshot.p_idata->isEqual(*cit->p_idata))
+			    {
+				y2err("Snapshot already imported in snapshot No. " << cit->getNum());
+				throw ImportSnapshotFailedException();
+			    }
+			}
+		    }
+		    break;
+	    }
+	}
+	catch (const ImportSnapshotFailedException &e)
+	{
+	    SDir info_dir = snapshot.openInfoDir();
+	    info_dir.unlink("snapshot", AT_REMOVEDIR);
+
+	    SDir infos_dir = snapshot.snapper->openInfosDir();
+	    infos_dir.unlink(decString(snapshot.getNum()), AT_REMOVEDIR);
+	    throw;
+	}
     }
 
 }

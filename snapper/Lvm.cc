@@ -312,7 +312,7 @@ namespace snapper
 	catch(const CreateSnapshotFailedException &e)
 	{
 	    // TODO: catch CreateSnapshotEnvironmentException isntead
-	    throw ImportSnapshotFailedException;
+	    throw ImportSnapshotFailedException();
 	}
 
 	SystemCmd cmd(LVCREATEBIN " --permission r --snapshot --name " +

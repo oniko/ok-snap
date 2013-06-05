@@ -93,8 +93,8 @@ setup() {
 }
 
 usage() {
-	echo "$0 setup <ext4/btrfs/xfs>: setup test environment"
-	echo "$0 cleanup <ext4/btrfs/xfs>: cleanup test environment"
+	echo "$0 -c|--command setup -f|--filesystem <ext4/btrfs/xfs>: setup test environment"
+	echo "$0 -c|--command cleanup -f|--filesystem <ext4/btrfs/xfs>: cleanup test environment"
 }
 
 DEBUG=1

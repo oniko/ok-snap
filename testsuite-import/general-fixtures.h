@@ -3,8 +3,12 @@
 
 #include <string>
 
-#include "snapper/Lvm.h"
-#include "snapper/Snapper.h"
+#define private public
+    #include "snapper/Lvm.h"
+    #include "snapper/Snapper.h"
+#undef private
+
+#include "snapper/Logger.h"
 
 namespace testsuiteimport { namespace lvm
 {

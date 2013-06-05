@@ -6,19 +6,19 @@
 #include <ostream>
 #include <string>
 
-#include "snapper/Snapper.h"
-
 #define private public
-#include "snapper/LvmImportMetadata.h"
-
-#define private private
+    #include "snapper/Lvm.h"
+    #include "snapper/Snapper.h"
+#undef private
 
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp>
 
 #include "testsuite-import/helpers.h"
 #include "testsuite-import/general-fixtures.h"
+#include "testsuite-import/lvmimportmetadata-fixtures.h"
 
+using namespace snapper;
 using namespace testsuiteimport::lvm;
 
 BOOST_GLOBAL_FIXTURE( LvmGlobalConfig )
@@ -27,7 +27,7 @@ BOOST_AUTO_TEST_SUITE ( LVM_import_testsuite )
 
 #include "testsuite-import/unit-LvmImportMetadata.h"
 
-#include "testsuite-import/unit-Lvm.h"
+//#include "testsuite-import/unit-Lvm.h"
 
 BOOST_AUTO_TEST_SUITE_END()
 

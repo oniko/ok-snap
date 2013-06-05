@@ -54,6 +54,7 @@ BOOST_FIXTURE_TEST_CASE ( tc_import_helper_type_ack_invalid, ImportHelperTypeAck
 BOOST_FIXTURE_TEST_CASE ( tc_import_helper_type_ack_already_imported, ImportHelperTypeAckAlreadyImported )
 {
     snapper::Snapshots::iterator it;
+    boost::unit_test::make_test_case
 
     BOOST_CHECK_THROW( it = f_shs.importHelper(f_sh), snapper::ImportSnapshotFailedException );
     BOOST_CHECK_THROW( it = f_shs.importHelper(f_sh_2), snapper::ImportSnapshotFailedException );
