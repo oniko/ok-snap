@@ -11,6 +11,13 @@
 #include <iostream>
 #include <sstream>
 
+// DELETE
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+// END
+
 #include <boost/test/unit_test.hpp>
 
 #include "testsuite-import/lvm-fixtures.h"
@@ -58,7 +65,7 @@ namespace testsuiteimport { namespace lvm
 	if (fstat(f_dirfd, &buff) || !S_ISDIR(buff.st_mode))
 	{
 	    close(f_dirfd);
-	    BOOST_FAIL( "Can't stat dir: /testsuite-import/.snapshots/" << num << " or the d-entry is not a directory" );
+	    BOOST_FAIL( "Can't stat dir: /testsuite-import/.snapshots/" << f_num << " or the d-entry is not a directory" );
 	}
     }
 
@@ -126,8 +133,9 @@ namespace testsuiteimport { namespace lvm
 	    perror("rmdir");
 	    BOOST_TEST_MESSAGE( "Can't remove: " << f_snapshot_dir );
 	}
-
     }
+
+    
 
     CreateSnapshotEnvironmentDirExists::CreateSnapshotEnvironmentDirExists()
 	: CreateSnapshotEnvironment()
@@ -138,19 +146,22 @@ namespace testsuiteimport { namespace lvm
 	    BOOST_FAIL( "Can't create snapshot directory in test environment" );
     }
 
+    
+
+
     CreateSnapshotEnvironmentFailure::CreateSnapshotEnvironmentFailure()
 	: CreateSnapshotEnvironment()
     {
 	std::cout << "CreateSnapshotEnvironmentFailure ctor" << std::endl;
 
-	int fd;
-
-	fd = openat(f_dirfd, "snapshot", O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0755);
+	int fd = openat(f_dirfd, "snapshot", O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0755);
 	if (fd < 0)
 	    BOOST_FAIL( "Can't create 'snapshot' file");
 
 	close(fd);
     }
+
+   
 
     CloneSnapshotValid::CloneSnapshotValid()
 	: CreateSnapshotEnvironment(), f_vg_name("vg_test"), f_lv_name("lv_test_snapshot_01"),
@@ -187,11 +198,15 @@ namespace testsuiteimport { namespace lvm
 	}
     }
 
+    
+
     CloneSnapshotMissingOrigin::CloneSnapshotMissingOrigin()
 	: f_vg_name("vg_test"), f_lv_name("lv_missing_snapshot_name")
     {
 	std::cout << "CloneSnapshotMissingOrigin ctor" << std::endl;
     }
+
+   
 
     MountSnapshotByDeviceValid::MountSnapshotByDeviceValid()
 	: CreateSnapshotEnvironmentDirExists(), f_vg_name("vg_test"),
@@ -224,58 +239,9 @@ namespace testsuiteimport { namespace lvm
 	}
     }
 
-    MountSnapshotByDeviceAlreadyMounted::MountSnapshotByDeviceAlreadyMounted()
-	: MountSnapshotByDeviceValid()
-    {
-	std::cout << "MountSnapshotByDeviceAlreadyMounted ctor" << std::endl;
+    
 
-	int ret = mount(f_dev_path.c_str(), f_mountpoint.c_str(),
-			f_lvm->mount_type.c_str(),
-			MS_NOATIME | MS_NODEV | MS_NOEXEC | MS_RDONLY,
-			NULL);
-
-	if (ret)
-	{
-	    perror("mount");
-	    BOOST_FAIL( "Can't mount filesystem for testing purposes: \"" <<
-			dev_path << "\" -> \"" << mountpoint << "\"");
-	}
-    }
-
-    MountSnapshotByDeviceInvalidDevice::MountSnapshotByDeviceInvalidDevice()
-	: CreateSnapshotEnvironmentDirExists()
-    {
-	std::cout << "MountSnapshotByDeviceInvalidDevice ctor" << std::endl;
-
-	f_missing_dev_path = "/dev/mapper/this_device_do_not_exists";
-    }
-
-    CheckImportedSnapshotValid::CheckImportedSnapshotValid()
-	: LvmGeneralFixture(), f_vg_name("vg_test"), f_lv_name("lv_test_snapshot_01"),
-	  f_origin_name("lv_test_thin_1")
-    {
-	std::cout << "CheckImportedSnapshotValid ctor" << std::endl;
-
-	// let boost handle the exception
-	lvcreate_thin_snapshot_wrapper( f_vg_name, f_origin_name, f_lv_name );
-    }
-
-    CheckImportedSnapshotValid::~CheckImportedSnapshotValid()
-    {
-	try {
-	    lvremove_wrapper(f_vg_name, f_lv_name );
-	}
-	catch (const LvmImportTestsuiteException &e)
-	{
-	    std::cerr << "lvremove_wrapper( " << f_vg_name << ", " << f_lv_name << " ) failed" << std::endl;
-	}
-    }
-
-    CheckImportedSnapshotWrongVg::CheckImportedSnapshotWrongVg()
-	: LvmGeneralFixture(), f_vg_name("vg_test_2"), f_lv_name("lv_test_thin_2")
-    {
-	std::cout << "CheckImportedSnapshotWrongVg ctor" << std::endl;
-    }
+    
 
     CheckImportedSnapshotVolumeImport::CheckImportedSnapshotVolumeImport()
 	: LvmGeneralFixture(), f_vg_name(f_lvm->vg_name), f_lv_name(f_lvm->lv_name)
@@ -331,4 +297,5 @@ namespace testsuiteimport { namespace lvm
 	: LvmGeneralFixture(), f_vg_name("vg_blahblah"), f_lv_name("lv_blahblah")
     {
     }
+
 }}

@@ -17,10 +17,10 @@ namespace testsuiteimport { namespace lvm
 // NOTE: do not add any fork/execs with childs possibly returning non-zero codes
 // don't know how to disable --catch_system_errors in exec monitor for global
 // fixtures :(
-    struct LvmGlobalConfig {
+    /*struct LvmGlobalConfig {
 	LvmGlobalConfig();
 	~LvmGlobalConfig();
-    };
+    };*/
 
     struct LvmGeneralFixture {
 	LvmGeneralFixture();

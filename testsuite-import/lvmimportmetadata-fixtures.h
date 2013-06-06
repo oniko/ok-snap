@@ -9,44 +9,28 @@
     #include "snapper/LvmImportMetadata.h"
 #undef private
 
+#include "testsuite-import/general-test.h"
+
 namespace testsuiteimport { namespace lvm {
 
     using std::map;
     using std::string;
 
-    struct GeneralFixture
-    {
-	virtual ~GeneralFixture() {}
-
-	virtual void test_method() = 0;
-    };
-
-    struct ValidMetadata : public GeneralFixture
+    struct ValidMetadata
     {
 	ValidMetadata();
+	virtual ~ValidMetadata() {}
 
 	const snapper::Lvm* f_dummy_lvm;
 	map<string,string> f_raw_data;
-
-	virtual void test_method();
     };
 
-    struct MissingVgName : public GeneralFixture
+    struct FLvmImportConstructor : public GeneralFixture, ValidMetadata
     {
-	MissingVgName();
+	FLvmImportConstructor();
 
-	const snapper::Lvm* f_dummy_lvm;
-	map<string,string> f_raw_data;
-
-	virtual void test_method();
-    };
-
-    struct MissingLvName : public GeneralFixture
-    {
-	MissingLvName();
-
-	const snapper::Lvm* f_dummy_lvm;
-	map<string,string> f_raw_data;
+	map<string,string> f_raw_data_missing_vg;
+	map<string,string> f_raw_data_missing_lv;
 
 	virtual void test_method();
     };
@@ -54,39 +38,43 @@ namespace testsuiteimport { namespace lvm {
     struct EqualFalseTestMetadata : public ValidMetadata
     {
 	EqualFalseTestMetadata();
+	virtual ~EqualFalseTestMetadata() {}
 
 	map<string,string> f_raw_data_diff_in_vg;
 	map<string,string> f_raw_data_diff_in_lv;
 	map<string,string> f_raw_data_different;
-
-	virtual void test_method();
     };
 
-    struct CopyConstructor : public ValidMetadata
+    struct FCopyConstructor : public GeneralFixture, ValidMetadata
     {
-	CopyConstructor();
+	FCopyConstructor();
 
 	const snapper::LvmImportMetadata f_origin;
 
 	virtual void test_method();
     };
 
-    struct EqualMethodTrue : public CopyConstructor
+    struct FEqualMethodTrue : public FCopyConstructor
     {
-	EqualMethodTrue();
+	FEqualMethodTrue();
+	~FEqualMethodTrue();
 
-	const map<string,string> f_raw_data_copy;
-	const snapper::LvmImportMetadata f_origin_copy;
+	map<string,string> f_raw_data_copy;
+	snapper::LvmImportMetadata* f_p_origin_copy;
 
 	virtual void test_method();
     };
 
-    struct EqualMethodFalse : public EqualFalseTestMetadata, CopyConstructor
+    struct FCloneMethod : public FCopyConstructor
     {
-    private:
-	const snapper::Lvm* dummy_addr;
-    public:
-	EqualMethodFalse();
+	virtual void test_method();
+    };
+
+    struct FEqualMethodFalse : public GeneralFixture, EqualFalseTestMetadata
+    {
+	FEqualMethodFalse();
+
+	const snapper::LvmImportMetadata f_origin;
 
 	const snapper::LvmImportMetadata f_data_diff_in_vg;
 	const snapper::LvmImportMetadata f_data_diff_in_lv;

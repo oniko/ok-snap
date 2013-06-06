@@ -1,3 +1,6 @@
+#ifndef LVM_MASTER_TESTSUITE_H
+#define LVM_MASTER_TESTSUITE_H
+
 #include <string>
 
 #include <boost/test/unit_test.hpp>
@@ -9,7 +12,9 @@ namespace testsuiteimport { namespace lvm {
 
     //snapper::LogLevel, const string&, const char*, int, const char*, const string*
     
-    // TODO: setup proper snapper logging in testsuite later
+    // TODO: think about possibility of proper logging in testsuite.
+    // Withou logging turned off, during testsuite teardown snapper destructor
+    // ends with exception
     static bool false_log_query(snapper::LogLevel, const string& component,
 			 const char* file, int line, const char* func,
 			 const string* content)
@@ -26,3 +31,4 @@ namespace testsuiteimport { namespace lvm {
     };
 
 }}
+#endif
