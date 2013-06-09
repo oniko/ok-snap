@@ -11,13 +11,6 @@
 #include <iostream>
 #include <sstream>
 
-// DELETE
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-// END
-
 #include <boost/test/unit_test.hpp>
 
 #include "testsuite-import/lvm-fixtures.h"
@@ -239,9 +232,58 @@ namespace testsuiteimport { namespace lvm
 	}
     }
 
-    
+    MountSnapshotByDeviceAlreadyMounted::MountSnapshotByDeviceAlreadyMounted()
+	: MountSnapshotByDeviceValid()
+    {
+	std::cout << "MountSnapshotByDeviceAlreadyMounted ctor" << std::endl;
 
-    
+	int ret = mount(f_dev_path.c_str(), f_mountpoint.c_str(),
+			f_lvm->mount_type.c_str(),
+			MS_NOATIME | MS_NODEV | MS_NOEXEC | MS_RDONLY,
+			NULL);
+
+	if (ret)
+	{
+	    perror("mount");
+	    BOOST_FAIL( "Can't mount filesystem for testing purposes: \"" <<
+			f_dev_path << "\" -> \"" << f_mountpoint << "\"");
+	}
+    }
+
+    MountSnapshotByDeviceInvalidDevice::MountSnapshotByDeviceInvalidDevice()
+	: CreateSnapshotEnvironmentDirExists()
+    {
+	std::cout << "MountSnapshotByDeviceInvalidDevice ctor" << std::endl;
+
+	f_missing_dev_path = "/dev/mapper/this_device_do_not_exists";
+    }
+
+    CheckImportedSnapshotValid::CheckImportedSnapshotValid()
+	: LvmGeneralFixture(), f_vg_name("vg_test"), f_lv_name("lv_test_snapshot_01"),
+	  f_origin_name("lv_test_thin_1")
+    {
+	std::cout << "CheckImportedSnapshotValid ctor" << std::endl;
+
+	// let boost handle the exception
+	lvcreate_thin_snapshot_wrapper( f_vg_name, f_origin_name, f_lv_name );
+    }
+
+    CheckImportedSnapshotValid::~CheckImportedSnapshotValid()
+    {
+	try {
+	    lvremove_wrapper(f_vg_name, f_lv_name );
+	}
+	catch (const LvmImportTestsuiteException &e)
+	{
+	    std::cerr << "lvremove_wrapper( " << f_vg_name << ", " << f_lv_name << " ) failed" << std::endl;
+	}
+    }
+
+    CheckImportedSnapshotWrongVg::CheckImportedSnapshotWrongVg()
+	: LvmGeneralFixture(), f_vg_name("vg_test_2"), f_lv_name("lv_test_thin_2")
+    {
+	std::cout << "CheckImportedSnapshotWrongVg ctor" << std::endl;
+    }
 
     CheckImportedSnapshotVolumeImport::CheckImportedSnapshotVolumeImport()
 	: LvmGeneralFixture(), f_vg_name(f_lvm->vg_name), f_lv_name(f_lvm->lv_name)

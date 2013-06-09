@@ -269,7 +269,7 @@ BOOST_FIXTURE_TEST_CASE ( tc_umount_filesystem_snapshot_import_clone_non_user_re
     BOOST_CHECK( check_is_mounted(f_vg_name, f_clone_origin_name) );
 }
 
-BOOST_FIXTURE_TEST_CASE ( tc_umount_filesystem_snapshot_import_clone_non_user_request, UmountFilesystemSnapshotImportClone )
+BOOST_FIXTURE_TEST_CASE ( tc_umount_filesystem_snapshot_import_clone_user_request, UmountFilesystemSnapshotImportClone )
 {
     unsigned int mount_count = f_sh.mount_use_count;
 

@@ -47,11 +47,42 @@ namespace testsuiteimport { namespace lvm
 
 	boost::shared_ptr<LvmTestClass> lvm_test(new LvmTestClass());
 
+	// Lvm unit
 	test_case* tc_create_snapshot_environment = BOOST_CLASS_TEST_CASE( &LvmTestClass::tc_create_snapshot_environment, lvm_test );
 	test_case* tc_create_snapshot_environment_dir_exists = BOOST_CLASS_TEST_CASE( &LvmTestClass::tc_create_snapshot_environment_dir_exists, lvm_test );
+	test_case* tc_create_snapshot_environment_failure = BOOST_CLASS_TEST_CASE( &LvmTestClass::tc_create_snapshot_environment_failure, lvm_test );
+	test_case* tc_create_snapshot_fail_on_environment = BOOST_CLASS_TEST_CASE( &LvmTestClass::tc_create_snapshot_fail_on_environment, lvm_test );
+	test_case* tc_clone_snapshot = BOOST_CLASS_TEST_CASE( &LvmTestClass::tc_clone_snapshot, lvm_test );
+	test_case* tc_clone_snapshot_missing_origin = BOOST_CLASS_TEST_CASE( &LvmTestClass::tc_clone_snapshot_missing_origin, lvm_test );
+	test_case* tc_mount_snapshot_by_device = BOOST_CLASS_TEST_CASE( &LvmTestClass::tc_mount_snapshot_by_device, lvm_test );
+	test_case* tc_mount_snapshot_by_device_already_mounted = BOOST_CLASS_TEST_CASE( &LvmTestClass::tc_mount_snapshot_by_device_already_mounted, lvm_test );
+	test_case* tc_mount_snapshot_by_device_missing_device = BOOST_CLASS_TEST_CASE( &LvmTestClass::tc_mount_snapshot_by_device_missing_device, lvm_test );
+	test_case* tc_check_imported_snapshot = BOOST_CLASS_TEST_CASE( &LvmTestClass::tc_check_imported_snapshot, lvm_test );
+	test_case* tc_check_imported_snapshot_wrong_vg = BOOST_CLASS_TEST_CASE( &LvmTestClass::tc_check_imported_snapshot_wrong_vg, lvm_test );
+	test_case* tc_check_imported_snapshot_volume_import = BOOST_CLASS_TEST_CASE( &LvmTestClass::tc_check_imported_snapshot_volume_import, lvm_test );
+	test_case* tc_check_imported_snapshot_fs_uuid_mismatch = BOOST_CLASS_TEST_CASE( &LvmTestClass::tc_check_imported_snapshot_fs_uuid_mismatch, lvm_test );
+	test_case* tc_check_imported_snapshot_non_thin_lv = BOOST_CLASS_TEST_CASE( &LvmTestClass::tc_check_imported_snapshot_non_thin_lv, lvm_test );
+	test_case* tc_check_delete_snapshot_by_vg_lv = BOOST_CLASS_TEST_CASE( &LvmTestClass::tc_check_delete_snapshot_by_vg_lv, lvm_test );
+	test_case* tc_check_delete_snapshot_by_vg_lv_missing = BOOST_CLASS_TEST_CASE( &LvmTestClass::tc_check_delete_snapshot_by_vg_lv_missing, lvm_test );
 
 	add(tc_create_snapshot_environment);
 	add(tc_create_snapshot_environment_dir_exists);
+	add(tc_create_snapshot_environment_failure);
+	add(tc_create_snapshot_fail_on_environment);
+	add(tc_clone_snapshot);
+	add(tc_clone_snapshot_missing_origin);
+	add(tc_mount_snapshot_by_device);
+	add(tc_mount_snapshot_by_device_already_mounted);
+	add(tc_mount_snapshot_by_device_missing_device);
+	add(tc_check_imported_snapshot);
+	add(tc_check_imported_snapshot_wrong_vg);
+	add(tc_check_imported_snapshot_volume_import);
+	add(tc_check_imported_snapshot_fs_uuid_mismatch, 1);
+	add(tc_check_imported_snapshot_non_thin_lv);
+	add(tc_check_delete_snapshot_by_vg_lv);
+	add(tc_check_delete_snapshot_by_vg_lv_missing);
+
+	
     }
 
     LvmImportTestsuite::~LvmImportTestsuite()

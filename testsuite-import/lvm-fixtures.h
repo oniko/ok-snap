@@ -21,21 +21,13 @@ namespace testsuiteimport { namespace lvm
 	unsigned int f_num;
     };
 
-    
-
     struct CreateSnapshotEnvironmentDirExists : public CreateSnapshotEnvironment {
 	CreateSnapshotEnvironmentDirExists();
     };
 
-    
-
     struct CreateSnapshotEnvironmentFailure : public CreateSnapshotEnvironment {
 	CreateSnapshotEnvironmentFailure();
     };
-
-    
-
-    
 
     struct CloneSnapshotValid : public CreateSnapshotEnvironment {
 	CloneSnapshotValid();
@@ -44,9 +36,7 @@ namespace testsuiteimport { namespace lvm
 	const string f_vg_name;
 	const string f_lv_name;
 	const string f_origin_name;
-    };
-
-    
+    };    
 
     struct CloneSnapshotMissingOrigin : public CreateSnapshotEnvironment {
 	CloneSnapshotMissingOrigin();
@@ -55,8 +45,6 @@ namespace testsuiteimport { namespace lvm
 	const string f_vg_name;
 	const string f_lv_name;
     };
-
-    
 
     struct MountSnapshotByDeviceValid : public CreateSnapshotEnvironmentDirExists
     {
@@ -69,6 +57,39 @@ namespace testsuiteimport { namespace lvm
 
 	string f_dev_path;
 	string f_mountpoint;
+    };
+
+    struct MountSnapshotByDeviceAlreadyMounted : public MountSnapshotByDeviceValid
+    {
+	MountSnapshotByDeviceAlreadyMounted();
+    };
+
+    struct MountSnapshotByDeviceInvalidDevice : public CreateSnapshotEnvironmentDirExists
+    {
+	MountSnapshotByDeviceInvalidDevice();
+	~MountSnapshotByDeviceInvalidDevice() {}
+
+	string f_missing_dev_path;
+    };
+
+    struct CheckImportedSnapshotValid : public LvmGeneralFixture
+    {
+	CheckImportedSnapshotValid();
+	~CheckImportedSnapshotValid();
+
+	const string f_vg_name;
+	const string f_lv_name;
+	const string f_origin_name;
+    };
+
+    struct CheckImportedSnapshotWrongVg : public LvmGeneralFixture
+    {
+	CheckImportedSnapshotWrongVg();
+	~CheckImportedSnapshotWrongVg() {}
+
+	const string f_vg_name;
+	const string f_lv_name;
+	const string f_origin_name;
     };
 
     struct CheckImportedSnapshotVolumeImport : public LvmGeneralFixture

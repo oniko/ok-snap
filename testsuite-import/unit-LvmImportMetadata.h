@@ -37,7 +37,7 @@ BOOST_FIXTURE_TEST_CASE ( tc_import_ctor_missing_lv, FMissingLvName )
 }
 
 // TODO: depends on basic ctor
-BOOST_FIXTURE_TEST_CASE ( tc_import_copy_ctor, FCopyConstructor )
+BOOST_FIXTURE_TEST_CASE ( tc_import_copy_ctor, CopyConstructor )
 {
     boost::scoped_ptr<snapper::LvmImportMetadata> p_copy;
 
@@ -49,7 +49,7 @@ BOOST_FIXTURE_TEST_CASE ( tc_import_copy_ctor, FCopyConstructor )
 }
 
 // TODO: depends on copy ctor
-BOOST_FIXTURE_TEST_CASE ( tc_import_clone_method, FCopyConstructor )
+BOOST_FIXTURE_TEST_CASE ( tc_import_clone_method, CopyConstructor )
 {
     boost::scoped_ptr<snapper::LvmImportMetadata> p_copy;
 
@@ -61,13 +61,13 @@ BOOST_FIXTURE_TEST_CASE ( tc_import_clone_method, FCopyConstructor )
 }
 
 // TODO: depends on copy ctor
-BOOST_FIXTURE_TEST_CASE ( tc_import_equal_method_true, FEqualMethodTrue )
+BOOST_FIXTURE_TEST_CASE ( tc_import_equal_method_true, EqualMethodTrue )
 {
     BOOST_CHECK( f_origin.isEqualImpl(f_origin_copy) );
 }
 
 // TODO: depends on basic ctor
-BOOST_FIXTURE_TEST_CASE (tc_import_equal_method_false, FEqualMethodFalse )
+BOOST_FIXTURE_TEST_CASE (tc_import_equal_method_false, EqualMethodFalse )
 {
     BOOST_CHECK ( !f_origin.isEqualImpl(f_data_diff_in_vg) );
     BOOST_CHECK ( !f_origin.isEqualImpl(f_data_diff_in_lv) );

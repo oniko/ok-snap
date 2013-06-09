@@ -9,8 +9,6 @@
     #include "snapper/LvmImportMetadata.h"
 #undef private
 
-#include "testsuite-import/general-test.h"
-
 namespace testsuiteimport { namespace lvm {
 
     using std::map;
@@ -25,14 +23,12 @@ namespace testsuiteimport { namespace lvm {
 	map<string,string> f_raw_data;
     };
 
-    struct FLvmImportConstructor : public GeneralFixture, ValidMetadata
+    struct LvmImportConstructor : public ValidMetadata
     {
-	FLvmImportConstructor();
+	LvmImportConstructor();
 
 	map<string,string> f_raw_data_missing_vg;
 	map<string,string> f_raw_data_missing_lv;
-
-	virtual void test_method();
     };
 
     struct EqualFalseTestMetadata : public ValidMetadata
@@ -45,43 +41,33 @@ namespace testsuiteimport { namespace lvm {
 	map<string,string> f_raw_data_different;
     };
 
-    struct FCopyConstructor : public GeneralFixture, ValidMetadata
+    struct CopyConstructor : public ValidMetadata
     {
-	FCopyConstructor();
+	CopyConstructor();
 
 	const snapper::LvmImportMetadata f_origin;
-
-	virtual void test_method();
     };
 
-    struct FEqualMethodTrue : public FCopyConstructor
+    struct EqualMethodTrue : public CopyConstructor
     {
-	FEqualMethodTrue();
-	~FEqualMethodTrue();
+	EqualMethodTrue();
+	~EqualMethodTrue();
 
 	map<string,string> f_raw_data_copy;
 	snapper::LvmImportMetadata* f_p_origin_copy;
-
-	virtual void test_method();
     };
 
-    struct FCloneMethod : public FCopyConstructor
-    {
-	virtual void test_method();
-    };
 
-    struct FEqualMethodFalse : public GeneralFixture, EqualFalseTestMetadata
+
+    struct EqualMethodFalse : public EqualFalseTestMetadata
     {
-	FEqualMethodFalse();
+	EqualMethodFalse();
 
 	const snapper::LvmImportMetadata f_origin;
 
 	const snapper::LvmImportMetadata f_data_diff_in_vg;
 	const snapper::LvmImportMetadata f_data_diff_in_lv;
 	const snapper::LvmImportMetadata f_data_different;
-
-	virtual void test_method();
     };
-
 }}
 #endif //LVMIMPORTMETADATA_FIXTURES_H
