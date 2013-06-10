@@ -26,8 +26,8 @@ namespace testsuiteimport { namespace lvm
 	void tc_check_imported_snapshot_volume_import();
 	void tc_check_imported_snapshot_fs_uuid_mismatch();
 	void tc_check_imported_snapshot_non_thin_lv();
-	void tc_check_delete_snapshot_by_vg_lv();
-	void tc_check_delete_snapshot_by_vg_lv_missing();
+	void tc_lvm_delete_snapshot_by_vg_lv();
+	void tc_lvm_delete_snapshot_by_vg_lv_missing();
     };
 
     struct FCreateSnapshotEnvironment : public GeneralFixture, CreateSnapshotEnvironment

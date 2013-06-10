@@ -73,7 +73,7 @@ namespace snapper
 
 
     Snapshot::Snapshot(const Snapshot& sh)
-	: snapper(sh.snapper), type(sh.type), num(sh.num), date(sh.date), uid(sh.uid), pre_num(sh.uid),
+	: snapper(sh.snapper), type(sh.type), num(sh.num), date(sh.date), uid(sh.uid), pre_num(sh.pre_num),
 	  description(sh.description), cleanup(sh.cleanup), userdata(sh.userdata),
 	  info_modified(sh.info_modified), mount_checked(sh.mount_checked),
 	  mount_user_request(sh.mount_user_request), import_policy(sh.import_policy)

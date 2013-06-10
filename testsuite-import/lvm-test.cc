@@ -97,13 +97,13 @@ namespace testsuiteimport { namespace lvm
 	fixture->test_method();
     }
 
-    void LvmTestClass::tc_check_delete_snapshot_by_vg_lv()
+    void LvmTestClass::tc_lvm_delete_snapshot_by_vg_lv()
     {
 	boost::scoped_ptr<GeneralFixture> fixture(new FDeleteSnapshotByVgLv());
 	fixture->test_method();
     }
 
-    void LvmTestClass::tc_check_delete_snapshot_by_vg_lv_missing()
+    void LvmTestClass::tc_lvm_delete_snapshot_by_vg_lv_missing()
     {
 	boost::scoped_ptr<GeneralFixture> fixture(new FDeleteSnapshotByVgLvMissing());
 	fixture->test_method();

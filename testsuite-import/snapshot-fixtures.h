@@ -6,10 +6,9 @@
 // ouch !!!
 #define private public
     #include "snapper/Snapshot.h"
-#define private private
-
-#include "snapper/Snapper.h"
-#include "snapper/LvmImportMetadata.h"
+    #include "snapper/Snapper.h"
+    #include "snapper/LvmImportMetadata.h"
+#undef private
 
 #include "testsuite-import/general-fixtures.h"
 #include "testsuite-import/lvm-fixtures.h"
@@ -41,22 +40,23 @@ namespace testsuiteimport { namespace lvm
     struct ImportConstructorValid : public SimpleConstructorValid
     {
 	ImportConstructorValid();
-	~ImportConstructorValid() {}
+
+	const CreateRawLvmImportMetata rm;
 
 	const snapper::ImportPolicy f_import_policy;
-	const snapper::ImportMetadata* f_p_idata;
+	const snapper::Lvm* f_dummy_lvm;
+	const snapper::ImportMetadata* f_dummy_idata;
     };
 
     struct CopyConstructorNoImport : public SimpleConstructorValid
     {
 	CopyConstructorNoImport();
-	~CopyConstructorNoImport() {}
 
 	const uid_t f_uid;
 	const unsigned int f_pre_num;
 	const string f_description;
 	const string f_cleanup;
-	const map<string,string> f_userdata;
+	map<string,string> f_userdata;
 	const bool f_info_modified;
 	const bool f_mount_checked;
 	const bool f_mount_user_request;
@@ -74,7 +74,7 @@ namespace testsuiteimport { namespace lvm
 	const unsigned int f_pre_num;
 	const string f_description;
 	const string f_cleanup;
-	const map<string,string> f_userdata;
+	map<string,string> f_userdata;
 	const bool f_info_modified;
 	const bool f_mount_checked;
 	const bool f_mount_user_request;
@@ -102,11 +102,11 @@ namespace testsuiteimport { namespace lvm
 	DeleteFilesystemSnapshotImportTypeClone();
 	~DeleteFilesystemSnapshotImportTypeClone();
 
+	const string f_snapshot_lv_name;
 	const CreateRawLvmImportMetata rm;
 
-	const snapper::LvmImportMetadata f_idata;
+	const snapper::ImportMetadata* f_p_idata;
 	const snapper::Snapshot f_sh;
-	const string f_snapshot_lv_name;
     };
 
     struct DeleteFilesystemSnapshotImportTypeAdopt : public CreateSnapshotEnvironmentDirExists
@@ -114,11 +114,11 @@ namespace testsuiteimport { namespace lvm
 	DeleteFilesystemSnapshotImportTypeAdopt();
 	~DeleteFilesystemSnapshotImportTypeAdopt();
 
+	const string f_snapshot_lv_name;
 	const CreateRawLvmImportMetata rm;
 
-	const snapper::LvmImportMetadata f_idata;
+	const snapper::ImportMetadata* f_p_idata;
 	const snapper::Snapshot f_sh;
-	const string f_snapshot_lv_name;
     };
 
     struct DeleteFilesystemSnapshotImportTypeAcknowledge : public CreateSnapshotEnvironmentDirExists
@@ -126,11 +126,11 @@ namespace testsuiteimport { namespace lvm
 	DeleteFilesystemSnapshotImportTypeAcknowledge();
 	~DeleteFilesystemSnapshotImportTypeAcknowledge();
 
+	const string f_snapshot_lv_name;
 	const CreateRawLvmImportMetata rm;
 
-	const snapper::LvmImportMetadata f_idata;
+	const snapper::ImportMetadata* f_p_idata;
 	const snapper::Snapshot f_sh;
-	const string f_snapshot_lv_name;
     };
 
     struct DeleteFileSystemSnapshotOrigin : public LvmGeneralFixture
@@ -165,7 +165,9 @@ namespace testsuiteimport { namespace lvm
 	~MountFileSystemSnapshotImportClone();
 
 	const string f_clone_origin_name;
-	const snapper::LvmImportMetadata* f_p_lvm_idata;
+	const CreateRawLvmImportMetata rm;
+
+	const snapper::ImportMetadata* f_p_idata;
 	const snapper::Snapshot f_sh;
     };
 
@@ -182,18 +184,20 @@ namespace testsuiteimport { namespace lvm
     struct MountFileSystemSnapshotImportAdopt : public MountFileSystemSnapshotImportBase
     {
 	MountFileSystemSnapshotImportAdopt();
-	~MountFileSystemSnapshotImportAdopt() {}
 
-	const snapper::LvmImportMetadata* f_p_lvm_idata;
+	const CreateRawLvmImportMetata rm;
+
+	const snapper::ImportMetadata* f_p_idata;
 	const snapper::Snapshot f_sh;
     };
 
     struct MountFileSystemSnapshotImportAck : public MountFileSystemSnapshotImportBase
     {
 	MountFileSystemSnapshotImportAck();
-	~MountFileSystemSnapshotImportAck() {}
 
-	const snapper::LvmImportMetadata* f_p_lvm_idata;
+	const CreateRawLvmImportMetata rm;
+
+	const snapper::ImportMetadata* f_p_idata;
 	const snapper::Snapshot f_sh;
     };
 
