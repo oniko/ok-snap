@@ -536,9 +536,9 @@ namespace testsuiteimport { namespace lvm
 
 	BOOST_REQUIRE_NO_THROW( f_sh.handleUmountFilesystemSnapshot() );
 	BOOST_REQUIRE( check_is_mounted(f_conf_vg_name, f_snapshot_lv_name) );
-	BOOST_REQUIRE_EQUAL( mount_count, f_sh.mount_use_count );
+	BOOST_CHECK_EQUAL( mount_count, f_sh.mount_use_count );
 
-	f_sh.mount_use_count = 0;
+	f_sh.mount_use_count = mount_count = 0;
 
 	BOOST_REQUIRE_NO_THROW( f_sh.handleUmountFilesystemSnapshot() );
 	BOOST_REQUIRE( check_is_mounted(f_conf_vg_name, f_snapshot_lv_name) );
@@ -567,7 +567,7 @@ namespace testsuiteimport { namespace lvm
 	BOOST_REQUIRE( check_is_mounted(f_conf_vg_name, f_snapshot_lv_name) );
 	BOOST_REQUIRE_EQUAL( mount_count, f_sh.mount_use_count );
 
-	f_sh.mount_use_count = 0;
+	f_sh.mount_use_count = mount_count = 0;
 
 	BOOST_REQUIRE_NO_THROW( f_sh.handleUmountFilesystemSnapshot() );
 	BOOST_REQUIRE( check_is_mounted(f_conf_vg_name, f_snapshot_lv_name) );
