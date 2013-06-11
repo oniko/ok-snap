@@ -21,8 +21,7 @@ namespace testsuiteimport { namespace lvm
     using std::cout;
     using std::cerr;
 
-    CreateSnapshotEnvironment::CreateSnapshotEnvironment()
-	: LvmGeneralFixture(), f_num(0)
+    void CreateSnapshotEnvironment::init()
     {
 	std::cout << "CreateSnapshotEnvironment ctor" << std::endl;
 
@@ -60,6 +59,18 @@ namespace testsuiteimport { namespace lvm
 	    close(f_dirfd);
 	    BOOST_FAIL( "Can't stat dir: /testsuite-import/.snapshots/" << f_num << " or the d-entry is not a directory" );
 	}
+    }
+
+    CreateSnapshotEnvironment::CreateSnapshotEnvironment()
+	: LvmGeneralFixture(), f_num(0)
+    {
+	init();
+    }
+
+    CreateSnapshotEnvironment::CreateSnapshotEnvironment(unsigned int num)
+	: LvmGeneralFixture(), f_num(num)
+    {
+	init();
     }
 
     CreateSnapshotEnvironment::~CreateSnapshotEnvironment()
@@ -128,19 +139,23 @@ namespace testsuiteimport { namespace lvm
 	}
     }
 
-    
-
-    CreateSnapshotEnvironmentDirExists::CreateSnapshotEnvironmentDirExists()
-	: CreateSnapshotEnvironment()
+    void CreateSnapshotEnvironmentDirExists::init()
     {
-	std::cout << "CreateSnapshotEnvironmentDirExists ctor" << std::endl;
-
 	if (mkdirat(f_dirfd, "snapshot", 0755))
 	    BOOST_FAIL( "Can't create snapshot directory in test environment" );
     }
 
-    
+    CreateSnapshotEnvironmentDirExists::CreateSnapshotEnvironmentDirExists()
+	: CreateSnapshotEnvironment()
+    {
+	init();
+    }
 
+    CreateSnapshotEnvironmentDirExists::CreateSnapshotEnvironmentDirExists(unsigned int num)
+	: CreateSnapshotEnvironment(num)
+    {
+	init();
+    }
 
     CreateSnapshotEnvironmentFailure::CreateSnapshotEnvironmentFailure()
 	: CreateSnapshotEnvironment()
@@ -154,7 +169,6 @@ namespace testsuiteimport { namespace lvm
 	close(fd);
     }
 
-   
 
     CloneSnapshotValid::CloneSnapshotValid()
 	: CreateSnapshotEnvironment(), f_vg_name("vg_test"), f_lv_name("lv_test_snapshot_01"),

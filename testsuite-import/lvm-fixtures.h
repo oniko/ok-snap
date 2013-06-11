@@ -10,19 +10,25 @@ namespace testsuiteimport { namespace lvm
 {    
     using std::map;
     using std::string;
-    
+
     struct CreateSnapshotEnvironment : public LvmGeneralFixture {
 	CreateSnapshotEnvironment();
+	CreateSnapshotEnvironment(unsigned int num);
 	~CreateSnapshotEnvironment();
 
 	string f_snapshot_dir;
 
 	int f_dirfd;
 	unsigned int f_num;
+    private:
+	void init();
     };
 
     struct CreateSnapshotEnvironmentDirExists : public CreateSnapshotEnvironment {
 	CreateSnapshotEnvironmentDirExists();
+	CreateSnapshotEnvironmentDirExists(unsigned int num);
+    private:
+	void init();
     };
 
     struct CreateSnapshotEnvironmentFailure : public CreateSnapshotEnvironment {

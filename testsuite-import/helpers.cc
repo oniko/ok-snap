@@ -77,7 +77,10 @@ namespace testsuiteimport { namespace lvm
     bool check_is_mounted(const string& vg_name, const string& lv_name)
     {
 	vector<string> args;
-	args.push_back("/dev/mapper/" + vg_name + "-" + lv_name);
+	args.push_back("/dev/mapper/" +
+		       boost::replace_all_copy(vg_name, "-", "--") +
+		       "-" +
+		       boost::replace_all_copy(lv_name, "-", "--"));
 
 	try
 	{

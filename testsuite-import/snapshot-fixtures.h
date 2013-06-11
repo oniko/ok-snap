@@ -154,7 +154,6 @@ namespace testsuiteimport { namespace lvm
     struct MountFileSystemSnapshotImportNone : public MountFileSystemSnapshotSimpleBase
     {
 	MountFileSystemSnapshotImportNone();
-	~MountFileSystemSnapshotImportNone() {}
 
 	const snapper::Snapshot f_sh;
     };
