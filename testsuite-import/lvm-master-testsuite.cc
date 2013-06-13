@@ -30,19 +30,19 @@ namespace testsuiteimport { namespace lvm
 
 	// LvmImportMetadata unit
 	test_case* tc_import_ctor = BOOST_CLASS_TEST_CASE( &LvmImportMetadataTestClass::tc_import_ctor, lvmimportmetadata_test );
-	test_case* tc_import_copy_ctor = BOOST_CLASS_TEST_CASE( &LvmImportMetadataTestClass::tc_import_copy_ctor, lvmimportmetadata_test );
-	test_case* tc_import_clone_method = BOOST_CLASS_TEST_CASE( &LvmImportMetadataTestClass::tc_import_clone_method, lvmimportmetadata_test );
+	//test_case* tc_import_copy_ctor = BOOST_CLASS_TEST_CASE( &LvmImportMetadataTestClass::tc_import_copy_ctor, lvmimportmetadata_test );
+	//test_case* tc_import_clone_method = BOOST_CLASS_TEST_CASE( &LvmImportMetadataTestClass::tc_import_clone_method, lvmimportmetadata_test );
 	test_case* tc_import_equal_method_true = BOOST_CLASS_TEST_CASE( &LvmImportMetadataTestClass::tc_import_equal_method_true, lvmimportmetadata_test );
 	test_case* tc_import_equal_method_false = BOOST_CLASS_TEST_CASE( &LvmImportMetadataTestClass::tc_import_equal_method_false, lvmimportmetadata_test );
 
-	tc_import_copy_ctor->depends_on(tc_import_ctor);
-	tc_import_clone_method->depends_on(tc_import_copy_ctor);
-	tc_import_equal_method_true->depends_on(tc_import_copy_ctor);
-	tc_import_equal_method_false->depends_on(tc_import_copy_ctor);
+	//tc_import_copy_ctor->depends_on(tc_import_ctor);
+	//tc_import_clone_method->depends_on(tc_import_copy_ctor);
+	//tc_import_equal_method_true->depends_on(tc_import_copy_ctor);
+	//tc_import_equal_method_false->depends_on(tc_import_copy_ctor);
 
 	add(tc_import_ctor);
-	add(tc_import_copy_ctor);
-	add(tc_import_clone_method);
+	//add(tc_import_copy_ctor);
+	//add(tc_import_clone_method);
 	add(tc_import_equal_method_true);
 	add(tc_import_equal_method_false);
 
@@ -89,8 +89,8 @@ namespace testsuiteimport { namespace lvm
 
 	test_case* tc_snapshot_simple_ctor = BOOST_CLASS_TEST_CASE( &SnapshotTestClass::tc_snapshot_simple_ctor, snapshot_test);
 	test_case* tc_snapshot_import_ctor = BOOST_CLASS_TEST_CASE( &SnapshotTestClass::tc_snapshot_import_ctor, snapshot_test);
-	test_case* tc_snapshot_copy_ctor_no_import = BOOST_CLASS_TEST_CASE( &SnapshotTestClass::tc_snapshot_copy_ctor_no_import, snapshot_test);
-	test_case* tc_snapshot_copy_ctor_import = BOOST_CLASS_TEST_CASE( &SnapshotTestClass::tc_snapshot_copy_ctor_import, snapshot_test);
+	//test_case* tc_snapshot_copy_ctor_no_import = BOOST_CLASS_TEST_CASE( &SnapshotTestClass::tc_snapshot_copy_ctor_no_import, snapshot_test);
+	//test_case* tc_snapshot_copy_ctor_import = BOOST_CLASS_TEST_CASE( &SnapshotTestClass::tc_snapshot_copy_ctor_import, snapshot_test);
 	test_case* tc_delete_filesystem_snapshot_import_type_none = BOOST_CLASS_TEST_CASE( &SnapshotTestClass::tc_delete_filesystem_snapshot_import_type_none, snapshot_test);
 	test_case* tc_delete_filesystem_snapshot_import_type_clone = BOOST_CLASS_TEST_CASE( &SnapshotTestClass::tc_delete_filesystem_snapshot_import_type_clone, snapshot_test);
 	test_case* tc_delete_filesystem_snapshot_import_type_adopt = BOOST_CLASS_TEST_CASE( &SnapshotTestClass::tc_delete_filesystem_snapshot_import_type_adopt, snapshot_test);
@@ -116,8 +116,8 @@ namespace testsuiteimport { namespace lvm
 	test_case* tc_handle_umount_filesystem_snapshot_non_user_request = BOOST_CLASS_TEST_CASE( &SnapshotTestClass::tc_handle_umount_filesystem_snapshot_non_user_request, snapshot_test);
 	test_case* tc_handle_umount_filesystem_snapshot_user_request = BOOST_CLASS_TEST_CASE( &SnapshotTestClass::tc_handle_umount_filesystem_snapshot_user_request, snapshot_test);
 
-	tc_snapshot_copy_ctor_no_import->depends_on(tc_snapshot_simple_ctor);
-	tc_snapshot_copy_ctor_import->depends_on(tc_snapshot_import_ctor);
+//	tc_snapshot_copy_ctor_no_import->depends_on(tc_snapshot_simple_ctor);
+//	tc_snapshot_copy_ctor_import->depends_on(tc_snapshot_import_ctor);
 	tc_delete_filesystem_snapshot_import_type_none->depends_on(tc_snapshot_simple_ctor);
 
 	tc_delete_filesystem_snapshot_import_type_clone->depends_on(tc_snapshot_import_ctor);
@@ -129,8 +129,8 @@ namespace testsuiteimport { namespace lvm
 
 	add(tc_snapshot_simple_ctor);
 	add(tc_snapshot_import_ctor);
-	add(tc_snapshot_copy_ctor_no_import);
-	add(tc_snapshot_copy_ctor_import);
+//	add(tc_snapshot_copy_ctor_no_import);
+//	add(tc_snapshot_copy_ctor_import);
 	add(tc_delete_filesystem_snapshot_import_type_none);
 	add(tc_delete_filesystem_snapshot_import_type_clone);
 	add(tc_delete_filesystem_snapshot_import_type_adopt);

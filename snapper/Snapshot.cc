@@ -27,7 +27,6 @@
 #include <dirent.h>
 #include <errno.h>
 #include <string.h>
-#include <boost/algorithm/string.hpp>
 
 #include "snapper/Snapshot.h"
 #include "snapper/Snapper.h"
@@ -72,20 +71,6 @@ namespace snapper
     }
 
 
-    Snapshot::Snapshot(const Snapshot& sh)
-	: snapper(sh.snapper), type(sh.type), num(sh.num), date(sh.date), uid(sh.uid), pre_num(sh.pre_num),
-	  description(sh.description), cleanup(sh.cleanup), userdata(sh.userdata),
-	  info_modified(sh.info_modified), mount_checked(sh.mount_checked),
-	  mount_user_request(sh.mount_user_request), mount_use_count(sh.mount_use_count),
-	  import_policy(sh.import_policy)
-    {
-	if (sh.p_idata)
-	    p_idata = sh.p_idata->clone();
-	else
-	    p_idata = NULL;
-    }
-
-
     Snapshot::Snapshot(const Snapper* snapper, SnapshotType type, unsigned int num, time_t date)
 	: snapper(snapper), type(type), num(num), date(date), uid(0), pre_num(0),
 	  info_modified(false), mount_checked(false), mount_user_request(false),
@@ -100,12 +85,6 @@ namespace snapper
 	  info_modified(false), mount_checked(false), mount_user_request(false),
 	  mount_use_count(0), import_policy(itype), p_idata(p_imdata)
     {
-    }
-
-
-    Snapshot::~Snapshot()
-    {
-	delete p_idata;
     }
 
 

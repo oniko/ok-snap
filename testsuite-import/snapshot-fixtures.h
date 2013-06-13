@@ -48,45 +48,6 @@ namespace testsuiteimport { namespace lvm
 	const snapper::ImportMetadata* f_dummy_idata;
     };
 
-    struct CopyConstructorNoImport : public SimpleConstructorValid
-    {
-	CopyConstructorNoImport();
-
-	const uid_t f_uid;
-	const unsigned int f_pre_num;
-	const string f_description;
-	const string f_cleanup;
-	map<string,string> f_userdata;
-	const bool f_info_modified;
-	const bool f_mount_checked;
-	const bool f_mount_user_request;
-	const unsigned int f_mount_use_count;
-
-	snapper::Snapshot f_origin;
-    };
-
-    struct CopyConstructorImport : public SimpleConstructorValid
-    {
-	CopyConstructorImport();
-	~CopyConstructorImport();
-
-	const uid_t f_uid;
-	const unsigned int f_pre_num;
-	const string f_description;
-	const string f_cleanup;
-	map<string,string> f_userdata;
-	const bool f_info_modified;
-	const bool f_mount_checked;
-	const bool f_mount_user_request;
-	const unsigned int f_mount_use_count;
-	const snapper::ImportPolicy f_import_policy;
-
-	map<string,string> raw_data;
-
-	const snapper::ImportMetadata* f_p_idata;
-
-	snapper::Snapshot* f_p_origin;
-    };
 
     struct DeleteFilesystemSnapshotImportTypeNone : public CreateSnapshotEnvironmentDirExists
     {

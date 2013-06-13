@@ -29,6 +29,8 @@
 #include <list>
 #include <map>
 
+#include <boost/shared_ptr.hpp>
+
 #include "snapper/Exception.h"
 #include "snapper/ImportMetadata.h"
 
@@ -100,10 +102,8 @@ namespace snapper
 	friend class Snapshots;
 	friend class ImportHelper;
 
-	Snapshot(const Snapshot& snapshot);
 	Snapshot(const Snapper* snapper, SnapshotType type, unsigned int num, time_t date);
 	Snapshot(const Snapper* snapper, SnapshotType type, unsigned int num, time_t date, ImportPolicy ipolicy, const ImportMetadata* p_idata);
-	~Snapshot();
 
 	SnapshotType getType() const { return type; }
 	ImportPolicy getImportPolicy() const { return import_policy; }
@@ -167,7 +167,7 @@ namespace snapper
 
 	ImportPolicy import_policy;
 
-	const ImportMetadata* p_idata;
+	boost::shared_ptr<const ImportMetadata> p_idata;
 
 	void writeInfo() const;
 

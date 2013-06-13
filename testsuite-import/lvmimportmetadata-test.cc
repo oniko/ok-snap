@@ -13,17 +13,13 @@ namespace testsuiteimport { namespace lvm
 	fixture->test_method();
     }
 
+/*
     void LvmImportMetadataTestClass::tc_import_copy_ctor()
     {
 	boost::scoped_ptr<GeneralFixture> fixture(new FCopyConstructor());
 	fixture->test_method();
     }
-
-    void LvmImportMetadataTestClass::tc_import_clone_method()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FCloneMethod());
-	fixture->test_method();
-    }
+*/
 
     void LvmImportMetadataTestClass::tc_import_equal_method_true()
     {
@@ -50,6 +46,7 @@ namespace testsuiteimport { namespace lvm
 	BOOST_CHECK_EQUAL( p_imdata->getLvName(), f_raw_data["lv_name"] );
     }
 
+/*
     void FCopyConstructor::test_method()
     {
 	boost::scoped_ptr<snapper::LvmImportMetadata> p_copy;
@@ -60,17 +57,7 @@ namespace testsuiteimport { namespace lvm
 	BOOST_CHECK_EQUAL( p_copy->getLvName(), f_origin.getLvName() );
 	BOOST_CHECK_EQUAL( p_copy->getCreationTime(), f_origin.getCreationTime() );
     }
-
-    void FCloneMethod::test_method()
-    {
-	boost::scoped_ptr<snapper::LvmImportMetadata> p_copy;
-
-	BOOST_REQUIRE_NO_THROW( p_copy.reset(dynamic_cast<snapper::LvmImportMetadata *>(f_origin.clone())) );
-
-	BOOST_CHECK_EQUAL( p_copy->getVgName(), f_origin.getVgName() );
-	BOOST_CHECK_EQUAL( p_copy->getLvName(), f_origin.getLvName() );
-	BOOST_CHECK_EQUAL( p_copy->getCreationTime(), f_origin.getCreationTime() );
-    }
+*/
 
     void FEqualMethodTrue::test_method()
     {

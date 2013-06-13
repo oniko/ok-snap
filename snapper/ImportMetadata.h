@@ -65,11 +65,11 @@ namespace snapper
 
     public:
 
-	ImportMetadata(const ImportMetadata& idata) { creation_time = idata.creation_time; }
+	//ImportMetadata(const ImportMetadata& idata) { creation_time = idata.creation_time; }
 	ImportMetadata() { creation_time = (time_t)(-1); }
 	virtual ~ImportMetadata() {}
 
-	virtual ImportMetadata* clone() const = 0;
+	//virtual ImportMetadata* clone() const = 0;
 
 	/*
 	 * if fs snapshot doesn't containt information about creation time

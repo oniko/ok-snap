@@ -86,7 +86,7 @@ namespace snapper
 	this->lvm = lvm;
     }
 
-
+/*
     LvmImportMetadata::LvmImportMetadata(const LvmImportMetadata& p_idata): ImportMetadata(p_idata)
     {
 	y2deb("LvmImportMetadata copy constructor");
@@ -99,7 +99,7 @@ namespace snapper
     {
 	return new LvmImportMetadata(*this);
     }
-
+*/
 
     string
     LvmImportMetadata::getDevicePath() const

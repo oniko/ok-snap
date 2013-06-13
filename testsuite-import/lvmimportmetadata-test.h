@@ -12,8 +12,7 @@ namespace testsuiteimport { namespace lvm
 	LvmImportMetadataTestClass() {}
 
 	void tc_import_ctor();
-	void tc_import_copy_ctor();
-	void tc_import_clone_method();
+	//void tc_import_copy_ctor();
 	void tc_import_equal_method_true();
 	void tc_import_equal_method_false();
     };
@@ -23,15 +22,12 @@ namespace testsuiteimport { namespace lvm
 	virtual void test_method();
     };
 
+/*
     struct FCopyConstructor : public GeneralFixture, CopyConstructor
     {
 	virtual void test_method();
     };
-
-    struct FCloneMethod : public GeneralFixture, CopyConstructor
-    {
-	virtual void test_method();
-    };
+*/
 
     struct FEqualMethodTrue : public GeneralFixture, EqualMethodTrue
     {

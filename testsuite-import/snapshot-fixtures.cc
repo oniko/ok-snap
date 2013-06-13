@@ -37,58 +37,6 @@ namespace testsuiteimport { namespace lvm
     {
     }
 
-    CopyConstructorNoImport::CopyConstructorNoImport()
-	: SimpleConstructorValid(), f_uid(1024), f_pre_num(42),
-	f_description("test_desc"), f_cleanup("test_cleanup"),
-	f_info_modified(true), f_mount_checked(false), f_mount_user_request(true),
-	f_mount_use_count(42), f_origin(f_dummy_snapper, f_type, f_num, f_date)
-    {
-	f_userdata.insert(make_pair("t_key", "t_value"));
-
-	f_origin.setUid(f_uid);
-	f_origin.setDescription(f_description);
-	f_origin.setCleanup(f_cleanup);
-	f_origin.setUserdata(f_userdata);
-
-	// set remaining private attributes for testing purposes
-	f_origin.pre_num = f_pre_num;
-	f_origin.info_modified = f_info_modified;
-	f_origin.mount_user_request = f_mount_user_request;
-	f_origin.mount_use_count = f_mount_use_count;
-    }
-
-    CopyConstructorImport::CopyConstructorImport()
-	: SimpleConstructorValid(), f_uid(1024), f_pre_num(42),
-	f_description("test_desc"), f_cleanup("test_cleanup"), f_info_modified(true),
-	f_mount_checked(false), f_mount_user_request(true), f_mount_use_count(42),
-	f_import_policy(snapper::ImportPolicy::ADOPT)
-    {
-	f_userdata.insert(make_pair("t_key", "t_value"));
-
-	raw_data.insert(make_pair("vg_name", "vg_test"));
-	raw_data.insert(make_pair("lv_name", "lv_test_thin_1"));
-
-	f_p_idata = new snapper::LvmImportMetadata(raw_data, reinterpret_cast<const snapper::Lvm *>(24680));
-	// Snapshot takes over ImportMetadata ownership, call Snapshot dtor to free ImportMetadata resources
-	f_p_origin = new snapper::Snapshot(f_dummy_snapper, f_type, f_num, f_date, f_import_policy, f_p_idata);
-
-	f_p_origin->setUid(f_uid);
-	f_p_origin->setDescription(f_description);
-	f_p_origin->setCleanup(f_cleanup);
-	f_p_origin->setUserdata(f_userdata);
-
-	// set remaining private attributes for testing purposes
-	f_p_origin->pre_num = f_pre_num;
-	f_p_origin->info_modified = f_info_modified;
-	f_p_origin->mount_user_request = f_mount_user_request;
-	f_p_origin->mount_use_count = f_mount_use_count;
-    }
-
-    CopyConstructorImport::~CopyConstructorImport()
-    {
-	delete f_p_origin;
-    }
-
     DeleteFilesystemSnapshotImportTypeNone::DeleteFilesystemSnapshotImportTypeNone()
 	: CreateSnapshotEnvironmentDirExists(1),
 	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1),

@@ -42,7 +42,7 @@ namespace snapper
 	LvmImportMetadata(const LvmImportMetadata& p_idata);
 	LvmImportMetadata(const map<string,string> &input, const Lvm* fs);
 
-	virtual ImportMetadata* clone() const;
+	//virtual ImportMetadata* clone() const;
 
 	virtual string getDevicePath() const;
 

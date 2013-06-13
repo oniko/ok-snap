@@ -11,8 +11,6 @@ namespace testsuiteimport { namespace lvm
     public:
 	void tc_snapshot_simple_ctor();
 	void tc_snapshot_import_ctor();
-	void tc_snapshot_copy_ctor_no_import();
-	void tc_snapshot_copy_ctor_import();
 	void tc_delete_filesystem_snapshot_import_type_none();
 	void tc_delete_filesystem_snapshot_import_type_clone();
 	void tc_delete_filesystem_snapshot_import_type_adopt();
@@ -45,16 +43,6 @@ namespace testsuiteimport { namespace lvm
     };
 
     struct FImportConstructorValid : public GeneralFixture, ImportConstructorValid
-    {
-	virtual void test_method();
-    };
-
-    struct FCopyConstructorNoImport : public GeneralFixture, CopyConstructorNoImport
-    {
-	virtual void test_method();
-    };
-
-    struct FCopyConstructorImport : public GeneralFixture, CopyConstructorImport
     {
 	virtual void test_method();
     };
@@ -143,18 +131,6 @@ namespace testsuiteimport { namespace lvm
     {
 	virtual void test_method();
     };
-
-    /*
-    struct FUmountFilesystemSnapshotImportClone : public GeneralFixture, UmountFilesystemSnapshotImportClone
-    {
-	virtual void test_method();
-    };
-
-    struct FUmountFilesystemSnapshotImportCloneUserRequest : public GeneralFixture, UmountFilesystemSnapshotImportClone
-    {
-	virtual void test_method();
-    };
-    */
 
     struct FUmountFilesystemSnapshotImportAdopt : public GeneralFixture, UmountFilesystemSnapshotImportAdopt
     {

@@ -18,18 +18,6 @@ namespace testsuiteimport { namespace lvm
 	fixture->test_method();
     }
 
-    void SnapshotTestClass::tc_snapshot_copy_ctor_no_import()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FCopyConstructorNoImport());
-	fixture->test_method();
-    }
-
-    void SnapshotTestClass::tc_snapshot_copy_ctor_import()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FCopyConstructorImport());
-	fixture->test_method();
-    }
-
     void SnapshotTestClass::tc_delete_filesystem_snapshot_import_type_none()
     {
 	boost::scoped_ptr<GeneralFixture> fixture(new FDeleteFilesystemSnapshotImportTypeNone());
@@ -189,7 +177,7 @@ namespace testsuiteimport { namespace lvm
 
 	// check few private attributes (essential tests for further testing)
 	BOOST_CHECK_EQUAL( snapshot->snapper, f_dummy_snapper );
-	BOOST_CHECK( snapshot->p_idata == NULL );
+	BOOST_CHECK( snapshot->p_idata.get() == NULL );
     }
 
     void FImportConstructorValid::test_method()
@@ -207,61 +195,7 @@ namespace testsuiteimport { namespace lvm
 
 	// check few private attributes (essential tests for further testing)
 	BOOST_CHECK_EQUAL( snapshot->snapper, f_dummy_snapper );
-	BOOST_CHECK_EQUAL( snapshot->p_idata, f_dummy_idata );
-    }
-
-    void FCopyConstructorNoImport::test_method()
-    {
-	boost::scoped_ptr<snapper::Snapshot> copy;
-
-	BOOST_REQUIRE_NO_THROW( copy.reset(new snapper::Snapshot(f_origin)) );
-
-	BOOST_CHECK_EQUAL( copy->getType(), f_type );
-	BOOST_CHECK_EQUAL( copy->getNum(), f_num );
-	BOOST_CHECK_EQUAL( copy->getDate(), f_date );
-	BOOST_CHECK_EQUAL( copy->getUid(), f_uid );
-	BOOST_CHECK_EQUAL( copy->getPreNum(), f_pre_num );
-	BOOST_CHECK_EQUAL( copy->getDescription(), f_description );
-	BOOST_CHECK_EQUAL( copy->getCleanup(), f_cleanup );
- 	BOOST_CHECK( copy->getUserdata() == f_userdata );
-
- 	BOOST_CHECK_EQUAL( copy->getImportPolicy(), snapper::ImportPolicy::NONE );
-
-	// check rest of private attributes
-	BOOST_CHECK_EQUAL( copy->snapper, f_dummy_snapper );
-	BOOST_CHECK_EQUAL( copy->info_modified, f_info_modified );
-	BOOST_CHECK_EQUAL( copy->mount_checked, f_mount_checked );
-	BOOST_CHECK_EQUAL( copy->mount_use_count, f_mount_use_count );
-	BOOST_CHECK( copy->p_idata == NULL );
-    }
-
-    void FCopyConstructorImport::test_method()
-    {
-	boost::scoped_ptr<snapper::Snapshot> copy;
-
-	BOOST_REQUIRE_NO_THROW( copy.reset(new snapper::Snapshot(*f_p_origin)) );
-	//snapper::Snapshot copy(*f_p_origin);
-
-	BOOST_CHECK_EQUAL( copy->getType(), f_type );
-	BOOST_CHECK_EQUAL( copy->getNum(), f_num );
-	BOOST_CHECK_EQUAL( copy->getDate(), f_date );
-	BOOST_CHECK_EQUAL( copy->getUid(), f_uid );
-	BOOST_CHECK_EQUAL( copy->getPreNum(), f_pre_num );
-	BOOST_CHECK_EQUAL( copy->getDescription(), f_description );
-	BOOST_CHECK_EQUAL( copy->getCleanup(), f_cleanup );
-	BOOST_CHECK( copy->getUserdata() == f_userdata );
-
-	BOOST_CHECK_EQUAL( copy->getImportPolicy(), f_import_policy );
-	BOOST_CHECK_EQUAL( copy->snapper, f_dummy_snapper );
-	BOOST_CHECK_EQUAL( copy->info_modified, f_info_modified );
-	BOOST_CHECK_EQUAL( copy->mount_checked, f_mount_checked );
-	BOOST_CHECK_EQUAL( copy->mount_use_count, f_mount_use_count );
-
-	// TODO: think about removal. We don't want to test other class here
-	// in case of extreme failure, this may fault assert, see ImportMetadata class
-	BOOST_CHECK( copy->p_idata->isEqual(*f_p_idata) );
-	// check if copy ctor has actually created a new copy on a new address
-	BOOST_CHECK_NE( copy->p_idata, f_p_idata );
+	BOOST_CHECK_EQUAL( snapshot->p_idata.get(), f_dummy_idata );
     }
 
     void FDeleteFilesystemSnapshotImportTypeNone::test_method()
