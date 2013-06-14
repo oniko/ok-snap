@@ -29,6 +29,8 @@
 #include <map>
 #include <string>
 
+#include "snapper/Log.h"
+
 namespace snapper
 {
     using std::map;
@@ -43,8 +45,9 @@ namespace snapper
      *			On a way backward (xmlfile->snapper), it will become NONE type, undistinguishable from
      *			regular snapshot.
      *
-     * ADOPT:		Takeover an imported snapshot (it will become 'owned by' the snapper)
-     * 
+     * ADOPT:		Takeover an imported snapshot (it will become 'owned by' the snapper and deleted if
+     * 			snapper decides so (cleanup policy, command, ...))
+     *
      * ACKNOWLEDGE:	add snapshot into snapper's environement but do not manipulate the snapshot (e.g. delete it)
      */
 
@@ -65,11 +68,8 @@ namespace snapper
 
     public:
 
-	//ImportMetadata(const ImportMetadata& idata) { creation_time = idata.creation_time; }
-	ImportMetadata() { creation_time = (time_t)(-1); }
-	virtual ~ImportMetadata() {}
-
-	//virtual ImportMetadata* clone() const = 0;
+	ImportMetadata() { creation_time = (time_t)(-1); y2deb("ImportMetadata ctor"); }
+	virtual ~ImportMetadata() { y2deb("ImportMetadata dtor"); }
 
 	/*
 	 * if fs snapshot doesn't containt information about creation time
@@ -80,7 +80,6 @@ namespace snapper
 	// used only during mount operation on ADOPT/ACKNOWLEDGE types of import
 	virtual string getDevicePath() const = 0;
 
-	// TODO: think about it. still looks like a design issue
 	bool isEqual(const ImportMetadata &b) const;
 
 	// check if the metadata desribes valid snapshot

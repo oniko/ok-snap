@@ -49,7 +49,6 @@ namespace snapper
     bool
     ImportMetadata::isEqual(const ImportMetadata& b) const
     {
-	y2deb("ImportMetadata::isEqual");
 	assert(getImportMetadataId() == b.getImportMetadataId());
 
 	return this->isEqualImpl(b);

@@ -39,10 +39,7 @@ namespace snapper
 
 	friend class Lvm;
 
-	LvmImportMetadata(const LvmImportMetadata& p_idata);
 	LvmImportMetadata(const map<string,string> &input, const Lvm* fs);
-
-	//virtual ImportMetadata* clone() const;
 
 	virtual string getDevicePath() const;
 
@@ -56,11 +53,8 @@ namespace snapper
 	virtual map<string,string>::const_iterator info_cbegin() const;
 	virtual map<string,string>::const_iterator info_cend() const;
 
-	//TODO: remove this ugly test
-	bool isEqual(const ImportMetadata& b) const;
-
-	string getVgName() const { return imd_map.find("vg_name")->second; }
-	string getLvName() const { return imd_map.find("lv_name")->second; }
+	string getVgName() const { return imd_map.find(KEY_VG_NAME)->second; }
+	string getLvName() const { return imd_map.find(KEY_LV_NAME)->second; }
     private:
 	static const ImportTypeId type_id = ImportTypeId::LVM2;
 

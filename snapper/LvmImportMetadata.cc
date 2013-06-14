@@ -86,21 +86,6 @@ namespace snapper
 	this->lvm = lvm;
     }
 
-/*
-    LvmImportMetadata::LvmImportMetadata(const LvmImportMetadata& p_idata): ImportMetadata(p_idata)
-    {
-	y2deb("LvmImportMetadata copy constructor");
-	imd_map = p_idata.imd_map;
-	lvm = p_idata.lvm;
-    }
-
-
-    ImportMetadata* LvmImportMetadata::clone() const
-    {
-	return new LvmImportMetadata(*this);
-    }
-*/
-
     string
     LvmImportMetadata::getDevicePath() const
     {
@@ -111,7 +96,6 @@ namespace snapper
     bool
     LvmImportMetadata::isEqualImpl(const ImportMetadata& a) const
     {
-	y2deb("LvmImportMetadata::isEqualImpl");
 	const LvmImportMetadata* p_a = static_cast<const LvmImportMetadata*>(&a);
 
 	return (p_a->getVgName() == getVgName() && p_a->getLvName() == getLvName());
@@ -150,12 +134,6 @@ namespace snapper
     LvmImportMetadata::info_cend() const
     {
 	return imd_map.end();
-    }
-
-
-    bool LvmImportMetadata::isEqual(const ImportMetadata& b) const
-    {
-	throw LogicErrorException();
     }
 
 }

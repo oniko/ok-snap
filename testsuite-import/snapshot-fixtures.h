@@ -192,13 +192,5 @@ namespace testsuiteimport { namespace lvm
 	UmountFilesystemSnapshotImportAck();
     };
 
-    struct UmountFilesystemInvalid : public DeleteFileSystemSnapshotOrigin
-    {
-    };
-
-    struct HandleUmountFilesystemSnapshot : public UmountFilesystemSnapshotImportNone
-    {
-    };
-
 }}
 #endif //SNAPSHOT_FIXTURES_H

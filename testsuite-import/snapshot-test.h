@@ -152,17 +152,17 @@ namespace testsuiteimport { namespace lvm
 	virtual void test_method();
     };
 
-    struct FUmountFilesystemInvalid : public GeneralFixture, UmountFilesystemInvalid
+    struct FUmountFilesystemInvalid : public GeneralFixture, DeleteFileSystemSnapshotOrigin
     {
 	virtual void test_method();
     };
 
-    struct FHandleUmountFilesystemSnapshot : public GeneralFixture, HandleUmountFilesystemSnapshot
+    struct FHandleUmountFilesystemSnapshot : public GeneralFixture, UmountFilesystemSnapshotImportNone
     {
 	virtual void test_method();
     };
 
-    struct FHandleUmountFilesystemSnapshotUserRequest : public GeneralFixture, HandleUmountFilesystemSnapshot
+    struct FHandleUmountFilesystemSnapshotUserRequest : public GeneralFixture, UmountFilesystemSnapshotImportNone
     {
 	virtual void test_method();
     };
