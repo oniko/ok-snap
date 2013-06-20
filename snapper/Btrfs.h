@@ -29,12 +29,18 @@
 
 namespace snapper
 {
+    class ImportMetadata;
+    class BtrfsImportMetadata;
 
     class Btrfs : public Filesystem
     {
     public:
 
 	static Filesystem* create(const string& fstype, const string& subvolume);
+	static u64 subvolume_id(const SDir &subvolume_path);
+	static string subvolume(u64 subvolume_id);
+
+	virtual ImportMetadata* createImportMetadata(const map<string, string>& raw_data) const;
 
 	Btrfs(const string& subvolume);
 
@@ -45,6 +51,9 @@ namespace snapper
 
 	virtual string snapshotDir(unsigned int num) const;
 
+	virtual void createSnapshotEnvironment(unsigned int num) const;
+	virtual void removeSnapshotEnvironment(unsigned int num) const;
+
 	virtual SDir openSubvolumeDir() const;
 	virtual SDir openInfosDir() const;
 	virtual SDir openSnapshotDir(unsigned int num) const;
@@ -54,6 +63,7 @@ namespace snapper
 
 	virtual bool isSnapshotMounted(unsigned int num) const;
 	virtual void mountSnapshot(unsigned int num) const;
+	virtual void mountSnapshot(unsigned int num, const string& device_path) const;
 	virtual void umountSnapshot(unsigned int num) const;
 
 	virtual bool checkSnapshot(unsigned int num) const;
@@ -64,13 +74,15 @@ namespace snapper
 
 	bool is_subvolume(const struct stat& stat) const;
 
+	bool checkImportedSnapshot(const SDir &import_subvolume) const;
+
 	bool create_subvolume(int fddst, const string& name) const;
 	bool create_snapshot(int fd, int fddst, const string& name) const;
 	bool delete_subvolume(int fd, const string& name) const;
 
+	void cloneSnapshot(unsigned int num, const string &subvolume) const;
+	void deleteSnapshot(const string &vg_name, const string &subvolume) const;
     };
 
 }
-
-
 #endif

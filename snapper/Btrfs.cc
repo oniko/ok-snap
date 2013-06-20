@@ -37,6 +37,7 @@
 #include <btrfs/send-utils.h>
 #include <boost/version.hpp>
 #include <boost/thread.hpp>
+#include <boost/scoped_ptr.hpp>
 #endif
 #include <boost/algorithm/string.hpp>
 
@@ -1236,5 +1237,83 @@ namespace snapper
 
 #endif
 
+    ImportMetadata* Btrfs::createImportMetadata(const map< string, string >& raw_data) const
+    {
+	return new BtrfImportMetadatata(raw_data, this);
+    }
 
+    void Btrfs::createSnapshotEnvironment(unsigned int num) const
+    {
+    }
+
+    void Btrfs::removeSnapshotEnvironment(unsigned int num) const
+    {
+    }
+
+    void Btrfs::mountSnapshot(unsigned int num, const string& device_path) const
+    {
+    }
+
+    void Btrfs::cloneSnapshot(unsigned int num, const string& subvolume) const
+    {
+	SDir subvolume_origin = SDir::deepopen(openSubvolumeDir(), subvolume);
+	SDir info_dir = openInfoDir(num);
+
+	if (!create_snapshot(subvolume_origin.fd(), info_dir.fd(), "snapshot"))
+	{
+	    y2err("create snapshot failed errno:" << errno << " (" << stringerror(errno) << ")");
+	    throw CreateSnapshotFailedException();
+	}
+    }
+
+    u64 Btrfs::subvolume_id(const SDir &subvol_dir)
+    {
+	int ret;
+	u64 sv_id;
+
+#ifdef HAVE_LIBBTRFS
+	ret = btrfs_list_get_path_rootid(subvol_dir.fd(), &sv_id);
+#else
+	// imported from btrfs-list.c (striped off logging)
+	struct btrfs_ioctl_ino_lookup_args args;
+
+	memset(&args, 0, sizeof(args));
+	args.objectid = BTRFS_FIRST_FREE_OBJECTID;
+
+	ret = ioctl(subvol_dir.fd(), BTRFS_IOC_INO_LOOKUP, &args);
+	if (ret >= 0)
+	{
+	    sv_id = args.treeid;
+	    ret = 0;
+	}
+#endif
+
+	if (ret)
+	{
+	    y2err("can't get subvolume_id from subvolume" << subvol_dir.fullname());
+	    throw IOErrorException();
+	}
+
+	if (sv_id == BTRFS_FS_TREE_OBJECTID)
+	{
+	    y2err(subvol_dir.fullname() << " is btrfs root!");
+	    // TODO: think about exception
+	    throw IOErrorException();
+	}
+
+	return sv_id;
+    }
+
+    bool Btrfs::checkImportedSnapshot(const SDir& import_subvolume) const
+    {
+	struct stat buf;
+
+	if (import_subvolume.stat(&buf))
+	{
+	    y2err("can not stat import subvolume");
+	    return false;
+	}
+
+	return is_subvolume(buf);
+    }
 }

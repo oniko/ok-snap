@@ -34,7 +34,8 @@
 
 namespace snapper
 {
-    LvmImportMetadata::LvmImportMetadata(const map<string,string> &input, const Lvm* lvm) : ImportMetadata()
+    LvmImportMetadata::LvmImportMetadata(const map<string,string> &input, const Lvm* lvm)
+	: ImportMetadata(), lvm(lvm)
     {
 	y2deb("LvmImportMetadata constructor");
 
@@ -82,8 +83,6 @@ namespace snapper
 		creation_time = scan_datetime(time_string, false);
 	    }
 	}
-
-	this->lvm = lvm;
     }
 
     string

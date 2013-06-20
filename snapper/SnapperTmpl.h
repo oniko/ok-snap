@@ -36,6 +36,13 @@ namespace snapper
 {
     using namespace std;
 
+    template<class Num> bool stringToDec(const string &str, Num &value)
+    {
+	std::istringstream iss(str);
+	iss >> value;
+
+	return (!iss.fail() && iss.eof);
+    }
 
     template<class Num> string decString(Num number)
     {

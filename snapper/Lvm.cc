@@ -343,7 +343,7 @@ namespace snapper
 	SDir info_dir = openInfoDir(num);
 
 	// TODO: think about flags!
-	int fd = info_dir.open("snapshot", O_RDONLY | O_CLOEXEC | O_NOFOLLOW);
+	int fd = info_dir.open("snapshot", O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_NOATIME);
 	if (fd < 0)
 	{
 	    if (info_dir.mkdir("snapshot", 0755))

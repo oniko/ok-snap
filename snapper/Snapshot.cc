@@ -906,19 +906,28 @@ namespace snapper
 		    if (!snapshot.p_idata->checkImportedSnapshot())
 			throw IllegalSnapshotException();
 		    // TODO: throws exception SnapshotEnvironment...
-		    snapshot.createEnvironment();
 
 		    for (Snapshots::const_iterator cit = snapshots.begin(); cit != snapshots.end(); cit++)
 		    {
-			if (cit->getImportPolicy() == ADOPT || cit->getImportPolicy() == ACKNOWLEDGE)
+			switch(cit->getImportPolicy())
 			{
-			    if (snapshot.p_idata->isEqual(*cit->p_idata))
-			    {
-				y2err("Snapshot already imported in snapshot No. " << cit->getNum());
-				throw ImportSnapshotFailedException();
-			    }
+			    case NONE:
+				// TODO: add missing check here:(
+				break;
+			    case CLONE:
+				// it's fine. feel free to clone it again...
+				continue;
+			    case ADOPT:
+			    case ACKNOWLEDGE:
+				if (snapshot.p_idata->isEqual(*cit->p_idata))
+				{
+				    y2err("Snapshot already imported in snapshot No. " << cit->getNum());
+				    throw ImportSnapshotFailedException();
+				}
+				break;
 			}
 		    }
+		    snapshot.createEnvironment();
 		    break;
 	    }
 	}
