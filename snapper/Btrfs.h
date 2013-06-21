@@ -37,8 +37,9 @@ namespace snapper
     public:
 
 	static Filesystem* create(const string& fstype, const string& subvolume);
+
 	static u64 subvolume_id(const SDir &subvolume_path);
-	static string subvolume(u64 subvolume_id);
+	// static string subvolume(u64 subvolume_id); would make libbtrfs mandatory
 
 	virtual ImportMetadata* createImportMetadata(const map<string, string>& raw_data) const;
 
@@ -74,14 +75,14 @@ namespace snapper
 
 	bool is_subvolume(const struct stat& stat) const;
 
-	bool checkImportedSnapshot(const SDir &import_subvolume) const;
+	bool checkImportedSnapshot(const string &import_subvolume) const;
 
 	bool create_subvolume(int fddst, const string& name) const;
 	bool create_snapshot(int fd, int fddst, const string& name) const;
 	bool delete_subvolume(int fd, const string& name) const;
 
 	void cloneSnapshot(unsigned int num, const string &subvolume) const;
-	void deleteSnapshot(const string &vg_name, const string &subvolume) const;
+	void deleteSnapshot(const string &dirname, const string& name) const;
     };
 
 }

@@ -27,6 +27,7 @@
 #include "snapper/FileUtils.h"
 #include "snapper/ImportMetadata.h"
 
+
 namespace snapper
 {
     class Btrfs;

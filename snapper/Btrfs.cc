@@ -1294,6 +1294,8 @@ namespace snapper
 	    throw IOErrorException();
 	}
 
+	// see btrfs-list.c in btrfs progs
+	// NOTE: think about removal in case we would use
 	if (sv_id == BTRFS_FS_TREE_OBJECTID)
 	{
 	    y2err(subvol_dir.fullname() << " is btrfs root!");
@@ -1304,16 +1306,39 @@ namespace snapper
 	return sv_id;
     }
 
-    bool Btrfs::checkImportedSnapshot(const SDir& import_subvolume) const
+    bool Btrfs::checkImportedSnapshot(const string& import_subvolume) const
     {
-	struct stat buf;
-
-	if (import_subvolume.stat(&buf))
+	try
 	{
-	    y2err("can not stat import subvolume");
+	    SDir import_subvol_dir = SDir::deepopen(openSubvolumeDir(), import_subvolume);
+
+	    struct stat buf;
+
+	    int r = import_subvol_dir.stat(&buf);
+
+	    return r == 0 && is_subvolume(buf);
+	}
+	catch (const IOErrorException &e)
+	{
 	    return false;
 	}
+    }
 
-	return is_subvolume(buf);
+    void Btrfs::deleteSnapshot(const string& dirname, const string& name) const
+    {
+	try
+	{
+	    SDir parent_dir = (dirname.empty()) ? openSubvolumeDir() : SDir::deepopen(openSubvolumeDir(), dirname);
+
+	    if (!delete_subvolume(parent_dir.fd(), name))
+	    {
+		y2err("delete imported snapshot failed errno:" << errno << " (" << stringerror(errno) << ")");
+		throw DeleteSnapshotFailedException();
+	    }
+	}
+	catch (const IOErrorException &e)
+	{
+	    throw DeleteSnapshotFailedException();
+	}
     }
 }

@@ -28,6 +28,7 @@
 #include "snapper/FileUtils.h"
 #include "snapper/Log.h"
 #include "snapper/SnapperTmpl.h"
+#include "snapper/Snapshot.h"
 
 namespace snapper
 {
@@ -92,5 +93,29 @@ namespace snapper
     {
 	//TODO: create private btrfs check method in fs class
 	return true;
+    }
+
+    void BtrfsImportMetadata::deleteImportedSnapshot(unsigned int num) const
+    {
+	string::size_type pos = import_subvolume.rfind("/");
+
+	try
+	{
+	    SDir root_subvolume = btrfs->openSubvolumeDir();
+
+	    if (pos == string::npos)
+		btrfs->deleteSnapshot(root_subvolume, import_subvolume);
+	    else
+	    {
+		const string dirname = import_subvolume.substr(0, pos);
+		const string basename = import_subvolume.substr(pos + 1);
+
+		btrfs->deleteSnapshot(SDir::deepopen(root_subvolume, dirname).fd(), basename);
+	    }
+	}
+	catch (const IOErrorException &e)
+	{
+	    throw DeleteSnapshotFailedException();
+	}
     }
 }
