@@ -31,6 +31,7 @@
 #include <sys/ioctl.h>
 #include <asm/types.h>
 #ifdef HAVE_LIBBTRFS
+//#include <btrfs/btrfs-list.h>
 #include <btrfs/ioctl.h>
 #include <btrfs/send.h>
 #include <btrfs/send-stream.h>
@@ -51,14 +52,19 @@
 
 #ifndef HAVE_LIBBTRFS
 
+#define BTRFS_FS_TREE_OBJECTID 5ULL
+#define BTRFS_FIRST_FREE_OBJECTID 256ULL
+#define BTRFS_INO_LOOKUP_PATH_MAX 4080
 #define BTRFS_IOCTL_MAGIC 0x94
 #define BTRFS_PATH_NAME_MAX 4087
 #define BTRFS_SUBVOL_NAME_MAX 4039
 #define BTRFS_SUBVOL_RDONLY (1ULL << 1)
 
+
 #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, struct btrfs_ioctl_vol_args)
 #define BTRFS_IOC_SUBVOL_CREATE _IOW(BTRFS_IOCTL_MAGIC, 14, struct btrfs_ioctl_vol_args)
 #define BTRFS_IOC_SNAP_DESTROY _IOW(BTRFS_IOCTL_MAGIC, 15, struct btrfs_ioctl_vol_args)
+#define BTRFS_IOC_INO_LOOKUP _IOW(BTRFS_IOCTL_MAGIC, 18, struct btrfs_ioctl_ino_lookup_args)
 #define BTRFS_IOC_SNAP_CREATE_V2 _IOW(BTRFS_IOCTL_MAGIC, 23, struct btrfs_ioctl_vol_args_v2)
 
 struct btrfs_ioctl_vol_args
@@ -74,6 +80,12 @@ struct btrfs_ioctl_vol_args_v2
     __u64 flags;
     __u64 unused[4];
     char name[BTRFS_SUBVOL_NAME_MAX + 1];
+};
+
+struct btrfs_ioctl_ino_lookup_args {
+        __u64 treeid;
+        __u64 objectid;
+        char name[BTRFS_INO_LOOKUP_PATH_MAX];
 };
 
 #endif
@@ -1295,7 +1307,6 @@ namespace snapper
 	}
 
 	// see btrfs-list.c in btrfs progs
-	// NOTE: think about removal in case we would use
 	if (sv_id == BTRFS_FS_TREE_OBJECTID)
 	{
 	    y2err(subvol_dir.fullname() << " is btrfs root!");
@@ -1308,6 +1319,8 @@ namespace snapper
 
     bool Btrfs::checkImportedSnapshot(const string& import_subvolume) const
     {
+	// TODO: add check for readonly snapshot!!!
+	// TODO: must not be .snapshots subvolume!!!
 	try
 	{
 	    SDir import_subvol_dir = SDir::deepopen(openSubvolumeDir(), import_subvolume);
@@ -1324,11 +1337,11 @@ namespace snapper
 	}
     }
 
-    void Btrfs::deleteSnapshot(const string& dirname, const string& name) const
+    void Btrfs::deleteSnapshot(const string& dirpath, const string& name) const
     {
 	try
 	{
-	    SDir parent_dir = (dirname.empty()) ? openSubvolumeDir() : SDir::deepopen(openSubvolumeDir(), dirname);
+	    SDir parent_dir = (dirpath.empty()) ? openSubvolumeDir() : SDir::deepopen(openSubvolumeDir(), dirpath);
 
 	    if (!delete_subvolume(parent_dir.fd(), name))
 	    {

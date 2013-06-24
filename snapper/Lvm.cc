@@ -382,14 +382,14 @@ namespace snapper
 
 
     void
-    Lvm::mountSnapshot(unsigned int num, const string &device_path) const
+    Lvm::mountSnapshot(unsigned int num, const string &subvolume) const
     {
 	if (isSnapshotMounted(num))
 	    return;
 
 	SDir snapshot_dir = openSnapshotDir(num);
 
-	if (!mount(device_path, snapshot_dir, mount_type, mount_options))
+	if (!mount(subvolume, snapshot_dir, mount_type, mount_options))
 	    throw MountSnapshotFailedException();
     }
 
@@ -417,6 +417,8 @@ namespace snapper
 
     bool Lvm::checkImportedSnapshot(const string& vg_name, const string& lv_name) const
     {
+	// TODO: add check for readonly snapshot!!!
+
 	return (vg_name == this->vg_name) &&
 	       (lv_name != this->lv_name) &&
 	       detectThinVolumeNames(vg_name, lv_name);

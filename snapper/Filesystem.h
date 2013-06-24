@@ -28,6 +28,7 @@
 #include <vector>
 #include <map>
 
+#include "snapper/Exception.h"
 #include "snapper/FileUtils.h"
 #include "snapper/Compare.h"
 
@@ -42,6 +43,17 @@ namespace snapper
     class MtabData;
     class ImportMetadata;
 
+    struct CreateSnapshotEnvironmentException : public SnapperException
+    {
+	explicit CreateSnapshotFailedException() throw() {}
+	virtual const char* what() const throw() { return "create snapshot environment failed"; }
+    };
+
+    struct RemoveSnapshotEnvironmentException : public SnapperException
+    {
+	explicit CreateSnapshotFailedException() throw() {}
+	virtual const char* what() const throw() { return "remove snapshot environment failed"; }
+    };
 
     class Filesystem
     {
@@ -51,7 +63,7 @@ namespace snapper
 	virtual ~Filesystem() {}
 
 	static Filesystem* create(const string& fstype, const string& subvolume);
-	virtual ImportMetadata* createImportMetadata(const map<string,string> &raw_data) const; // supposed to be pure virtual
+	virtual ImportMetadata* createImportMetadata(const map<string,string> &raw_data) const = 0;
 
 	virtual string fstype() const = 0;
 
@@ -65,15 +77,15 @@ namespace snapper
 	virtual SDir openInfoDir(unsigned int num) const;
 	virtual SDir openSnapshotDir(unsigned int num) const = 0;
 
-	virtual void createSnapshotEnvironment(unsigned int num) const; // supposed to be pure virtual
-	virtual void removeSnapshotEnvironment(unsigned int num) const; // supposed to be pure virtual
+	virtual void createSnapshotEnvironment(unsigned int num) const = 0;
+	virtual void removeSnapshotEnvironment(unsigned int num) const = 0;
 
 	virtual void createSnapshot(unsigned int num) const = 0;
 	virtual void deleteSnapshot(unsigned int num) const = 0;
 
 	virtual bool isSnapshotMounted(unsigned int num) const = 0;
 	virtual void mountSnapshot(unsigned int num) const = 0;
-	virtual void mountSnapshot(unsigned int num, const string &device_path) const; // supposed to be pure virtual
+	virtual void mountSnapshot(unsigned int num, const string &subvolume) const = 0;
 	virtual void umountSnapshot(unsigned int num) const = 0;
 
 	virtual bool checkSnapshot(unsigned int num) const = 0;

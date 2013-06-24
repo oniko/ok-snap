@@ -37,7 +37,7 @@ namespace snapper
     {
     public:
 
-	friend class Lvm;
+	//friend class Lvm; // ??
 
 	LvmImportMetadata(const map<string,string> &input, const Lvm* fs);
 
@@ -45,21 +45,23 @@ namespace snapper
 
 	virtual ImportTypeId getImportMetadataId() const { return type_id; }
 	virtual bool isEqualImpl(const ImportMetadata &a) const;
+	virtual bool isEqual(unsigned int num) const;
 
 	virtual bool checkImportedSnapshot() const;
 	virtual void cloneImportedSnapshot(unsigned int num) const;
 	virtual void deleteImportedSnapshot(unsigned int num) const;
 
-	virtual map<string,string>::const_iterator info_cbegin() const;
-	virtual map<string,string>::const_iterator info_cend() const;
+	virtual map<string, string> raw_metadata() const;
 
-	string getVgName() const { return imd_map.find(KEY_VG_NAME)->second; }
-	string getLvName() const { return imd_map.find(KEY_LV_NAME)->second; }
+	virtual string getSnapshotDir(unsigned int num) const;
     private:
+	LvmImportMetadata(const string &vg_name, const string &lv_name, const Lvm* fs);
 	static const ImportTypeId type_id = ImportTypeId::LVM2;
 
 	const Lvm* lvm;
-	map<string,string> imd_map;
+
+	string vg_name;
+	string lv_name;
     };
 
 }

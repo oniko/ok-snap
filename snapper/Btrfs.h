@@ -36,6 +36,8 @@ namespace snapper
     {
     public:
 
+	friend class BtrfsImportMetadata;
+
 	static Filesystem* create(const string& fstype, const string& subvolume);
 
 	static u64 subvolume_id(const SDir &subvolume_path);
@@ -82,7 +84,7 @@ namespace snapper
 	bool delete_subvolume(int fd, const string& name) const;
 
 	void cloneSnapshot(unsigned int num, const string &subvolume) const;
-	void deleteSnapshot(const string &dirname, const string& name) const;
+	void deleteSnapshot(const string &dirpath, const string& name) const;
     };
 
 }

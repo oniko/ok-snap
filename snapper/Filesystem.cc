@@ -144,29 +144,4 @@ namespace snapper
 	snapper::cmpDirs(dir1, dir2, cb);
     }
 
-
-    void
-    Filesystem::mountSnapshot(unsigned int num, const string& device_path) const
-    {
-	throw UnsupportedSnapshotOperation();
-    }
-
-
-    ImportMetadata*
-    Filesystem::createImportMetadata(const map< string, string >& raw_data) const
-    {
-	throw UnsupportedSnapshotOperation();
-    }
-
-
-    void Filesystem::createSnapshotEnvironment(unsigned int num) const
-    {
-	throw UnsupportedSnapshotOperation();
-    }
-
-
-    void Filesystem::removeSnapshotEnvironment(unsigned int num) const
-    {
-	throw UnsupportedSnapshotOperation();
-    }
 }

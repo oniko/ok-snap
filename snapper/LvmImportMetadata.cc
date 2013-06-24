@@ -39,16 +39,13 @@ namespace snapper
     {
 	y2deb("LvmImportMetadata constructor");
 
-	imd_map = map<string,string>();
-	string vg_name, lv_name;
-
 	map<string,string>::const_iterator cit = input.find(KEY_VG_NAME);
 	if (cit == input.end())
 	{
 	    y2err("can't get volume group name from raw import metadata");
 	    throw InvalidImportMetadataException();
 	}
-	imd_map[cit->first] = vg_name = cit->second;
+	vg_name = cit->second;
 
 	cit = input.find(KEY_LV_NAME);
 	if (cit == input.end())
@@ -56,7 +53,7 @@ namespace snapper
 	    y2err("can't get logical volume name from raw import metadata");
 	    throw InvalidImportMetadataException();
 	}
-	imd_map[cit->first] = lv_name = cit->second;
+	lv_name = cit->second;
 
 	// TODO: LVM will support format options for time string later.
 	//	 use "%F %T" output format instead of hardcoded "%F %T %z"
@@ -85,25 +82,34 @@ namespace snapper
 	}
     }
 
+    LvmImportMetadata::LvmImportMetadata(const string& vg_name, const string& lv_name, const Lvm* lvm)
+	: lvm(lvm), vg_name(vg_name), lv_name(lv_name)
+    {
+    }
+
     string
     LvmImportMetadata::getDevicePath() const
     {
-	return "/dev/" + getVgName() + "/" + getLvName();
+	return "/dev/" + vg_name + "/" + lv_name;
     }
 
 
     bool
     LvmImportMetadata::isEqualImpl(const ImportMetadata& a) const
     {
-	const LvmImportMetadata* p_a = static_cast<const LvmImportMetadata*>(&a);
+	const LvmImportMetadata& p_a = static_cast<const LvmImportMetadata&>(&a);
 
-	return (p_a->getVgName() == getVgName() && p_a->getLvName() == getLvName());
+	return (this->vg_name == p_a &&  this->lv_name == p_a.lv_name);
     }
 
+    bool LvmImportMetadata::isEqual(unsigned int num) const
+    {
+	return isEqualImpl(LvmImportMetadata(lvm->vg_name, lvm->snapshotLvName(num), lvm));
+    }
 
     bool LvmImportMetadata::checkImportedSnapshot() const
     {
-	return (lvm->checkImportedSnapshot(getVgName(), getLvName()) &&
+	return (lvm->checkImportedSnapshot(vg_name, lv_name) &&
 		get_fs_uuid(getDevicePath()) == lvm->getFsUuid());
     }
 
@@ -111,28 +117,28 @@ namespace snapper
     void
     LvmImportMetadata::cloneImportedSnapshot(unsigned int num) const
     {
-	lvm->cloneSnapshot(num, getVgName(), getLvName());
+	lvm->cloneSnapshot(num, vg_name, lv_name);
     }
 
 
     void
     LvmImportMetadata::deleteImportedSnapshot(unsigned int num) const
     {
-	lvm->deleteSnapshot(getVgName(), getLvName());
+	lvm->deleteSnapshot(vg_name, lv_name);
     }
 
-
-    map<string,string>::const_iterator
-    LvmImportMetadata::info_cbegin() const
+    map<string,string> LvmImportMetadata::raw_metadata() const
     {
-	return imd_map.begin();
+	map<string,string> raw;
+
+	raw[KEY_VG_NAME] = vg_name;
+	raw[KEY_LV_NAME] = lv_name;
+
+	return raw;
     }
 
-
-    map<string,string>::const_iterator
-    LvmImportMetadata::info_cend() const
+    string LvmImportMetadata::getSnapshotDir(unsigned int num) const
     {
-	return imd_map.end();
+	lvm->snapshotDir(num);
     }
-
 }

@@ -99,7 +99,10 @@ namespace snapper
 	if (isCurrent())
 	    return snapper->subvolumeDir();
 
-	return snapper->getFilesystem()->snapshotDir(num);
+	if (getImportPolicy() == ADOPT || getImportPolicy() == ACKNOWLEDGE)
+	    return p_idata.get()->getSnapshotDir(num);
+	else
+	    return snapper->getFilesystem()->snapshotDir(num);
     }
 
 
@@ -912,7 +915,7 @@ namespace snapper
 			switch(cit->getImportPolicy())
 			{
 			    case NONE:
-				// TODO: add missing check here:(
+				snapshot.p_idata->isEqual(cit->getNum());
 				break;
 			    case CLONE:
 				// it's fine. feel free to clone it again...

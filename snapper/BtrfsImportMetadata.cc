@@ -18,9 +18,9 @@
  *
  */
 
-#ifdef HAVE_LIBBTRFS
-#include <btrfs/btrfs-list.h>
-#endif
+#include <boost/algorithm/string.hpp>
+
+
 
 #include "snapper/Btrfs.h"
 #include "snapper/BtrfsImportMetadata.h"
@@ -42,12 +42,19 @@ namespace snapper
 	    import_subvolume = cit_subv->second();
 	    SDir root(btrfs->openSubvolumeDir());
 
+	    // remove trailing "/"
+	    while (boost::ends_with(import_subvolume, "/"))
+		boost::erase_tail(import_subvolume, 1);
+
 	    // remove origin subvolume from import subvolume
 	    string::size_type pos = import_subvolume.find(root.fullname());
 	    if (pos != string::npos && pos == 0)
 		import_subvolume = import_subvolume.substr(root.fullname().length());
 
-	    // import subvolume == origin subvolume
+	    // remove starting "/"
+	    while (boost::starts_with(import_subvolume, "/"))
+		boost::erase_head(import_subvolume, 1);
+
 	    if (import_subvolume.empty())
 	    {
 		y2err("Illegal import metadata");
@@ -63,8 +70,6 @@ namespace snapper
 		y2err("couldn't open subvolume or resolve subvolume_id");
 		throw InvalidImportMetadataException();
 	    }
-
-	    imd_map[KEY_SUBVOLUME] = import_subvolume;
 	}
 	else
 	{
@@ -72,6 +77,13 @@ namespace snapper
 	    throw InvalidImportMetadataException();
 	}
     }
+
+    BtrfsImportMetadata::BtrfsImportMetadata(const string& subvolume, const Btrfs* btrfs)
+	: btrfs(btrfs), import_subvolume(subvolume)
+    {
+	import_subvol_id = Btrfs::subvolume_id(btrfs->openSubvolumeDir(), import_subvolume);
+    }
+
 
     string BtrfsImportMetadata::getDevicePath() const
     {
@@ -81,7 +93,7 @@ namespace snapper
 
     bool BtrfsImportMetadata::isEqualImpl(const ImportMetadata& a) const
     {
-	if (a.getImportMetadataId() != getImportMetadataId())
+	if (getImportMetadataId() != a.getImportMetadataId())
 	    return false;
 
 	const BtrfsImportMetadata &p_a = static_cast<const BtrfsImportMetadata &>(a);
@@ -89,33 +101,49 @@ namespace snapper
 	return import_subvol_id == p_a.import_subvol_id;
     }
 
+    bool BtrfsImportMetadata::isEqual(unsigned int num) const
+    {
+	string subvolume = btrfs->snapshotDir(num).substr(btrfs->subvolume.length());
+
+	try
+	{
+	    return isEqualImpl(BtrfsImportMetadata(subvolume, btrfs));
+	}
+	catch (const IOErrorException &e)
+	{
+	    return false;
+	}
+    }
+
+
     bool BtrfsImportMetadata::checkImportedSnapshot() const
     {
-	//TODO: create private btrfs check method in fs class
-	return true;
+	btrfs->checkImportedSnapshot(import_subvolume);
     }
 
     void BtrfsImportMetadata::deleteImportedSnapshot(unsigned int num) const
     {
 	string::size_type pos = import_subvolume.rfind("/");
 
-	try
+	if (pos == string::npos)
+	    btrfs->deleteSnapshot("", import_subvolume);
+	else
 	{
-	    SDir root_subvolume = btrfs->openSubvolumeDir();
+	    const string dirname = import_subvolume.substr(0, pos);
+	    const string basename = import_subvolume.substr(pos + 1);
 
-	    if (pos == string::npos)
-		btrfs->deleteSnapshot(root_subvolume, import_subvolume);
-	    else
-	    {
-		const string dirname = import_subvolume.substr(0, pos);
-		const string basename = import_subvolume.substr(pos + 1);
-
-		btrfs->deleteSnapshot(SDir::deepopen(root_subvolume, dirname).fd(), basename);
-	    }
-	}
-	catch (const IOErrorException &e)
-	{
-	    throw DeleteSnapshotFailedException();
+	    btrfs->deleteSnapshot(dirname, basename);
 	}
     }
+
+    void BtrfsImportMetadata::cloneImportedSnapshot(unsigned int num) const
+    {
+	btrfs->cloneSnapshot(num, import_subvolume);
+    }
+
+    string BtrfsImportMetadata::getSnapshotDir(unsigned int num) const
+    {
+	return (btrfs->subvolume == "/" ? "" : btrfs->subvolume) + "/" + import_subvolume;
+    }
+
 }

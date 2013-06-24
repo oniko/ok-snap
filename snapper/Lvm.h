@@ -105,7 +105,7 @@ namespace snapper
 
 	virtual bool isSnapshotMounted(unsigned int num) const;
 	virtual void mountSnapshot(unsigned int num) const;
-	virtual void mountSnapshot(unsigned int num, const string &device_path) const;
+	virtual void mountSnapshot(unsigned int num, const string &subvolume) const;
 	virtual void umountSnapshot(unsigned int num) const;
 
 	virtual bool checkSnapshot(unsigned int num) const;

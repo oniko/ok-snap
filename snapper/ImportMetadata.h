@@ -81,6 +81,7 @@ namespace snapper
 	virtual string getDevicePath() const = 0;
 
 	bool isEqual(const ImportMetadata &b) const;
+	virtual bool isEqual(unsigned int num) const = 0;
 
 	// check if the metadata desribes valid snapshot
 	virtual bool checkImportedSnapshot() const = 0;
@@ -89,9 +90,9 @@ namespace snapper
 	// delete imported snapshot (ADOPT only import)
 	virtual void deleteImportedSnapshot(unsigned int num) const = 0;
 
-	// iterators used to flush metadata into xml file
-	virtual map<string,string>::const_iterator info_cbegin() const = 0;
-	virtual map<string,string>::const_iterator info_cend() const = 0;
+	virtual map<string,string> raw_metadata() const = 0;
+
+	virtual string getSnapshotDir(unsigned int num) const = 0;
     };
 
 }

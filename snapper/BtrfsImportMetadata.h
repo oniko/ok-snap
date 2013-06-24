@@ -36,7 +36,7 @@ namespace snapper
     {
     public:
 
-	friend class Btrfs;
+	//friend class Btrfs; // ??
 
 	//BtrfsImportMetadata(const BtrfsImportMetadata& p_idata);
 	BtrfsImportMetadata(const map<string,string> &input, const Btrfs* btrfs);
@@ -45,23 +45,23 @@ namespace snapper
 
 	virtual ImportTypeId getImportMetadataId() const { return type_id; }
 	virtual bool isEqualImpl(const ImportMetadata &a) const;
+	virtual bool isEqual(unsigned int num) const;
 
 	virtual bool checkImportedSnapshot() const;
 	virtual void cloneImportedSnapshot(unsigned int num) const;
 	virtual void deleteImportedSnapshot(unsigned int num) const;
 
-	virtual map<string,string>::const_iterator info_cbegin() const;
-	virtual map<string,string>::const_iterator info_cend() const;
+	virtual map<string, string> raw_metadata() const;
 
+	virtual string getSnapshotDir(unsigned int num) const;
     private:
+	BtrfsImportMetadata(const string &subvolume, const Btrfs* btrfs);
 	static const ImportMetadata::ImportTypeId type_id = ImportTypeId::BTRFS;
 
 	const Btrfs* btrfs;
-	u64 import_subvol_id; // used in comparing imported snapshots
+	const u64 import_subvol_id; // used in comparing imported snapshots
 
-	string import_subvolume;
-
-	map<string,string> imd_map;
+	string import_subvolume; // no starting or trailing "/" allowed!
     };
 
 }
