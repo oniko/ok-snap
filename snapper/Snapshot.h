@@ -102,7 +102,7 @@ namespace snapper
 	friend class Snapshots;
 	friend class ImportHelper;
 
-	Snapshot(const Snapper* snapper, SnapshotType type, unsigned int num, time_t date);
+	//Snapshot(const Snapper* snapper, SnapshotType type, unsigned int num, time_t date);
 	Snapshot(const Snapper* snapper, SnapshotType type, unsigned int num, time_t date, ImportPolicy ipolicy, const ImportMetadata* p_idata);
 
 	SnapshotType getType() const { return type; }

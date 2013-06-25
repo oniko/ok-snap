@@ -63,9 +63,10 @@ namespace snapper
 
 	time_t creation_time;
 
-	virtual bool isEqualImpl(const ImportMetadata& idata) const = 0;
-	virtual ImportTypeId getImportMetadataId() const = 0;
+	virtual bool isEqual(unsigned int num) const = 0;
+	virtual bool isEqual(const ImportMetadata& idata) const = 0;
 
+	virtual ImportTypeId getImportMetadataId() const = 0;
     public:
 
 	ImportMetadata() { creation_time = (time_t)(-1); y2deb("ImportMetadata ctor"); }
@@ -80,9 +81,6 @@ namespace snapper
 	// used only during mount operation on ADOPT/ACKNOWLEDGE types of import
 	virtual string getDevicePath() const = 0;
 
-	bool isEqual(const ImportMetadata &b) const;
-	virtual bool isEqual(unsigned int num) const = 0;
-
 	// check if the metadata desribes valid snapshot
 	virtual bool checkImportedSnapshot() const = 0;
 	// clone described snapshot into snapper's own snapshot
@@ -93,6 +91,10 @@ namespace snapper
 	virtual map<string,string> raw_metadata() const = 0;
 
 	virtual string getSnapshotDir(unsigned int num) const = 0;
+
+	friend bool operator==(const ImportMetadata& data_a, const ImportMetadata& data_b);
+	friend bool operator==(const ImportMetadata& data, unsigned int num);
+	friend bool operator==(unsigned int num, const ImportMetadata& data);
     };
 
 }

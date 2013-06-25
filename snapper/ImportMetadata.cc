@@ -45,13 +45,24 @@ namespace snapper
 	}
     }
 
-
-    bool
-    ImportMetadata::isEqual(const ImportMetadata& b) const
+    bool operator==(const ImportMetadata& data, unsigned int num)
     {
-	assert(getImportMetadataId() == b.getImportMetadataId());
-
-	return this->isEqualImpl(b);
+	return data.isEqual(num);
     }
 
+    bool operator==(unsigned int num, const ImportMetadata& data)
+    {
+	return data.isEqual(num);
+    }
+
+    bool operator==(const ImportMetadata& data_a, const ImportMetadata& data_b)
+    {
+	if (&data_a == &data_b)
+	    return true;
+
+	if (data_a.getImportMetadataId() != data_b.getImportMetadataId())
+	    return false;
+
+	return data_a.isEqual(data_b);
+    }
 }

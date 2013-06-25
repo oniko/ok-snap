@@ -44,7 +44,7 @@ namespace snapper
 	virtual string getDevicePath() const;
 
 	virtual ImportTypeId getImportMetadataId() const { return type_id; }
-	virtual bool isEqualImpl(const ImportMetadata &a) const;
+	virtual bool isEqual(const ImportMetadata &a) const;
 	virtual bool isEqual(unsigned int num) const;
 
 	virtual bool checkImportedSnapshot() const;

@@ -28,7 +28,6 @@
 #include <vector>
 #include <map>
 
-#include "snapper/Exception.h"
 #include "snapper/FileUtils.h"
 #include "snapper/Compare.h"
 
@@ -42,18 +41,6 @@ namespace snapper
 
     class MtabData;
     class ImportMetadata;
-
-    struct CreateSnapshotEnvironmentException : public SnapperException
-    {
-	explicit CreateSnapshotFailedException() throw() {}
-	virtual const char* what() const throw() { return "create snapshot environment failed"; }
-    };
-
-    struct RemoveSnapshotEnvironmentException : public SnapperException
-    {
-	explicit CreateSnapshotFailedException() throw() {}
-	virtual const char* what() const throw() { return "remove snapshot environment failed"; }
-    };
 
     class Filesystem
     {

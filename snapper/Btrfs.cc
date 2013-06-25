@@ -31,7 +31,6 @@
 #include <sys/ioctl.h>
 #include <asm/types.h>
 #ifdef HAVE_LIBBTRFS
-//#include <btrfs/btrfs-list.h>
 #include <btrfs/ioctl.h>
 #include <btrfs/send.h>
 #include <btrfs/send-stream.h>
@@ -48,6 +47,7 @@
 #include "snapper/Snapper.h"
 #include "snapper/SnapperTmpl.h"
 #include "snapper/SnapperDefines.h"
+#include "snapper/BtrfsImportMetadata.h"
 
 
 #ifndef HAVE_LIBBTRFS
@@ -1251,7 +1251,7 @@ namespace snapper
 
     ImportMetadata* Btrfs::createImportMetadata(const map< string, string >& raw_data) const
     {
-	return new BtrfImportMetadatata(raw_data, this);
+	return new BtrfsImportMetadata(raw_data, this);
     }
 
     void Btrfs::createSnapshotEnvironment(unsigned int num) const
@@ -1278,14 +1278,14 @@ namespace snapper
 	}
     }
 
-    u64 Btrfs::subvolume_id(const SDir &subvol_dir)
+    uint64_t Btrfs::subvolume_id(const SDir &subvol_dir)
     {
 	int ret;
 	u64 sv_id;
 
-#ifdef HAVE_LIBBTRFS
-	ret = btrfs_list_get_path_rootid(subvol_dir.fd(), &sv_id);
-#else
+//#ifdef HAVE_LIBBTRFS
+	//ret = btrfs_list_get_path_rootid(subvol_dir.fd(), &sv_id);
+//#else
 	// imported from btrfs-list.c (striped off logging)
 	struct btrfs_ioctl_ino_lookup_args args;
 
@@ -1298,7 +1298,6 @@ namespace snapper
 	    sv_id = args.treeid;
 	    ret = 0;
 	}
-#endif
 
 	if (ret)
 	{

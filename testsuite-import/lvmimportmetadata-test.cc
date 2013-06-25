@@ -42,8 +42,8 @@ namespace testsuiteimport { namespace lvm
 
 	BOOST_REQUIRE_NO_THROW( p_imdata.reset(new snapper::LvmImportMetadata(f_raw_data, f_dummy_lvm)));
 
-	BOOST_CHECK_EQUAL( p_imdata->getVgName(), f_raw_data["vg_name"] );
-	BOOST_CHECK_EQUAL( p_imdata->getLvName(), f_raw_data["lv_name"] );
+	BOOST_CHECK_EQUAL( p_imdata->vg_name, f_raw_data["vg_name"] );
+	BOOST_CHECK_EQUAL( p_imdata->lv_name, f_raw_data["lv_name"] );
     }
 
 /*
@@ -61,13 +61,13 @@ namespace testsuiteimport { namespace lvm
 
     void FEqualMethodTrue::test_method()
     {
-	BOOST_CHECK( f_origin.isEqualImpl(*f_p_origin_copy) );
+	BOOST_CHECK( f_origin.isEqual(*f_p_origin_copy) );
     }
 
     void FEqualMethodFalse::test_method()
     {
-	BOOST_CHECK ( !f_origin.isEqualImpl(f_data_diff_in_vg) );
-	BOOST_CHECK ( !f_origin.isEqualImpl(f_data_diff_in_lv) );
-	BOOST_CHECK ( !f_origin.isEqualImpl(f_data_different) );
+	BOOST_CHECK ( !f_origin.isEqual(f_data_diff_in_vg) );
+	BOOST_CHECK ( !f_origin.isEqual(f_data_diff_in_lv) );
+	BOOST_CHECK ( !f_origin.isEqual(f_data_different) );
     }
 }}

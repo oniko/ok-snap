@@ -95,16 +95,16 @@ namespace snapper
 
 
     bool
-    LvmImportMetadata::isEqualImpl(const ImportMetadata& a) const
+    LvmImportMetadata::isEqual(const ImportMetadata& a) const
     {
-	const LvmImportMetadata& p_a = static_cast<const LvmImportMetadata&>(&a);
+	const LvmImportMetadata& p_a = static_cast<const LvmImportMetadata&>(a);
 
-	return (this->vg_name == p_a &&  this->lv_name == p_a.lv_name);
+	return (this->vg_name == p_a.vg_name &&  this->lv_name == p_a.lv_name);
     }
 
     bool LvmImportMetadata::isEqual(unsigned int num) const
     {
-	return isEqualImpl(LvmImportMetadata(lvm->vg_name, lvm->snapshotLvName(num), lvm));
+	return isEqual(LvmImportMetadata(lvm->vg_name, lvm->snapshotLvName(num), lvm));
     }
 
     bool LvmImportMetadata::checkImportedSnapshot() const
@@ -131,14 +131,14 @@ namespace snapper
     {
 	map<string,string> raw;
 
-	raw[KEY_VG_NAME] = vg_name;
-	raw[KEY_LV_NAME] = lv_name;
+	raw.insert(make_pair(KEY_VG_NAME, vg_name));
+	raw.insert(make_pair(KEY_LV_NAME, lv_name));
 
 	return raw;
     }
 
     string LvmImportMetadata::getSnapshotDir(unsigned int num) const
     {
-	lvm->snapshotDir(num);
+	return lvm->snapshotDir(num);
     }
 }

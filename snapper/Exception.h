@@ -87,6 +87,12 @@ namespace snapper
         virtual const char* what() const throw() { return "invalid import metadata format"; }
     };
 
+    struct CreateSnapshotEnvirnomentException : public SnapperException
+    {
+	explicit CreateSnapshotEnvirnomentException() throw() {}
+        virtual const char* what() const throw() { return ""; }
+    };
+
 }
 
 

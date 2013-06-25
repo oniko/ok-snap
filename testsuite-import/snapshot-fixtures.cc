@@ -39,7 +39,7 @@ namespace testsuiteimport { namespace lvm
 
     DeleteFilesystemSnapshotImportTypeNone::DeleteFilesystemSnapshotImportTypeNone()
 	: CreateSnapshotEnvironmentDirExists(1),
-	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1),
+	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1, snapper::ImportPolicy::NONE, NULL),
 	f_snapshot_lv_name(f_lvm->snapshotLvName(f_num))
     {
 	lvcreate_thin_snapshot_wrapper(f_conf_vg_name, f_conf_origin_name, f_snapshot_lv_name);
@@ -120,7 +120,8 @@ namespace testsuiteimport { namespace lvm
     }
 
     DeleteFileSystemSnapshotOrigin::DeleteFileSystemSnapshotOrigin()
-	: LvmGeneralFixture(), f_sh(f_snapper, snapper::SnapshotType::SINGLE, 0, (time_t) -1)
+	: LvmGeneralFixture(),
+	f_sh(f_snapper, snapper::SnapshotType::SINGLE, 0, (time_t) -1, snapper::ImportPolicy::NONE, NULL)
     {
     }
 
@@ -153,7 +154,7 @@ namespace testsuiteimport { namespace lvm
 
     MountFileSystemSnapshotImportNone::MountFileSystemSnapshotImportNone()
 	: MountFileSystemSnapshotSimpleBase(),
-	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t)-1)
+	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) - 1, snapper::ImportPolicy::NONE, NULL)
     {
 	std::cout << "MountFileSystemSnapshotImportNone ctor" << std::endl
 		  << "vg/lv: " << f_conf_vg_name << "/" << f_snapshot_lv_name << std::endl;

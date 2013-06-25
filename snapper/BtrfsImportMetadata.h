@@ -44,7 +44,7 @@ namespace snapper
 	virtual string getDevicePath() const;
 
 	virtual ImportTypeId getImportMetadataId() const { return type_id; }
-	virtual bool isEqualImpl(const ImportMetadata &a) const;
+	virtual bool isEqual(const ImportMetadata &a) const;
 	virtual bool isEqual(unsigned int num) const;
 
 	virtual bool checkImportedSnapshot() const;
@@ -56,10 +56,10 @@ namespace snapper
 	virtual string getSnapshotDir(unsigned int num) const;
     private:
 	BtrfsImportMetadata(const string &subvolume, const Btrfs* btrfs);
-	static const ImportMetadata::ImportTypeId type_id = ImportTypeId::BTRFS;
+	static const ImportTypeId type_id = ImportTypeId::BTRFS;
 
 	const Btrfs* btrfs;
-	const u64 import_subvol_id; // used in comparing imported snapshots
+	uint64_t import_subvol_id; // used in comparing imported snapshots
 
 	string import_subvolume; // no starting or trailing "/" allowed!
     };

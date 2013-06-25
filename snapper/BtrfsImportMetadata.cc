@@ -32,14 +32,15 @@
 
 namespace snapper
 {
-    BtrfsImportMetadata::BtrfsImportMetadata(const map< string, string >& input, const Btrfs* btrfs)
+    BtrfsImportMetadata::BtrfsImportMetadata(const map<string,string> &input, const Btrfs* btrfs)
 	: ImportMetadata(), btrfs(btrfs)
     {
 	map<string,string>::const_iterator cit_subv = input.find(KEY_SUBVOLUME);
 
 	if (cit_subv != input.end())
 	{
-	    import_subvolume = cit_subv->second();
+	    import_subvolume = cit_subv->second;
+
 	    SDir root(btrfs->openSubvolumeDir());
 
 	    // remove trailing "/"
@@ -81,7 +82,7 @@ namespace snapper
     BtrfsImportMetadata::BtrfsImportMetadata(const string& subvolume, const Btrfs* btrfs)
 	: btrfs(btrfs), import_subvolume(subvolume)
     {
-	import_subvol_id = Btrfs::subvolume_id(btrfs->openSubvolumeDir(), import_subvolume);
+	import_subvol_id = Btrfs::subvolume_id(SDir::deepopen(btrfs->openSubvolumeDir(), import_subvolume));
     }
 
 
@@ -91,11 +92,8 @@ namespace snapper
 	return "not_needed";
     }
 
-    bool BtrfsImportMetadata::isEqualImpl(const ImportMetadata& a) const
+    bool BtrfsImportMetadata::isEqual(const ImportMetadata& a) const
     {
-	if (getImportMetadataId() != a.getImportMetadataId())
-	    return false;
-
 	const BtrfsImportMetadata &p_a = static_cast<const BtrfsImportMetadata &>(a);
 
 	return import_subvol_id == p_a.import_subvol_id;
@@ -107,7 +105,7 @@ namespace snapper
 
 	try
 	{
-	    return isEqualImpl(BtrfsImportMetadata(subvolume, btrfs));
+	    return isEqual(BtrfsImportMetadata(subvolume, btrfs));
 	}
 	catch (const IOErrorException &e)
 	{
@@ -118,7 +116,7 @@ namespace snapper
 
     bool BtrfsImportMetadata::checkImportedSnapshot() const
     {
-	btrfs->checkImportedSnapshot(import_subvolume);
+	return btrfs->checkImportedSnapshot(import_subvolume);
     }
 
     void BtrfsImportMetadata::deleteImportedSnapshot(unsigned int num) const
@@ -128,12 +126,7 @@ namespace snapper
 	if (pos == string::npos)
 	    btrfs->deleteSnapshot("", import_subvolume);
 	else
-	{
-	    const string dirname = import_subvolume.substr(0, pos);
-	    const string basename = import_subvolume.substr(pos + 1);
-
-	    btrfs->deleteSnapshot(dirname, basename);
-	}
+	    btrfs->deleteSnapshot(import_subvolume.substr(0, pos), import_subvolume.substr(pos + 1));
     }
 
     void BtrfsImportMetadata::cloneImportedSnapshot(unsigned int num) const
@@ -146,4 +139,12 @@ namespace snapper
 	return (btrfs->subvolume == "/" ? "" : btrfs->subvolume) + "/" + import_subvolume;
     }
 
+    map<string,string> BtrfsImportMetadata::raw_metadata() const
+    {
+	map<string,string> raw;
+
+	raw.insert(make_pair(KEY_SUBVOLUME, import_subvolume));
+
+	return raw;
+    }
 }

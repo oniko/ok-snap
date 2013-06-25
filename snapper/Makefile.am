@@ -37,7 +37,8 @@ libsnapper_la_SOURCES =					\
 
 if ENABLE_BTRFS
 libsnapper_la_SOURCES +=				\
-	Btrfs.cc		Btrfs.h
+	Btrfs.cc		Btrfs.h			\
+	BtrfsImportMetadata.cc	BtrfsImportMetadata.h
 endif
 
 if ENABLE_EXT4

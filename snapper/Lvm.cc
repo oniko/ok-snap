@@ -196,10 +196,9 @@ namespace snapper
 	{
 	    createSnapshotEnvironment(num);
 	}
-	catch(const CreateSnapshotFailedException &e)
+	catch(const CreateSnapshotEnvirnomentException &e)
 	{
-	    // TODO: catch CreateSnapshotEnvironmentException
-	    throw;
+	    throw CreateSnapshotFailedException();
 	}
 
 	SystemCmd cmd(LVCREATEBIN " --permission r --snapshot --name " +
@@ -349,8 +348,7 @@ namespace snapper
 	    if (info_dir.mkdir("snapshot", 0755))
 	    {
 		y2err("mkdir failed with errno:" << errno << " (" << strerror(errno) << ")");
-		// TODO: SnapshotEnvironmentException...
-		throw CreateSnapshotFailedException();
+		throw CreateSnapshotEnvirnomentException();
 	    }
 	}
 	else
@@ -362,8 +360,7 @@ namespace snapper
 		close(fd);
 
 		y2err("stat failed or dentry 'snapshot' exists but it's not actually a directory!");
-		// TODO: SnapshotEnvironmentException...
-		throw CreateSnapshotFailedException();
+		throw CreateSnapshotEnvirnomentException();
 	    }
 
 	    close(fd);

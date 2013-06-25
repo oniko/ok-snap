@@ -70,14 +70,14 @@ namespace snapper
 	return s;
     }
 
-
+/*
     Snapshot::Snapshot(const Snapper* snapper, SnapshotType type, unsigned int num, time_t date)
 	: snapper(snapper), type(type), num(num), date(date), uid(0), pre_num(0),
 	  info_modified(false), mount_checked(false), mount_user_request(false),
 	  mount_use_count(0), import_policy(NONE), p_idata(NULL)
     {
     }
-
+*/
 
     Snapshot::Snapshot(const Snapper* snapper, SnapshotType type, unsigned int num, time_t date,
 		       ImportPolicy itype, const ImportMetadata* p_imdata)
@@ -226,40 +226,38 @@ namespace snapper
 		const xmlNode *import_node = getElementNode(node, "import");
 		if (import_node)
 		{
-		    // on path xmlFile -> snapper, CLONE/NONE import policy is illegal
-		    if (!getNodePropValue(import_node, "policy", tmp) || !toValue(tmp, policy, true) || policy == NONE)
+		    // on path xmlFile -> snapper, NONE/CLONE import policy is illegal
+		    // later CLONE policy may be respected for informational purposes
+		    if (!getNodePropValue(import_node, "policy", tmp) || !toValue(tmp, policy, true) || (policy == NONE || policy == CLONE))
 		    {
 			y2err("import policy is missing or invalid. not adding imported snapshot " << *it1);
 			continue;
 		    }
 
-		    if (policy != CLONE)
+		    map<string,string> raw_import_metadata;
+
+		    const list<const xmlNode *> nodes = getChildNodes(getChildNode(node, "import"), "import_metadata");
+		    for (list<const xmlNode*>::const_iterator nit = nodes.begin(); nit != nodes.end(); nit++)
 		    {
-			map<string,string> raw_import_metadata;
+			string key, value;
+			getChildValue(*nit, "key", key);
+			getChildValue(*nit, "value", value);
+			if (!key.empty())
+			    raw_import_metadata[key] = value;
+		    }
 
-			const list<const xmlNode *> nodes = getChildNodes(getChildNode(node, "import"), "import_metadata");
-			for (list<const xmlNode*>::const_iterator nit = nodes.begin(); nit != nodes.end(); nit++)
-			{
-			    string key, value;
-			    getChildValue(*nit, "key", key);
-			    getChildValue(*nit, "value", value);
-			    if (!key.empty())
-				raw_import_metadata[key] = value;
-			}
+		    y2deb("raw_import_metadata: " << raw_import_metadata);
 
-			y2deb("raw_import_metadata: " << raw_import_metadata);
-
-			try {
-			    p_imdata = snapper->getFilesystem()->createImportMetadata(raw_import_metadata);
-			}
-			catch (const InvalidImportMetadataException &e)
-			{
-			    y2err("corrupted import metadata. not adding imported snapshot " << *it1);
-			    continue;
-			}
+		    try {
+			p_imdata = snapper->getFilesystem()->createImportMetadata(raw_import_metadata);
+		    }
+		    catch (const InvalidImportMetadataException &e)
+		    {
+			y2err("corrupted import metadata. not adding imported snapshot " << *it1);
+			continue;
 		    }
 		}
-		Snapshot snapshot = (policy == NONE) ? Snapshot(snapper, type, num, date) : Snapshot(snapper, type, num, date, policy, p_imdata);
+		Snapshot snapshot(snapper, type, num, date, policy, p_imdata);
 
 		*it1 >> num;
 		if (num != snapshot.num)
@@ -380,7 +378,7 @@ namespace snapper
     {
 	entries.clear();
 
-	Snapshot snapshot(snapper, SINGLE, 0, (time_t)(-1));
+	Snapshot snapshot(snapper, SINGLE, 0, (time_t)(-1), ImportPolicy::NONE, NULL);
 	snapshot.description = "current";
 	entries.push_back(snapshot);
 
@@ -526,7 +524,9 @@ namespace snapper
 	    xmlNode* import_node = xmlNewChild(node, "import");
 	    xmlNewAttr(import_node, "policy", toString(getImportPolicy()).c_str());
 
-	    for (map<string,string>::const_iterator cit = p_idata->info_cbegin(); cit != p_idata->info_cend(); cit++)
+	    const map<string,string> raw = p_idata.get()->raw_metadata();
+
+	    for (map<string,string>::const_iterator cit = raw.begin(); cit != raw.end(); cit++)
 	    {
 		xmlNode* imdata_node = xmlNewChild(import_node, "import_metadata");
 		setChildValue(imdata_node, "key", cit->first);
@@ -568,7 +568,7 @@ namespace snapper
 	    mount_use_count++;
 
 	if (import_policy == ACKNOWLEDGE  || import_policy == ADOPT)
-	    snapper->getFilesystem()->mountSnapshot(num, p_idata->getDevicePath());
+	    snapper->getFilesystem()->mountSnapshot(num, p_idata.get()->getDevicePath());
 	else
 	    snapper->getFilesystem()->mountSnapshot(num);
     }
@@ -635,7 +635,7 @@ namespace snapper
 		break;
 	    case ADOPT:
 		y2deb(toString(getImportPolicy()) + " delete milestone: entering deleteImportedSnapshot(num)");
-		p_idata->deleteImportedSnapshot(num);
+		p_idata.get()->deleteImportedSnapshot(num);
 	    case ACKNOWLEDGE:
 		y2deb(toString(getImportPolicy()) + " delete milestone: entering removeEnvironment()");
 		removeEnvironemt();
@@ -665,14 +665,14 @@ namespace snapper
 	if (isCurrent())
 	    throw IllegalSnapshotException();
 
-	p_idata->cloneImportedSnapshot(num);
+	p_idata.get()->cloneImportedSnapshot(num);
     }
 
 
     Snapshots::iterator
     Snapshots::createSingleSnapshot(string description)
     {
-	Snapshot snapshot(snapper, SINGLE, nextNumber(), time(NULL));
+	Snapshot snapshot(snapper, SINGLE, nextNumber(), time(NULL), ImportPolicy::NONE, NULL);
 	snapshot.description = description;
 	snapshot.info_modified = true;
 
@@ -683,7 +683,7 @@ namespace snapper
     Snapshots::iterator
     Snapshots::createPreSnapshot(string description)
     {
-	Snapshot snapshot(snapper, PRE, nextNumber(), time(NULL));
+	Snapshot snapshot(snapper, PRE, nextNumber(), time(NULL), ImportPolicy::NONE, NULL);
 	snapshot.description = description;
 	snapshot.info_modified = true;
 
@@ -698,7 +698,7 @@ namespace snapper
 	    findPost(pre) != entries.end())
 	    throw IllegalSnapshotException();
 
-	Snapshot snapshot(snapper, POST, nextNumber(), time(NULL));
+	Snapshot snapshot(snapper, POST, nextNumber(), time(NULL), ImportPolicy::NONE, NULL);
 	snapshot.description = description;
 	snapshot.pre_num = pre->getNum();
 	snapshot.info_modified = true;
@@ -899,14 +899,14 @@ namespace snapper
 		    y2err("Illegal import policy");
 		    throw IllegalSnapshotException();
 		case CLONE:
-		    if (!snapshot.p_idata->checkImportedSnapshot())
+		    if (!snapshot.p_idata.get()->checkImportedSnapshot())
 			throw IllegalSnapshotException();
 		    snapshot.cloneFilesystemSnapshot();
 		    break;
 
 		case ADOPT:
 		case ACKNOWLEDGE:
-		    if (!snapshot.p_idata->checkImportedSnapshot())
+		    if (!snapshot.p_idata.get()->checkImportedSnapshot())
 			throw IllegalSnapshotException();
 		    // TODO: throws exception SnapshotEnvironment...
 
@@ -915,14 +915,16 @@ namespace snapper
 			switch(cit->getImportPolicy())
 			{
 			    case NONE:
-				snapshot.p_idata->isEqual(cit->getNum());
-				break;
 			    case CLONE:
-				// it's fine. feel free to clone it again...
+				if (*snapshot.p_idata.get() == cit->getNum())
+				{
+				    y2err("Snapshot already exists. Number: " << cit->getNum());
+				    throw ImportSnapshotFailedException();
+				}
 				continue;
 			    case ADOPT:
 			    case ACKNOWLEDGE:
-				if (snapshot.p_idata->isEqual(*cit->p_idata))
+				if (*snapshot.p_idata.get() == *cit->p_idata.get())
 				{
 				    y2err("Snapshot already imported in snapshot No. " << cit->getNum());
 				    throw ImportSnapshotFailedException();

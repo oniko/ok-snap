@@ -40,7 +40,7 @@ namespace snapper
 
 	static Filesystem* create(const string& fstype, const string& subvolume);
 
-	static u64 subvolume_id(const SDir &subvolume_path);
+	static uint64_t subvolume_id(const SDir &subvolume_path);
 	// static string subvolume(u64 subvolume_id); would make libbtrfs mandatory
 
 	virtual ImportMetadata* createImportMetadata(const map<string, string>& raw_data) const;
