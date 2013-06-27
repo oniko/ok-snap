@@ -31,7 +31,6 @@
 namespace snapper
 {
     class LvmImportMetadata;
-    class ImportMetadata;
 
     struct LvmActivationException : public std::exception
     {
@@ -82,7 +81,8 @@ namespace snapper
 	friend class LvmImportMetadata;
 
 	static Filesystem* create(const string& fstype, const string& subvolume);
-	virtual ImportMetadata* createImportMetadata(const map<string,string> &raw_data) const;
+	static bool is_subvolume_ro(const string& vg_name, const string& lv_name);
+	virtual ImportMetadata* createImportMetadata(const map<string,string> &raw_data, ImportPolicy ipolicy) const;
 
 	Lvm(const string& subvolume, const string& mount_type);
 
@@ -115,7 +115,7 @@ namespace snapper
 	const string mount_type;
 	const LvmCapabilities* caps;
 
-	bool checkImportedSnapshot(const string &vg_name, const string& lv_name) const;
+	bool checkImportedSnapshot(const string &vg_name, const string& lv_name, bool check_ro = false) const;
 	bool detectThinVolumeNames(const MtabData& mtab_data);
 	bool detectThinVolumeNames(const string& vg_name, const string& lv_name) const;
 	void activateSnapshot(const string& vg_name, const string& lv_name) const;

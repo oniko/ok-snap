@@ -34,8 +34,8 @@
 
 namespace snapper
 {
-    LvmImportMetadata::LvmImportMetadata(const map<string,string> &input, const Lvm* lvm)
-	: ImportMetadata(), lvm(lvm)
+    LvmImportMetadata::LvmImportMetadata(const map<string,string> &input, ImportPolicy ipolicy, const Lvm* lvm)
+	: ImportMetadata(ipolicy), lvm(lvm)
     {
 	y2deb("LvmImportMetadata constructor");
 
@@ -83,7 +83,7 @@ namespace snapper
     }
 
     LvmImportMetadata::LvmImportMetadata(const string& vg_name, const string& lv_name, const Lvm* lvm)
-	: lvm(lvm), vg_name(vg_name), lv_name(lv_name)
+	: ImportMetadata(ImportPolicy::NONE), lvm(lvm), vg_name(vg_name), lv_name(lv_name)
     {
     }
 
@@ -109,8 +109,8 @@ namespace snapper
 
     bool LvmImportMetadata::checkImportedSnapshot() const
     {
-	return (lvm->checkImportedSnapshot(vg_name, lv_name) &&
-		get_fs_uuid(getDevicePath()) == lvm->getFsUuid());
+	    return lvm->checkImportedSnapshot(vg_name, lv_name, (import_policy != CLONE)) &&
+		    get_fs_uuid(getDevicePath()) == lvm->getFsUuid();
     }
 
 

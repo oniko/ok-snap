@@ -52,7 +52,7 @@ namespace snapper
 
     bool operator==(unsigned int num, const ImportMetadata& data)
     {
-	return data.isEqual(num);
+	return data == num;
     }
 
     bool operator==(const ImportMetadata& data_a, const ImportMetadata& data_b)

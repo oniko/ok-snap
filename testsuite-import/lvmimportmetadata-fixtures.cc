@@ -41,7 +41,7 @@ namespace testsuiteimport { namespace lvm {
     }
 
     CopyConstructor::CopyConstructor()
-	: ValidMetadata(), f_origin(f_raw_data, f_dummy_lvm)
+	: ValidMetadata(), f_origin(f_raw_data, snapper::ImportPolicy::NONE, f_dummy_lvm)
     {
     }
 
@@ -49,7 +49,7 @@ namespace testsuiteimport { namespace lvm {
 	: CopyConstructor(), f_raw_data_copy(f_raw_data)
     {
 	f_raw_data_copy["the_answer"] = "43";
-	f_p_origin_copy = new snapper::LvmImportMetadata(f_raw_data_copy, f_dummy_lvm);
+	f_p_origin_copy = new snapper::LvmImportMetadata(f_raw_data_copy, snapper::ImportPolicy::NONE, f_dummy_lvm);
     }
 
     EqualMethodTrue::~EqualMethodTrue()
@@ -58,10 +58,10 @@ namespace testsuiteimport { namespace lvm {
     }
 
     EqualMethodFalse::EqualMethodFalse()
-	: EqualFalseTestMetadata(), f_origin(f_raw_data, f_dummy_lvm),
-	f_data_diff_in_vg(f_raw_data_diff_in_vg, f_dummy_lvm),
-	f_data_diff_in_lv(f_raw_data_diff_in_lv, f_dummy_lvm),
-	f_data_different(f_raw_data_different, f_dummy_lvm)
+	: EqualFalseTestMetadata(), f_origin(f_raw_data, snapper::ImportPolicy::NONE, f_dummy_lvm),
+	f_data_diff_in_vg(f_raw_data_diff_in_vg, snapper::ImportPolicy::NONE, f_dummy_lvm),
+	f_data_diff_in_lv(f_raw_data_diff_in_lv, snapper::ImportPolicy::NONE, f_dummy_lvm),
+	f_data_different(f_raw_data_different, snapper::ImportPolicy::NONE, f_dummy_lvm)
     {
     }
 

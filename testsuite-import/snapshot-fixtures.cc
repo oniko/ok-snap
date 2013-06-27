@@ -33,13 +33,13 @@ namespace testsuiteimport { namespace lvm
 	: SimpleConstructorValid(), rm("dummy_vg", "dummy_lv"),
 	f_import_policy(snapper::ImportPolicy::ADOPT),
 	f_dummy_lvm(reinterpret_cast<const snapper::Lvm *>(123456)),
-	f_dummy_idata(new snapper::LvmImportMetadata(rm.f_raw_data, f_dummy_lvm))
+	f_dummy_idata(new snapper::LvmImportMetadata(rm.f_raw_data, f_import_policy, f_dummy_lvm))
     {
     }
 
     DeleteFilesystemSnapshotImportTypeNone::DeleteFilesystemSnapshotImportTypeNone()
 	: CreateSnapshotEnvironmentDirExists(1),
-	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1, snapper::ImportPolicy::NONE, NULL),
+	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1, NULL),
 	f_snapshot_lv_name(f_lvm->snapshotLvName(f_num))
     {
 	lvcreate_thin_snapshot_wrapper(f_conf_vg_name, f_conf_origin_name, f_snapshot_lv_name);
@@ -59,8 +59,8 @@ namespace testsuiteimport { namespace lvm
 
     DeleteFilesystemSnapshotImportTypeClone::DeleteFilesystemSnapshotImportTypeClone()
 	: CreateSnapshotEnvironmentDirExists(1), f_snapshot_lv_name(f_lvm->snapshotLvName(f_num)),
-	rm(f_conf_vg_name, f_snapshot_lv_name), f_p_idata(new snapper::LvmImportMetadata(rm.f_raw_data, f_lvm)),
-	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1, snapper::ImportPolicy::CLONE, f_p_idata)
+	rm(f_conf_vg_name, f_snapshot_lv_name), f_p_idata(new snapper::LvmImportMetadata(rm.f_raw_data, snapper::ImportPolicy::CLONE, f_lvm)),
+	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1, f_p_idata)
     {
 	lvcreate_thin_snapshot_wrapper(f_conf_vg_name, f_conf_origin_name, f_snapshot_lv_name);
     }
@@ -79,8 +79,8 @@ namespace testsuiteimport { namespace lvm
 
     DeleteFilesystemSnapshotImportTypeAdopt::DeleteFilesystemSnapshotImportTypeAdopt()
 	: CreateSnapshotEnvironmentDirExists(1), f_snapshot_lv_name(f_test_snapshot_01),
-	rm(f_conf_vg_name, f_snapshot_lv_name), f_p_idata(new snapper::LvmImportMetadata(rm.f_raw_data, f_lvm)),
-	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1, snapper::ImportPolicy::ADOPT, f_p_idata)
+	rm(f_conf_vg_name, f_snapshot_lv_name), f_p_idata(new snapper::LvmImportMetadata(rm.f_raw_data, snapper::ImportPolicy::ADOPT, f_lvm)),
+	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1, f_p_idata)
     {
 	lvcreate_thin_snapshot_wrapper(f_conf_vg_name, f_conf_origin_name, f_snapshot_lv_name);
     }
@@ -99,8 +99,8 @@ namespace testsuiteimport { namespace lvm
 
     DeleteFilesystemSnapshotImportTypeAcknowledge::DeleteFilesystemSnapshotImportTypeAcknowledge()
 	: CreateSnapshotEnvironmentDirExists(1), f_snapshot_lv_name(f_test_snapshot_01),
-	rm(f_conf_vg_name, f_snapshot_lv_name), f_p_idata(new snapper::LvmImportMetadata(rm.f_raw_data, f_lvm)),
-	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1, snapper::ImportPolicy::ACKNOWLEDGE, f_p_idata)
+	rm(f_conf_vg_name, f_snapshot_lv_name), f_p_idata(new snapper::LvmImportMetadata(rm.f_raw_data, snapper::ImportPolicy::ACKNOWLEDGE, f_lvm)),
+	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1, f_p_idata)
     {
 	lvcreate_thin_snapshot_wrapper(f_conf_vg_name, f_conf_origin_name, f_snapshot_lv_name);
     }
@@ -121,7 +121,7 @@ namespace testsuiteimport { namespace lvm
 
     DeleteFileSystemSnapshotOrigin::DeleteFileSystemSnapshotOrigin()
 	: LvmGeneralFixture(),
-	f_sh(f_snapper, snapper::SnapshotType::SINGLE, 0, (time_t) -1, snapper::ImportPolicy::NONE, NULL)
+	f_sh(f_snapper, snapper::SnapshotType::SINGLE, 0, (time_t) -1, NULL)
     {
     }
 
@@ -154,7 +154,7 @@ namespace testsuiteimport { namespace lvm
 
     MountFileSystemSnapshotImportNone::MountFileSystemSnapshotImportNone()
 	: MountFileSystemSnapshotSimpleBase(),
-	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) - 1, snapper::ImportPolicy::NONE, NULL)
+	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) - 1, NULL)
     {
 	std::cout << "MountFileSystemSnapshotImportNone ctor" << std::endl
 		  << "vg/lv: " << f_conf_vg_name << "/" << f_snapshot_lv_name << std::endl;
@@ -164,8 +164,8 @@ namespace testsuiteimport { namespace lvm
 	: MountFileSystemSnapshotSimpleBase(),
 	f_clone_origin_name("lv_clone_origin_name"),
 	rm(f_conf_vg_name, f_clone_origin_name),
-	f_p_idata(new snapper::LvmImportMetadata(rm.f_raw_data, f_lvm)),
-	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t)-1, snapper::ImportPolicy::CLONE, f_p_idata)
+	f_p_idata(new snapper::LvmImportMetadata(rm.f_raw_data, snapper::ImportPolicy::CLONE, f_lvm)),
+	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t)-1, f_p_idata)
     {
 	lvcreate_thin_snapshot_wrapper(f_conf_vg_name, f_conf_origin_name, f_clone_origin_name);
     }
@@ -212,15 +212,15 @@ namespace testsuiteimport { namespace lvm
     MountFileSystemSnapshotImportAdopt::MountFileSystemSnapshotImportAdopt()
 	: MountFileSystemSnapshotImportBase(),
 	rm(f_conf_vg_name, f_snapshot_lv_name),
-	f_p_idata(new snapper::LvmImportMetadata(rm.f_raw_data, f_lvm)),
-	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1, snapper::ImportPolicy::ADOPT, f_p_idata)
+	f_p_idata(new snapper::LvmImportMetadata(rm.f_raw_data, snapper::ImportPolicy::ADOPT, f_lvm)),
+	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1, f_p_idata)
     {
     }
 
     MountFileSystemSnapshotImportAck::MountFileSystemSnapshotImportAck()
 	: MountFileSystemSnapshotImportBase(), rm(f_conf_vg_name, f_snapshot_lv_name),
-	f_p_idata(new snapper::LvmImportMetadata(rm.f_raw_data, f_lvm)),
-	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1, snapper::ImportPolicy::ACKNOWLEDGE, f_p_idata)
+	f_p_idata(new snapper::LvmImportMetadata(rm.f_raw_data, snapper::ImportPolicy::ACKNOWLEDGE, f_lvm)),
+	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1, f_p_idata)
     {
     }
 

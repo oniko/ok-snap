@@ -61,7 +61,8 @@ namespace snapper
     {
     protected:
 
-	time_t creation_time;
+	time_t creation_time; // const?
+	const ImportPolicy import_policy;
 
 	virtual bool isEqual(unsigned int num) const = 0;
 	virtual bool isEqual(const ImportMetadata& idata) const = 0;
@@ -69,9 +70,10 @@ namespace snapper
 	virtual ImportTypeId getImportMetadataId() const = 0;
     public:
 
-	ImportMetadata() { creation_time = (time_t)(-1); y2deb("ImportMetadata ctor"); }
+	ImportMetadata(ImportPolicy policy) : creation_time((time_t)-1), import_policy(policy) { y2deb("ImportMetadata ctor"); }
 	virtual ~ImportMetadata() { y2deb("ImportMetadata dtor"); }
 
+	ImportPolicy getImportPolicy() const { return import_policy; }
 	/*
 	 * if fs snapshot doesn't containt information about creation time
 	 * it'll return time_t(-1)

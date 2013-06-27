@@ -30,16 +30,12 @@
 
 namespace snapper
 {
-    class Btrfs;
 
     class BtrfsImportMetadata : public ImportMetadata
     {
     public:
 
-	//friend class Btrfs; // ??
-
-	//BtrfsImportMetadata(const BtrfsImportMetadata& p_idata);
-	BtrfsImportMetadata(const map<string,string> &input, const Btrfs* btrfs);
+	BtrfsImportMetadata(const map<string,string> &input, ImportPolicy policy, const Btrfs* btrfs);
 
 	virtual string getDevicePath() const;
 

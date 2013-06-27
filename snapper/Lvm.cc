@@ -331,9 +331,9 @@ namespace snapper
     }
 
 
-    ImportMetadata* Lvm::createImportMetadata(const map<string,string> &raw_data) const
+    ImportMetadata* Lvm::createImportMetadata(const map<string,string> &raw_data, ImportPolicy ipolicy) const
     {
-	return new LvmImportMetadata(raw_data, this);
+	return new LvmImportMetadata(raw_data, ipolicy, this);
     }
 
 
@@ -412,13 +412,14 @@ namespace snapper
     }
 
 
-    bool Lvm::checkImportedSnapshot(const string& vg_name, const string& lv_name) const
+    bool Lvm::checkImportedSnapshot(const string& vg_name, const string& lv_name, bool check_ro) const
     {
 	// TODO: add check for readonly snapshot!!!
 
-	return (vg_name == this->vg_name) &&
-	       (lv_name != this->lv_name) &&
-	       detectThinVolumeNames(vg_name, lv_name);
+	return vg_name == this->vg_name &&
+	       lv_name != this->lv_name &&
+	       detectThinVolumeNames(vg_name, lv_name) &&
+	       (!check_ro || is_subvolume_ro(vg_name, lv_name));
     }
 
 
@@ -530,4 +531,16 @@ namespace snapper
 	return time_support;
     }
 
+
+    bool Lvm::is_subvolume_ro(const string& vg_name, const string& lv_name)
+    {
+	SystemCmd cmd(LVSBIN " -o lv_attr --noheadings " + quote(vg_name + "/" + lv_name));
+
+	if (cmd.retcode())
+	    return false;
+
+	string ret = boost::trim_copy(cmd.getLine(0));
+
+	return ret.length() >= 2 && ret[1] == 'r';
+    }
 }

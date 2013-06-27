@@ -149,25 +149,21 @@ read_import_metadata(const string& in)
 {
     string::size_type pos = in.find_first_of('/');
 
-    if (pos == string::npos)
+    map<string,string> import_metadata;
+
+    if (pos != string::npos)
     {
-	cerr << _("Invalid import metadata");
-	exit (EXIT_FAILURE);
+	string vg_name = boost::trim_copy(in.substr(0, pos));
+	string lv_name = boost::trim_copy(in.substr(pos + 1));
+
+	if (!vg_name.empty() && !lv_name.empty())
+	{
+	    import_metadata.insert(make_pair("vg_name", vg_name));
+	    import_metadata.insert(make_pair("lv_name", lv_name));
+	}
     }
 
-    string vg_name = boost::trim_copy(in.substr(0,pos));
-    string lv_name = boost::trim_copy(in.substr(pos + 1));
-
-    if (vg_name.empty() || lv_name.empty() || (lv_name.find_first_of('/') != string::npos))
-    {
-	cerr << _("Invalid import metadata");
-	exit (EXIT_FAILURE);
-    }
-
-    map<string,string> import_metadata = map<string,string>();
-
-    import_metadata["vg_name"] = vg_name;
-    import_metadata["lv_name"] = lv_name;
+    import_metadata.insert(make_pair("subvolume", boost::trim_copy(in)));
 
     return import_metadata;
 }

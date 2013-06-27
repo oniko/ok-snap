@@ -20,32 +20,29 @@
 
 #include <boost/algorithm/string.hpp>
 
-
-
 #include "snapper/Btrfs.h"
 #include "snapper/BtrfsImportMetadata.h"
 #include "snapper/Exception.h"
 #include "snapper/FileUtils.h"
 #include "snapper/Log.h"
-#include "snapper/SnapperTmpl.h"
-#include "snapper/Snapshot.h"
 
 namespace snapper
 {
-    BtrfsImportMetadata::BtrfsImportMetadata(const map<string,string> &input, const Btrfs* btrfs)
-	: ImportMetadata(), btrfs(btrfs)
+    BtrfsImportMetadata::BtrfsImportMetadata(const map<string,string> &input, ImportPolicy policy, const Btrfs* btrfs)
+	: ImportMetadata(policy), btrfs(btrfs)
     {
 	map<string,string>::const_iterator cit_subv = input.find(KEY_SUBVOLUME);
 
 	if (cit_subv != input.end())
 	{
-	    import_subvolume = cit_subv->second;
+	    //import_subvolume = cit_subv->second;
 
 	    SDir root(btrfs->openSubvolumeDir());
 
 	    // remove trailing "/"
-	    while (boost::ends_with(import_subvolume, "/"))
-		boost::erase_tail(import_subvolume, 1);
+	    import_subvolume = boost::trim_right_copy_if(cit_subv->second, boost::is_any_of("/ \t"));
+	    //while (boost::ends_with(import_subvolume, "/"))
+	    //	boost::erase_tail(import_subvolume, 1);
 
 	    // remove origin subvolume from import subvolume
 	    string::size_type pos = import_subvolume.find(root.fullname());
@@ -53,14 +50,17 @@ namespace snapper
 		import_subvolume = import_subvolume.substr(root.fullname().length());
 
 	    // remove starting "/"
-	    while (boost::starts_with(import_subvolume, "/"))
-		boost::erase_head(import_subvolume, 1);
+	    import_subvolume = boost::trim_left_copy_if(import_subvolume, boost::is_any_of("/ \t"));
+	    //while (boost::starts_with(import_subvolume, "/"))
+	    //	boost::erase_head(import_subvolume, 1);
 
 	    if (import_subvolume.empty())
 	    {
 		y2err("Illegal import metadata");
 		throw InvalidImportMetadataException();
 	    }
+
+	    y2deb("import btrfs subvolume: " << import_subvolume);
 
 	    try
 	    {
@@ -80,7 +80,7 @@ namespace snapper
     }
 
     BtrfsImportMetadata::BtrfsImportMetadata(const string& subvolume, const Btrfs* btrfs)
-	: btrfs(btrfs), import_subvolume(subvolume)
+	: ImportMetadata(ImportPolicy::NONE), btrfs(btrfs), import_subvolume(subvolume)
     {
 	import_subvol_id = Btrfs::subvolume_id(SDir::deepopen(btrfs->openSubvolumeDir(), import_subvolume));
     }
@@ -88,8 +88,8 @@ namespace snapper
 
     string BtrfsImportMetadata::getDevicePath() const
     {
-	// hmm not needed. we'll mount subvolume by either id or by its path
-	return "not_needed";
+	// NOTE: not used
+	return string();
     }
 
     bool BtrfsImportMetadata::isEqual(const ImportMetadata& a) const
@@ -102,6 +102,13 @@ namespace snapper
     bool BtrfsImportMetadata::isEqual(unsigned int num) const
     {
 	string subvolume = btrfs->snapshotDir(num).substr(btrfs->subvolume.length());
+	subvolume = boost::trim_left_copy_if(subvolume, boost::is_any_of("/"));
+
+	// trim all leading / chars
+	//subvolume = boost::trim_left_if(subvolume, );
+	//boost::starts_with();
+
+	y2deb("isEqual subvolume=" << subvolume);
 
 	try
 	{
@@ -109,6 +116,7 @@ namespace snapper
 	}
 	catch (const IOErrorException &e)
 	{
+	    y2war("Failure in BtrfsImportMetadata compare");
 	    return false;
 	}
     }
@@ -116,8 +124,9 @@ namespace snapper
 
     bool BtrfsImportMetadata::checkImportedSnapshot() const
     {
-	return btrfs->checkImportedSnapshot(import_subvolume);
+	return btrfs->checkImportedSnapshot(import_subvolume, (import_policy != CLONE));
     }
+
 
     void BtrfsImportMetadata::deleteImportedSnapshot(unsigned int num) const
     {

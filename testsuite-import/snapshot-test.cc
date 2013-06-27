@@ -166,7 +166,7 @@ namespace testsuiteimport { namespace lvm
     {
 	boost::scoped_ptr<snapper::Snapshot> snapshot;
 
-	BOOST_REQUIRE_NO_THROW( snapshot.reset(new snapper::Snapshot(f_dummy_snapper, f_type, f_num, f_date, snapper::ImportPolicy::NONE, NULL)) );
+	BOOST_REQUIRE_NO_THROW( snapshot.reset(new snapper::Snapshot(f_dummy_snapper, f_type, f_num, f_date, NULL)) );
 
 	BOOST_CHECK_EQUAL( snapshot->getType(), f_type );
 	BOOST_CHECK_EQUAL( snapshot->getNum(), f_num );
@@ -184,7 +184,7 @@ namespace testsuiteimport { namespace lvm
     {
 	boost::scoped_ptr<snapper::Snapshot> snapshot;
 
-	BOOST_REQUIRE_NO_THROW( snapshot.reset(new snapper::Snapshot(f_dummy_snapper, f_type, f_num, f_date, f_import_policy, f_dummy_idata)) );
+	BOOST_REQUIRE_NO_THROW( snapshot.reset(new snapper::Snapshot(f_dummy_snapper, f_type, f_num, f_date, f_dummy_idata)) );
 
 	BOOST_CHECK_EQUAL( snapshot->getType(), f_type );
 	BOOST_CHECK_EQUAL( snapshot->getNum(), f_num );

@@ -39,7 +39,7 @@ namespace snapper
 
 	//friend class Lvm; // ??
 
-	LvmImportMetadata(const map<string,string> &input, const Lvm* fs);
+	LvmImportMetadata(const map<string,string> &input, ImportPolicy ipolicy, const Lvm* fs);
 
 	virtual string getDevicePath() const;
 

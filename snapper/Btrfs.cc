@@ -35,9 +35,9 @@
 #include <btrfs/send.h>
 #include <btrfs/send-stream.h>
 #include <btrfs/send-utils.h>
+#include <btrfs/btrfs-list.h>
 #include <boost/version.hpp>
 #include <boost/thread.hpp>
-#include <boost/scoped_ptr.hpp>
 #endif
 #include <boost/algorithm/string.hpp>
 
@@ -52,8 +52,8 @@
 
 #ifndef HAVE_LIBBTRFS
 
-#define BTRFS_FS_TREE_OBJECTID 5ULL
 #define BTRFS_FIRST_FREE_OBJECTID 256ULL
+#define BTRFS_FS_TREE_OBJECTID 5ULL
 #define BTRFS_INO_LOOKUP_PATH_MAX 4080
 #define BTRFS_IOCTL_MAGIC 0x94
 #define BTRFS_PATH_NAME_MAX 4087
@@ -105,8 +105,27 @@ namespace snapper
 
 
     Btrfs::Btrfs(const string& subvolume)
-	: Filesystem(subvolume)
+	: Filesystem(subvolume), subvol_id(0)
     {
+	try
+	{
+	    SDir root_dir = Btrfs::openSubvolumeDir();
+
+	    struct stat buf;
+
+	    // pre createConfig
+	    if (!root_dir.stat(".snapshots", &buf, AT_SYMLINK_NOFOLLOW))
+	    {
+		y2deb("about to get subvolume_id");
+		subvol_id = Btrfs::subvolume_id(Btrfs::openInfosDir());
+	    }
+	    else
+		y2deb(".snapshots subvolume stat failed, subvol_id == 0");
+	}
+	catch (const IOErrorException &e)
+	{
+	    throw InvalidConfigException();
+	}
     }
 
 
@@ -1170,25 +1189,12 @@ namespace snapper
     }
 
 
-    static bool
-    is_subvolume_ro(const SDir& dir)
-    {
-	u64 flags;
-	if (ioctl(dir.fd(), BTRFS_IOC_SUBVOL_GETFLAGS, &flags) < 0)
-	{
-	    throw IOErrorException();
-	}
-
-	return flags & BTRFS_SUBVOL_RDONLY;
-    }
-
-
     void
     StreamProcessor::process(cmpdirs_cb_t cb)
     {
 	y2mil("dir1:'" << dir1.fullname() << "' dir2:'" << dir2.fullname() << "'");
 
-	if (!is_subvolume_ro(dir1) || !is_subvolume_ro(dir2))
+	if (!Btrfs::is_subvolume_ro(dir1) || !Btrfs::is_subvolume_ro(dir2))
 	{
 	    y2err("not read-only snapshots");
 	    throw BtrfsSendReceiveException();
@@ -1249,25 +1255,90 @@ namespace snapper
 
 #endif
 
-    ImportMetadata* Btrfs::createImportMetadata(const map< string, string >& raw_data) const
+
+    bool
+    Btrfs::is_subvolume_ro(const SDir& dir)
     {
-	return new BtrfsImportMetadata(raw_data, this);
+	u64 flags;
+	if (ioctl(dir.fd(), BTRFS_IOC_SUBVOL_GETFLAGS, &flags) < 0)
+	{
+	    throw IOErrorException();
+	}
+
+	return flags & BTRFS_SUBVOL_RDONLY;
     }
 
-    void Btrfs::createSnapshotEnvironment(unsigned int num) const
+
+    uint64_t
+    Btrfs::subvolume_id(const SDir &dir)
+    {
+	y2deb("Entering static Btrfs::subvolume_id(" << dir.fullname() << ")");
+
+	int ret;
+	u64 sv_id;
+
+#ifdef HAVE_LIBBTRFS
+	ret = btrfs_list_get_path_rootid(dir.fd(), &sv_id);
+#else
+	// imported from btrfs-list.c (striped off logging)
+	struct btrfs_ioctl_ino_lookup_args args;
+
+	memset(&args, 0, sizeof(args));
+	args.objectid = BTRFS_FIRST_FREE_OBJECTID;
+
+	ret = ioctl(dir.fd(), BTRFS_IOC_INO_LOOKUP, &args);
+	if (ret >= 0)
+	{
+	    sv_id = args.treeid;
+	    ret = 0;
+	}
+#endif
+
+	if (ret)
+	{
+	    y2err("can't get subvolume_id from path: " << dir.fullname());
+	    throw IOErrorException();
+	}
+
+	// see btrfs-list.c in btrfs progs
+	if (sv_id == BTRFS_FS_TREE_OBJECTID)
+	{
+	    y2err(dir.fullname() << " is btrfs root!");
+	    // TODO: think about exception
+	    throw IOErrorException();
+	}
+
+	return sv_id;
+    }
+
+    ImportMetadata*
+    Btrfs::createImportMetadata(const map<string, string>& raw_data, ImportPolicy ipolicy) const
+    {
+	y2deb("entering createImportMetadata(btrfs)");
+
+	return new BtrfsImportMetadata(raw_data, ipolicy, this);
+    }
+
+    void
+    Btrfs::createSnapshotEnvironment(unsigned int num) const
     {
     }
 
-    void Btrfs::removeSnapshotEnvironment(unsigned int num) const
+    void
+    Btrfs::removeSnapshotEnvironment(unsigned int num) const
     {
     }
 
-    void Btrfs::mountSnapshot(unsigned int num, const string& device_path) const
+    void
+    Btrfs::mountSnapshot(unsigned int num, const string& device_path) const
     {
     }
 
-    void Btrfs::cloneSnapshot(unsigned int num, const string& subvolume) const
+    void
+    Btrfs::cloneSnapshot(unsigned int num, const string& subvolume) const
     {
+	y2deb("entering cloneSnapshot()");
+
 	SDir subvolume_origin = SDir::deepopen(openSubvolumeDir(), subvolume);
 	SDir info_dir = openInfoDir(num);
 
@@ -1278,48 +1349,11 @@ namespace snapper
 	}
     }
 
-    uint64_t Btrfs::subvolume_id(const SDir &subvol_dir)
+
+    bool
+    Btrfs::checkImportedSnapshot(const string& import_subvolume, bool check_ro) const
     {
-	int ret;
-	u64 sv_id;
-
-//#ifdef HAVE_LIBBTRFS
-	//ret = btrfs_list_get_path_rootid(subvol_dir.fd(), &sv_id);
-//#else
-	// imported from btrfs-list.c (striped off logging)
-	struct btrfs_ioctl_ino_lookup_args args;
-
-	memset(&args, 0, sizeof(args));
-	args.objectid = BTRFS_FIRST_FREE_OBJECTID;
-
-	ret = ioctl(subvol_dir.fd(), BTRFS_IOC_INO_LOOKUP, &args);
-	if (ret >= 0)
-	{
-	    sv_id = args.treeid;
-	    ret = 0;
-	}
-
-	if (ret)
-	{
-	    y2err("can't get subvolume_id from subvolume" << subvol_dir.fullname());
-	    throw IOErrorException();
-	}
-
-	// see btrfs-list.c in btrfs progs
-	if (sv_id == BTRFS_FS_TREE_OBJECTID)
-	{
-	    y2err(subvol_dir.fullname() << " is btrfs root!");
-	    // TODO: think about exception
-	    throw IOErrorException();
-	}
-
-	return sv_id;
-    }
-
-    bool Btrfs::checkImportedSnapshot(const string& import_subvolume) const
-    {
-	// TODO: add check for readonly snapshot!!!
-	// TODO: must not be .snapshots subvolume!!!
+	y2deb("entering checkImportedSnapshot");
 	try
 	{
 	    SDir import_subvol_dir = SDir::deepopen(openSubvolumeDir(), import_subvolume);
@@ -1328,7 +1362,7 @@ namespace snapper
 
 	    int r = import_subvol_dir.stat(&buf);
 
-	    return r == 0 && is_subvolume(buf);
+	    return r == 0 && is_subvolume(buf) && subvolume_id(import_subvol_dir) != subvol_id && (!check_ro || is_subvolume_ro(import_subvol_dir));
 	}
 	catch (const IOErrorException &e)
 	{
@@ -1336,8 +1370,12 @@ namespace snapper
 	}
     }
 
-    void Btrfs::deleteSnapshot(const string& dirpath, const string& name) const
+
+    void
+    Btrfs::deleteSnapshot(const string& dirpath, const string& name) const
     {
+	y2deb("entering deleteSnapshot(string,string)");
+
 	try
 	{
 	    SDir parent_dir = (dirpath.empty()) ? openSubvolumeDir() : SDir::deepopen(openSubvolumeDir(), dirpath);

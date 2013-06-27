@@ -29,7 +29,6 @@
 
 namespace snapper
 {
-    class ImportMetadata;
     class BtrfsImportMetadata;
 
     class Btrfs : public Filesystem
@@ -40,10 +39,10 @@ namespace snapper
 
 	static Filesystem* create(const string& fstype, const string& subvolume);
 
-	static uint64_t subvolume_id(const SDir &subvolume_path);
-	// static string subvolume(u64 subvolume_id); would make libbtrfs mandatory
+	static uint64_t subvolume_id(const SDir &dir);
+	static bool is_subvolume_ro(const SDir &dir);
 
-	virtual ImportMetadata* createImportMetadata(const map<string, string>& raw_data) const;
+	virtual ImportMetadata* createImportMetadata(const map<string,string>& raw_data, ImportPolicy ipolicy) const;
 
 	Btrfs(const string& subvolume);
 
@@ -74,10 +73,13 @@ namespace snapper
 	virtual void cmpDirs(const SDir& dir1, const SDir& dir2, cmpdirs_cb_t cb) const;
 
     private:
+	uint64_t subvol_id;
+
+	uint64_t get_subvol_id() const { return subvol_id; }
 
 	bool is_subvolume(const struct stat& stat) const;
 
-	bool checkImportedSnapshot(const string &import_subvolume) const;
+	bool checkImportedSnapshot(const string &import_subvolume, bool check_ro = false) const;
 
 	bool create_subvolume(int fddst, const string& name) const;
 	bool create_snapshot(int fd, int fddst, const string& name) const;

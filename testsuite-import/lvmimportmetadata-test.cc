@@ -37,10 +37,10 @@ namespace testsuiteimport { namespace lvm
     {
 	boost::scoped_ptr<snapper::LvmImportMetadata> p_imdata;
 
-	BOOST_CHECK_THROW( p_imdata.reset(new snapper::LvmImportMetadata(f_raw_data_missing_vg, f_dummy_lvm)), snapper::InvalidImportMetadataException );
-	BOOST_CHECK_THROW( p_imdata.reset(new snapper::LvmImportMetadata(f_raw_data_missing_lv, f_dummy_lvm)), snapper::InvalidImportMetadataException );
+	BOOST_CHECK_THROW( p_imdata.reset(new snapper::LvmImportMetadata(f_raw_data_missing_vg, snapper::ImportPolicy::NONE, f_dummy_lvm)), snapper::InvalidImportMetadataException );
+	BOOST_CHECK_THROW( p_imdata.reset(new snapper::LvmImportMetadata(f_raw_data_missing_lv, snapper::ImportPolicy::NONE, f_dummy_lvm)), snapper::InvalidImportMetadataException );
 
-	BOOST_REQUIRE_NO_THROW( p_imdata.reset(new snapper::LvmImportMetadata(f_raw_data, f_dummy_lvm)));
+	BOOST_REQUIRE_NO_THROW( p_imdata.reset(new snapper::LvmImportMetadata(f_raw_data, snapper::ImportPolicy::NONE, f_dummy_lvm)));
 
 	BOOST_CHECK_EQUAL( p_imdata->vg_name, f_raw_data["vg_name"] );
 	BOOST_CHECK_EQUAL( p_imdata->lv_name, f_raw_data["lv_name"] );
