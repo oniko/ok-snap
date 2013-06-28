@@ -32,6 +32,7 @@ namespace testsuiteimport { namespace lvm
 	{
 	    f_num++;
 
+	    // TODO: WTF?
 	    oss.str(f_snapshots_prefix);
 	    oss.clear();
 	    oss << f_snapshots_prefix << f_num;

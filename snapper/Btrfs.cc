@@ -1354,6 +1354,7 @@ namespace snapper
     Btrfs::checkImportedSnapshot(const string& import_subvolume, bool check_ro) const
     {
 	y2deb("entering checkImportedSnapshot");
+
 	try
 	{
 	    SDir import_subvol_dir = SDir::deepopen(openSubvolumeDir(), import_subvolume);
@@ -1366,6 +1367,7 @@ namespace snapper
 	}
 	catch (const IOErrorException &e)
 	{
+	    y2war("check snapshot failed!");
 	    return false;
 	}
     }

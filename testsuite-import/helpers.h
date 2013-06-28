@@ -23,6 +23,9 @@ namespace testsuiteimport { namespace lvm
 
     void modify_fs_uuid(const string& vg_name, const string& lv_name, const string& fs_type, const string& new_uuid = "");
 
+    void btrfs_create_subvolume(const string& root, const string& subvolume);
+    void btrfs_delete_subvolume(const string& parent_dir, const string& name);
+
     struct LvmImportTestsuiteException : std::exception
     {
 	explicit LvmImportTestsuiteException() throw() {}

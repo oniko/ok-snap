@@ -1,11 +1,5 @@
 #!/bin/bash
 
-VGCREATE_BIN=/usr/sbin/vgcreate
-LVCREATE_BIN=/usr/sbin/lvcreate
-LVREMOVE_BIN=/usr/sbin/lvremove
-PVREMOVE_BIN=/usr/sbin/pvremove
-VGREMOVE_BIN=/usr/sbin/vgremove
-
 TEST_VG_0=vg_test
 TEST_VG_1=vg_test_2
 
@@ -25,9 +19,12 @@ function cleanup() {
 	umount -f $TEST_VOLUME
 	local l_pv_count=$[PV_COUNT-1]
 
+	rmdir $TEST_VOLUME
+
 	while [ "$l_pv_count" -ge 0 ]; do
 		eval local l_pv="\${PV${l_pv_count}}"
 		eval local l_vg="\${TEST_VG_${l_pv_count}}"
+		$WIPEFS_BIN -a /dev/$l_vg/* > /dev/null
 		$VGREMOVE_BIN -qq -f "$l_vg"
 		$PVREMOVE_BIN -qq "$l_pv"
 		l_pv_count=$[l_pv_count-1]
@@ -88,6 +85,8 @@ setup() {
 	setup_pools_and_origins
 
 	setup_fs
+
+	mkdir $TEST_VOLUME
 
 	mount_test_volume /dev/mapper/$TEST_VG_0-$TEST_ORIGIN_0 $TEST_VOLUME
 }

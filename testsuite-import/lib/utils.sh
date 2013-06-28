@@ -1,7 +1,15 @@
 #!/bin/bash
 
 MKFS_EXT4_BIN=/usr/sbin/mkfs.ext4
+MKFS_BTRFS_BIN=/usr/sbin/mkfs.btrfs
 
+WIPEFS_BIN=/usr/sbin/wipefs
+
+VGCREATE_BIN=/usr/sbin/vgcreate
+LVCREATE_BIN=/usr/sbin/lvcreate
+LVREMOVE_BIN=/usr/sbin/lvremove
+PVREMOVE_BIN=/usr/sbin/pvremove
+VGREMOVE_BIN=/usr/sbin/vgremove
 
 function pdebug() {
 	if [ -n "$DEBUG" ]; then
@@ -54,7 +62,10 @@ function setup_fs_ext4() {
 	$MKFS_EXT4_BIN -q -E nodiscard "$1"
 }
 
-# setup_fs_btrfs
+function setup_fs_btrfs() {
+	$MKFS_BTRFS_BIN -K "$1" > /dev/null
+}
+
 # setup_fs_xfs
 
 function mount_test_volume() {

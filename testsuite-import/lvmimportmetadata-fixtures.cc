@@ -1,6 +1,3 @@
-//#include <boost/test/unit_test.hpp>
-#include <boost/scoped_ptr.hpp>
-
 #include "testsuite-import/lvmimportmetadata-fixtures.h"
 
 #include "snapper/Exception.h"

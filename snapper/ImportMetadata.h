@@ -61,7 +61,7 @@ namespace snapper
     {
     protected:
 
-	time_t creation_time; // const?
+	time_t creation_time;
 	const ImportPolicy import_policy;
 
 	virtual bool isEqual(unsigned int num) const = 0;
@@ -70,8 +70,8 @@ namespace snapper
 	virtual ImportTypeId getImportMetadataId() const = 0;
     public:
 
-	ImportMetadata(ImportPolicy policy) : creation_time((time_t)-1), import_policy(policy) { y2deb("ImportMetadata ctor"); }
-	virtual ~ImportMetadata() { y2deb("ImportMetadata dtor"); }
+	ImportMetadata(ImportPolicy policy) : creation_time((time_t)-1), import_policy(policy) {}
+	virtual ~ImportMetadata() {}
 
 	ImportPolicy getImportPolicy() const { return import_policy; }
 	/*

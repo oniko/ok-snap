@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
@@ -16,6 +17,33 @@
 #include <boost/algorithm/string.hpp>
 
 #include "testsuite-import/helpers.h"
+
+#ifdef HAVE_LIBBTRFS
+#include <btrfs/ioctl.h>
+#else
+#define BTRFS_IOCTL_MAGIC 0x94
+#define BTRFS_PATH_NAME_MAX 4087
+#define BTRFS_SUBVOL_NAME_MAX 4039
+
+#define BTRFS_IOC_SUBVOL_CREATE _IOW(BTRFS_IOCTL_MAGIC, 14, struct btrfs_ioctl_vol_args)
+#define BTRFS_IOC_SNAP_DESTROY _IOW(BTRFS_IOCTL_MAGIC, 15, struct btrfs_ioctl_vol_args)
+
+struct btrfs_ioctl_vol_args
+{
+    __s64 fd;
+    char name[BTRFS_PATH_NAME_MAX + 1];
+};
+
+struct btrfs_ioctl_vol_args_v2
+{
+    __s64 fd;
+    __u64 transid;
+    __u64 flags;
+    __u64 unused[4];
+    char name[BTRFS_SUBVOL_NAME_MAX + 1];
+};
+
+#endif //HAVE_LIBBTRFS
 
 namespace testsuiteimport { namespace lvm
 
@@ -217,6 +245,53 @@ namespace testsuiteimport { namespace lvm
 	    throw;
 	}
     }
+
+
+    void btrfs_create_subvolume(const string& root, const string& subvolume)
+    {
+	int fddst = open(root.c_str(), O_RDONLY | O_CLOEXEC | O_NOATIME );
+	if (fddst < 0)
+	{
+	    throw std::exception;
+	}
+
+	struct btrfs_ioctl_vol_args args;
+	memset(&args, 0, sizeof(args));
+
+	strncpy(args.name, subvolume.c_str(), sizeof(args.name) - 1);
+
+	int ret = ioctl(fddst, BTRFS_IOC_SUBVOL_CREATE, &args);
+	close(fddst);
+
+	if (ret)
+	{
+	    throw std::exception;
+	}
+    }
+
+
+    void btrfs_delete_subvolume(const string& parent_dir, const string& name)
+    {
+	int fd = open(parent_dir.c_str(), O_RDONLY | O_CLOEXEC | O_NOATIME);
+	if (fd < 0)
+	{
+	    throw std::exception;
+	}
+
+	struct btrfs_ioctl_vol_args args;
+	memset(&args, 0, sizeof(args));
+
+	strncpy(args.name, name.c_str(), sizeof(args.name) - 1);
+
+	int ret = ioctl(fd, BTRFS_IOC_SNAP_DESTROY, &args);
+	close(fd);
+
+	if (ret)
+	{
+	    throw std::exception;
+	}
+    }
+
 
     char* SimpleSystemCmd::convert(const string& str)
     {

@@ -39,10 +39,6 @@ namespace snapper
 
 	virtual string getDevicePath() const;
 
-	virtual ImportTypeId getImportMetadataId() const { return type_id; }
-	virtual bool isEqual(const ImportMetadata &a) const;
-	virtual bool isEqual(unsigned int num) const;
-
 	virtual bool checkImportedSnapshot() const;
 	virtual void cloneImportedSnapshot(unsigned int num) const;
 	virtual void deleteImportedSnapshot(unsigned int num) const;
@@ -58,6 +54,11 @@ namespace snapper
 	uint64_t import_subvol_id; // used in comparing imported snapshots
 
 	string import_subvolume; // no starting or trailing "/" allowed!
+
+	virtual ImportTypeId getImportMetadataId() const { return type_id; }
+
+	virtual bool isEqual(const ImportMetadata &a) const;
+	virtual bool isEqual(unsigned int num) const;
     };
 
 }

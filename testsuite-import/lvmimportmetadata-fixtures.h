@@ -23,6 +23,7 @@ namespace testsuiteimport { namespace lvm {
 	map<string,string> f_raw_data;
     };
 
+
     struct LvmImportConstructor : public ValidMetadata
     {
 	LvmImportConstructor();
@@ -30,6 +31,7 @@ namespace testsuiteimport { namespace lvm {
 	map<string,string> f_raw_data_missing_vg;
 	map<string,string> f_raw_data_missing_lv;
     };
+
 
     struct EqualFalseTestMetadata : public ValidMetadata
     {
@@ -41,12 +43,14 @@ namespace testsuiteimport { namespace lvm {
 	map<string,string> f_raw_data_different;
     };
 
+
     struct CopyConstructor : public ValidMetadata
     {
 	CopyConstructor();
 
 	const snapper::LvmImportMetadata f_origin;
     };
+
 
     struct EqualMethodTrue : public CopyConstructor
     {
@@ -56,7 +60,6 @@ namespace testsuiteimport { namespace lvm {
 	map<string,string> f_raw_data_copy;
 	snapper::LvmImportMetadata* f_p_origin_copy;
     };
-
 
 
     struct EqualMethodFalse : public EqualFalseTestMetadata
