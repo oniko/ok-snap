@@ -6,31 +6,12 @@
 #include <vector>
 
 #include <boost/noncopyable.hpp>
+#include "btrfsimportmetadata-fixtures.h"
 
-namespace testsuiteimport { namespace lvm
+namespace testsuiteimport
 {
     using std::string;
     using std::vector;
-
-    bool check_lv_exists(const string& vg_name, const string& lv_name);
-    bool check_is_thin(const string& vg_name, const string& lv_name);
-
-    bool check_is_mounted(const string& vg_name, const string& lv_name);
-
-    void lvcreate_thin_snapshot_wrapper(const string& vg_name, const string& origin_lv_name, const string& snapshot_name, const bool readonly = true);
-    void lvcreate_non_thin_lv_wrapper(const string& vg_name, const string& lv_name);
-    void lvremove_wrapper(const string& vg_name, const string& lv_name);
-
-    void modify_fs_uuid(const string& vg_name, const string& lv_name, const string& fs_type, const string& new_uuid = "");
-
-    void btrfs_create_subvolume(const string& root, const string& subvolume);
-    void btrfs_delete_subvolume(const string& parent_dir, const string& name);
-
-    struct LvmImportTestsuiteException : std::exception
-    {
-	explicit LvmImportTestsuiteException() throw() {}
-	virtual const char* what() const throw() { return "generic testsuite import lvm exception"; }
-    };
 
     struct SimpleSystemCmdException : public LvmImportTestsuiteException
     {
@@ -61,5 +42,34 @@ namespace testsuiteimport { namespace lvm
 	vector<string>::const_iterator stderr_cbegin() const { return err_vec.begin(); }
 	vector<string>::const_iterator stderr_cend() const { return err_vec.end(); }
     };
-}}
+
+    namespace lvm
+    {
+
+	bool check_lv_exists(const string& vg_name, const string& lv_name);
+	bool check_is_thin(const string& vg_name, const string& lv_name);
+
+	bool check_is_mounted(const string& vg_name, const string& lv_name);
+
+	void lvcreate_thin_snapshot_wrapper(const string& vg_name, const string& origin_lv_name, const string& snapshot_name, const bool readonly = true);
+	void lvcreate_non_thin_lv_wrapper(const string& vg_name, const string& lv_name);
+	void lvremove_wrapper(const string& vg_name, const string& lv_name);
+
+	void modify_fs_uuid(const string& vg_name, const string& lv_name, const string& fs_type, const string& new_uuid = "");
+
+	struct LvmImportTestsuiteException : std::exception
+	{
+	    explicit LvmImportTestsuiteException() throw() {}
+	    virtual const char* what() const throw() { return "generic testsuite import lvm exception"; }
+	};
+    }
+
+    namespace btrfs
+    {
+	void btrfs_create_subvolume(const string& root, const string& subvolume);
+	void btrfs_delete_subvolume(const string& parent_dir, const string& name);
+
+	void btrfs_create_snapshot_ro(const string& source, const string& dest_path, const string& name);
+    }
+}
 #endif // TESTSUITE_IMPORT_LVM_HELPERS_H

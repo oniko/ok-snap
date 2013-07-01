@@ -28,6 +28,7 @@ namespace testsuiteimport
     namespace btrfs
     {
 	const string BtrfsGeneralFixture::f_conf_root_volume = "/testsuite-import-btrfs";
+	const string BtrfsGeneralFixture::f_conf_foreing_root_volume = "/testsuite-import-btrfs-x";
 
 	BtrfsGeneralFixture::BtrfsGeneralFixture()
 	    : f_snapper(new snapper::Snapper("testsuite-import-btrfs")),

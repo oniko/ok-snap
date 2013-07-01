@@ -46,18 +46,6 @@ namespace testsuiteimport { namespace lvm
 	BOOST_CHECK_EQUAL( p_imdata->lv_name, f_raw_data["lv_name"] );
     }
 
-/*
-    void FCopyConstructor::test_method()
-    {
-	boost::scoped_ptr<snapper::LvmImportMetadata> p_copy;
-
-	BOOST_REQUIRE_NO_THROW( p_copy.reset(new snapper::LvmImportMetadata(f_origin)) );
-
-	BOOST_CHECK_EQUAL( p_copy->getVgName(), f_origin.getVgName() );
-	BOOST_CHECK_EQUAL( p_copy->getLvName(), f_origin.getLvName() );
-	BOOST_CHECK_EQUAL( p_copy->getCreationTime(), f_origin.getCreationTime() );
-    }
-*/
 
     void FEqualMethodTrue::test_method()
     {

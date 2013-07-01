@@ -10,7 +10,6 @@
 #undef private
 
 #include "snapper/Logger.h"
-#include "btrfsimportmetadata-fixtures.h"
 
 namespace testsuiteimport
 {
@@ -50,6 +49,7 @@ namespace testsuiteimport
 	    ~BtrfsGeneralFixture();
 
 	    static const string f_conf_root_volume;
+	    static const string f_conf_foreign_root_volume;
 
 	    const snapper::Snapper *f_snapper;
 	    const snapper::Btrfs *f_btrfs;

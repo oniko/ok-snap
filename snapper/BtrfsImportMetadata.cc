@@ -41,18 +41,14 @@ namespace snapper
 
 	    // remove trailing "/"
 	    import_subvolume = boost::trim_right_copy_if(cit_subv->second, boost::is_any_of("/ \t"));
-	    //while (boost::ends_with(import_subvolume, "/"))
-	    //	boost::erase_tail(import_subvolume, 1);
 
 	    // remove origin subvolume from import subvolume
 	    string::size_type pos = import_subvolume.find(root.fullname());
-	    if (pos != string::npos && pos == 0)
+	    if (pos == 0)
 		import_subvolume = import_subvolume.substr(root.fullname().length());
 
-	    // remove starting "/"
+	    // remove heading "/"
 	    import_subvolume = boost::trim_left_copy_if(import_subvolume, boost::is_any_of("/ \t"));
-	    //while (boost::starts_with(import_subvolume, "/"))
-	    //	boost::erase_head(import_subvolume, 1);
 
 	    if (import_subvolume.empty())
 	    {

@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
@@ -24,7 +25,9 @@
 #define BTRFS_IOCTL_MAGIC 0x94
 #define BTRFS_PATH_NAME_MAX 4087
 #define BTRFS_SUBVOL_NAME_MAX 4039
+#define BTRFS_SUBVOL_RDONLY (1ULL << 1)
 
+#define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, struct btrfs_ioctl_vol_args)
 #define BTRFS_IOC_SUBVOL_CREATE _IOW(BTRFS_IOCTL_MAGIC, 14, struct btrfs_ioctl_vol_args)
 #define BTRFS_IOC_SNAP_DESTROY _IOW(BTRFS_IOCTL_MAGIC, 15, struct btrfs_ioctl_vol_args)
 
@@ -45,253 +48,300 @@ struct btrfs_ioctl_vol_args_v2
 
 #endif //HAVE_LIBBTRFS
 
-namespace testsuiteimport { namespace lvm
-
-{
+namespace testsuiteimport {
     using std::string;
     using std::vector;
 
+    namespace lvm {
 
-    bool check_lv_exists(const string& vg_name, const string& lv_name)
-    {
-	vector<string> args;
-	args.push_back(vg_name + "/" + lv_name);
-
-	try
+	bool check_lv_exists(const string& vg_name, const string& lv_name)
 	{
-	    SimpleSystemCmd cmd("/usr/sbin/lvs", args);
+	    vector<string> args;
+	    args.push_back(vg_name + "/" + lv_name);
 
-	    return cmd.retcode() ? false : true;
-	}
-	catch (const SimpleSystemCmdException &e)
-	{
-	    std::cerr << "SimpleSystemCmd(\"/usr/sbin/lvs\") failed" << std::endl;
-	    throw;
-	}
-    }
-
-    bool check_is_thin(const string& vg_name, const string& lv_name)
-    {
-	string tmp("-o segtype --noheadings " + vg_name + "/" + lv_name);
-
-	vector<string> args;
-	boost::split(args, tmp, boost::is_any_of(" \t\n"), boost::token_compress_on);
-
-	try
-	{
-	    SimpleSystemCmd cmd("/usr/sbin/lvs", args);
-
-	    if (cmd.retcode())
+	    try
 	    {
-		std::cerr << "lvs failed with ret_code: " << cmd.retcode() << std::endl;
-		for (vector<string>::const_iterator cit = cmd.stderr_cbegin(); cit != cmd.stderr_cend(); cit++)
-		    std::cerr << "lvs err: " << *cit << std::endl;
-		throw LvmImportTestsuiteException();
+		SimpleSystemCmd cmd("/usr/sbin/lvs", args);
+
+		return cmd.retcode() ? false : true;
 	    }
-
-	    assert(cmd.stdout_cbegin() != cmd.stdout_cend());
-
-	    string segtype = boost::trim_copy(*cmd.stdout_cbegin());
-
-	    return segtype.compare("thin") ? false : true;
-	}
-	catch (const SimpleSystemCmdException &e)
-	{
-	    std::cerr << "SimpleSystemCmd(\"/usr/sbin/lvs\") failed" << std::endl;
-	    throw;
-	}
-    }
-
-    bool check_is_mounted(const string& vg_name, const string& lv_name)
-    {
-	vector<string> args;
-	args.push_back("/dev/mapper/" +
-		       boost::replace_all_copy(vg_name, "-", "--") +
-		       "-" +
-		       boost::replace_all_copy(lv_name, "-", "--"));
-
-	try
-	{
-	    SimpleSystemCmd cmd("/usr/bin/findmnt", args);
-
-	    return cmd.retcode() ? false : true;
-	}
-	catch (const SimpleSystemCmdException &e)
-	{
-	    std::cerr << "SimpleSystemCmd(\"/usr/bin/findmnt\", " << args.front() << ") failed" << std::endl;
-	    throw;
-	}
-    }
-
-    void lvcreate_thin_snapshot_wrapper(const string& vg_name, const string& origin_lv_name, const string& snapshot_name, bool readonly)
-    {
-	std::ostringstream oss;
-	oss << "-qq ";
-
-	if (readonly)
-	{
-	    oss << "--permission r ";
-	}
-
-	oss << "--snapshot --name " << snapshot_name << " " << vg_name
-	    << "/" + origin_lv_name;
-
-	string tmp(oss.str());
-	vector<string> args;
-	boost::split(args, tmp, boost::is_any_of(" \t\n"), boost::token_compress_on);
-
-	try
-	{
-	    SimpleSystemCmd cmd("/usr/sbin/lvcreate", args);
-
-	    if (cmd.retcode())
+	    catch (const SimpleSystemCmdException &e)
 	    {
-		std::cerr << "lvcreate failed with ret_code: " << cmd.retcode() << std::endl;
-		for (vector<string>::const_iterator cit = cmd.stderr_cbegin(); cit != cmd.stderr_cend(); cit++)
-		    std::cerr << "lvcreate err: " << *cit << std::endl;
-		throw LvmImportTestsuiteException();
+		std::cerr << "SimpleSystemCmd(\"/usr/sbin/lvs\") failed" << std::endl;
+		throw;
 	    }
 	}
-	catch (const SimpleSystemCmdException &e)
+
+	bool check_is_thin(const string& vg_name, const string& lv_name)
 	{
-	    std::cerr << "SimpleSystemCmd(\"/usr/sbin/lvcreate\") failed" << std::endl;
-	    throw;
-	}
-    }
+	    string tmp("-o segtype --noheadings " + vg_name + "/" + lv_name);
 
-    void lvcreate_non_thin_lv_wrapper(const string& vg_name, const string& lv_name)
-    {
-	string tmp("-qq --name " + lv_name + " -L100M " + vg_name);
+	    vector<string> args;
+	    boost::split(args, tmp, boost::is_any_of(" \t\n"), boost::token_compress_on);
 
-	vector<string> args;
-	boost::split(args, tmp, boost::is_any_of(" \t\n"), boost::token_compress_on);
-
-	try
-	{
-	    SimpleSystemCmd cmd("/usr/sbin/lvcreate", args);
-
-	    if (cmd.retcode())
+	    try
 	    {
-		std::cerr << "lvcreate failed with ret_code: " << cmd.retcode() << std::endl;
-		for (vector<string>::const_iterator cit = cmd.stderr_cbegin(); cit != cmd.stderr_cend(); cit++)
-		    std::cerr << "lvcreate err: " << *cit << std::endl;
-		throw LvmImportTestsuiteException();
+		SimpleSystemCmd cmd("/usr/sbin/lvs", args);
+
+		if (cmd.retcode())
+		{
+		    std::cerr << "lvs failed with ret_code: " << cmd.retcode() << std::endl;
+		    for (vector<string>::const_iterator cit = cmd.stderr_cbegin(); cit != cmd.stderr_cend(); cit++)
+			std::cerr << "lvs err: " << *cit << std::endl;
+		    throw LvmImportTestsuiteException();
+		}
+
+		assert(cmd.stdout_cbegin() != cmd.stdout_cend());
+
+		string segtype = boost::trim_copy(*cmd.stdout_cbegin());
+
+		return segtype.compare("thin") ? false : true;
+	    }
+	    catch (const SimpleSystemCmdException &e)
+	    {
+		std::cerr << "SimpleSystemCmd(\"/usr/sbin/lvs\") failed" << std::endl;
+		throw;
 	    }
 	}
-	catch (const SimpleSystemCmdException &e)
+
+	bool check_is_mounted(const string& vg_name, const string& lv_name)
 	{
-	    std::cerr << "SimpleSystemCmd(\"/usr/sbin/lvcreate\", \"" << tmp
-		      << "\") failed" << std::endl;
-	    throw;
-	}
-    }
+	    vector<string> args;
+	    args.push_back("/dev/mapper/" +
+			boost::replace_all_copy(vg_name, "-", "--") +
+			"-" +
+			boost::replace_all_copy(lv_name, "-", "--"));
 
-    void lvremove_wrapper(const string& vg_name, const string& lv_name)
-    {
-	string tmp("-qq -f " + vg_name + "/" + lv_name);
-
-	vector<string> args;
-	boost::split(args, tmp, boost::is_any_of(" \t\n"), boost::token_compress_on);
-
-	try
-	{
-	    SimpleSystemCmd cmd("/usr/sbin/lvremove", args);
-
-	    if (cmd.retcode())
+	    try
 	    {
-		std::cerr << "lvremove failed with ret_code: " << cmd.retcode() << std::endl;
-		for (vector<string>::const_iterator cit = cmd.stderr_cbegin(); cit != cmd.stderr_cend(); cit++)
-		    std::cerr << "lvremove err: " << *cit << std::endl;
-		throw LvmImportTestsuiteException();
+		SimpleSystemCmd cmd("/usr/bin/findmnt", args);
+
+		return cmd.retcode() ? false : true;
+	    }
+	    catch (const SimpleSystemCmdException &e)
+	    {
+		std::cerr << "SimpleSystemCmd(\"/usr/bin/findmnt\", " << args.front() << ") failed" << std::endl;
+		throw;
 	    }
 	}
-	catch (const SimpleSystemCmdException &e)
+
+	void lvcreate_thin_snapshot_wrapper(const string& vg_name, const string& origin_lv_name, const string& snapshot_name, bool readonly)
 	{
-	    std::cerr << "SimpleSystemCmd(\"/usr/sbin/lvremove\") failed" << std::endl;
-	    throw;
-	}
-    }
+	    std::ostringstream oss;
+	    oss << "-qq ";
 
-    void modify_fs_uuid(const string& vg_name, const string& lv_name, const string& fs_type, const string& new_uuid)
-    {
-	// FIXME: proper fs_type check with decision which tune2fs to use
-	if (fs_type.substr(0, 3) != "ext")
-	{
-	    std::cerr << "unimplemented fs" << std::endl;
-	    throw std::exception();
-	}
-
-	string tmp("-U " + (new_uuid.empty() ? "random" : new_uuid) + " /dev/" + vg_name + "/" + lv_name);
-
-	vector<string> args;
-	boost::split(args, tmp, boost::is_any_of(" \t\n"), boost::token_compress_on);
-
-	try
-	{
-	    SimpleSystemCmd cmd("/usr/sbin/tune2fs", args);
-
-	    if (cmd.retcode())
+	    if (readonly)
 	    {
-		std::cerr << "tune2fs failed with ret_code: " << cmd.retcode() << std::endl
-			  << "/usr/sbin/tune2fs " << tmp << std::endl;
-		for (vector<string>::const_iterator cit = cmd.stderr_cbegin(); cit != cmd.stderr_cend(); cit++)
-		    std::cerr << "tune2fs err: " << *cit << std::endl;
-		throw LvmImportTestsuiteException();
+		oss << "--permission r ";
+	    }
+
+	    oss << "--snapshot --name " << snapshot_name << " " << vg_name
+		<< "/" + origin_lv_name;
+
+	    string tmp(oss.str());
+	    vector<string> args;
+	    boost::split(args, tmp, boost::is_any_of(" \t\n"), boost::token_compress_on);
+
+	    try
+	    {
+		SimpleSystemCmd cmd("/usr/sbin/lvcreate", args);
+
+		if (cmd.retcode())
+		{
+		    std::cerr << "lvcreate failed with ret_code: " << cmd.retcode() << std::endl;
+		    for (vector<string>::const_iterator cit = cmd.stderr_cbegin(); cit != cmd.stderr_cend(); cit++)
+			std::cerr << "lvcreate err: " << *cit << std::endl;
+		    throw LvmImportTestsuiteException();
+		}
+	    }
+	    catch (const SimpleSystemCmdException &e)
+	    {
+		std::cerr << "SimpleSystemCmd(\"/usr/sbin/lvcreate\") failed" << std::endl;
+		throw;
 	    }
 	}
-	catch (const SimpleSystemCmdException &e)
+
+	void lvcreate_non_thin_lv_wrapper(const string& vg_name, const string& lv_name)
 	{
-	    std::cerr << "SimpleSystemCmd(\"/usr/sbin/tun2fs\", \"" << tmp << "\") failed" << std::endl;
-	    throw;
+	    string tmp("-qq --name " + lv_name + " -L100M " + vg_name);
+
+	    vector<string> args;
+	    boost::split(args, tmp, boost::is_any_of(" \t\n"), boost::token_compress_on);
+
+	    try
+	    {
+		SimpleSystemCmd cmd("/usr/sbin/lvcreate", args);
+
+		if (cmd.retcode())
+		{
+		    std::cerr << "lvcreate failed with ret_code: " << cmd.retcode() << std::endl;
+		    for (vector<string>::const_iterator cit = cmd.stderr_cbegin(); cit != cmd.stderr_cend(); cit++)
+			std::cerr << "lvcreate err: " << *cit << std::endl;
+		    throw LvmImportTestsuiteException();
+		}
+	    }
+	    catch (const SimpleSystemCmdException &e)
+	    {
+		std::cerr << "SimpleSystemCmd(\"/usr/sbin/lvcreate\", \"" << tmp
+			<< "\") failed" << std::endl;
+		throw;
+	    }
+	}
+
+	void lvremove_wrapper(const string& vg_name, const string& lv_name)
+	{
+	    string tmp("-qq -f " + vg_name + "/" + lv_name);
+
+	    vector<string> args;
+	    boost::split(args, tmp, boost::is_any_of(" \t\n"), boost::token_compress_on);
+
+	    try
+	    {
+		SimpleSystemCmd cmd("/usr/sbin/lvremove", args);
+
+		if (cmd.retcode())
+		{
+		    std::cerr << "lvremove failed with ret_code: " << cmd.retcode() << std::endl;
+		    for (vector<string>::const_iterator cit = cmd.stderr_cbegin(); cit != cmd.stderr_cend(); cit++)
+			std::cerr << "lvremove err: " << *cit << std::endl;
+		    throw LvmImportTestsuiteException();
+		}
+	    }
+	    catch (const SimpleSystemCmdException &e)
+	    {
+		std::cerr << "SimpleSystemCmd(\"/usr/sbin/lvremove\") failed" << std::endl;
+		throw;
+	    }
+	}
+
+	void modify_fs_uuid(const string& vg_name, const string& lv_name, const string& fs_type, const string& new_uuid)
+	{
+	    // FIXME: proper fs_type check with decision which tune2fs to use
+	    if (fs_type.substr(0, 3) != "ext")
+	    {
+		std::cerr << "unimplemented fs" << std::endl;
+		throw std::exception();
+	    }
+
+	    string tmp("-U " + (new_uuid.empty() ? "random" : new_uuid) + " /dev/" + vg_name + "/" + lv_name);
+
+	    vector<string> args;
+	    boost::split(args, tmp, boost::is_any_of(" \t\n"), boost::token_compress_on);
+
+	    try
+	    {
+		SimpleSystemCmd cmd("/usr/sbin/tune2fs", args);
+
+		if (cmd.retcode())
+		{
+		    std::cerr << "tune2fs failed with ret_code: " << cmd.retcode() << std::endl
+			    << "/usr/sbin/tune2fs " << tmp << std::endl;
+		    for (vector<string>::const_iterator cit = cmd.stderr_cbegin(); cit != cmd.stderr_cend(); cit++)
+			std::cerr << "tune2fs err: " << *cit << std::endl;
+		    throw LvmImportTestsuiteException();
+		}
+	    }
+	    catch (const SimpleSystemCmdException &e)
+	    {
+		std::cerr << "SimpleSystemCmd(\"/usr/sbin/tun2fs\", \"" << tmp << "\") failed" << std::endl;
+		throw;
+	    }
 	}
     }
 
 
-    void btrfs_create_subvolume(const string& root, const string& subvolume)
-    {
-	int fddst = open(root.c_str(), O_RDONLY | O_CLOEXEC | O_NOATIME );
-	if (fddst < 0)
+    namespace btrfs {
+	void btrfs_create_subvolume(const string& root, const string& subvolume)
 	{
-	    throw std::exception;
+	    int fddst = open(root.c_str(), O_RDONLY | O_CLOEXEC | O_NOATIME );
+	    if (fddst < 0)
+	    {
+		throw std::exception;
+	    }
+
+	    struct btrfs_ioctl_vol_args args;
+	    memset(&args, 0, sizeof(args));
+
+	    strncpy(args.name, subvolume.c_str(), sizeof(args.name) - 1);
+
+	    int ret = ioctl(fddst, BTRFS_IOC_SUBVOL_CREATE, &args);
+	    close(fddst);
+
+	    if (ret)
+	    {
+		throw std::exception;
+	    }
 	}
 
-	struct btrfs_ioctl_vol_args args;
-	memset(&args, 0, sizeof(args));
 
-	strncpy(args.name, subvolume.c_str(), sizeof(args.name) - 1);
-
-	int ret = ioctl(fddst, BTRFS_IOC_SUBVOL_CREATE, &args);
-	close(fddst);
-
-	if (ret)
+	void btrfs_delete_subvolume(const string& parent_dir, const string& name)
 	{
-	    throw std::exception;
+	    int fd = open(parent_dir.c_str(), O_RDONLY | O_CLOEXEC | O_NOATIME);
+	    if (fd < 0)
+	    {
+		throw std::exception;
+	    }
+
+	    struct btrfs_ioctl_vol_args args;
+	    memset(&args, 0, sizeof(args));
+
+	    strncpy(args.name, name.c_str(), sizeof(args.name) - 1);
+
+	    int ret = ioctl(fd, BTRFS_IOC_SNAP_DESTROY, &args);
+
+	    close(fd);
+
+	    if (ret)
+	    {
+		throw std::exception;
+	    }
+	}
+
+	void btrfs_create_snapshot_ro(const string& source, const string& dest_path, const string& name)
+	{
+	    int fddst = open(dest_path.c_str(), O_RDONLY | O_CLOEXEC | O_NOATIME);
+
+	    if (fddst < 0 )
+	    {
+		throw std::exception;
+	    }
+	    
+	    int fd = open(source.c_str(), O_RDONLY | O_CLOEXEC | O_NOATIME);
+	    if (fd < 0)
+	    {
+		close(fddst);
+		throw std::exception;
+	    }
+
+	    struct btrfs_ioctl_vol_args_v2 args_v2;
+	    memset(&args_v2, 0, sizeof(args_v2));
+
+	    args_v2.fd = fd;
+	    args_v2.flags = BTRFS_SUBVOL_RDONLY;
+	    strncpy(args_v2.name, name.c_str(), sizeof(args_v2.name) - 1);
+
+	    int ret = ioctl(fddst, BTRFS_IOC_SNAP_CREATE_V2, &args_v2);
+
+	    if (ret && (errno == ENOTTY || errnor == EINVAL))
+	    {
+		struct btrfs_ioctl_vol_args args;
+		memset(&args, 0, sizeof(args));
+
+		args.fd = fd;
+		strncpy(args.name, name.c_str(), sizeof(args.name) - 1);
+
+		ret = ioctl(fddst, BTRFS_IOC_SNAP_CREATE, &args);
+	    }
+
+	    close(fd);
+	    close(fddst);
+
+	    if (ret)
+	    {
+		throw std::exception;
+	    }
 	}
     }
-
-
-    void btrfs_delete_subvolume(const string& parent_dir, const string& name)
-    {
-	int fd = open(parent_dir.c_str(), O_RDONLY | O_CLOEXEC | O_NOATIME);
-	if (fd < 0)
-	{
-	    throw std::exception;
-	}
-
-	struct btrfs_ioctl_vol_args args;
-	memset(&args, 0, sizeof(args));
-
-	strncpy(args.name, name.c_str(), sizeof(args.name) - 1);
-
-	int ret = ioctl(fd, BTRFS_IOC_SNAP_DESTROY, &args);
-	close(fd);
-
-	if (ret)
-	{
-	    throw std::exception;
-	}
-    }
-
 
     char* SimpleSystemCmd::convert(const string& str)
     {
