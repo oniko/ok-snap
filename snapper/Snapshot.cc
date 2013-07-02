@@ -642,7 +642,7 @@ namespace snapper
 		break;
 	    case ADOPT:
 		y2deb(toString(getImportPolicy()) + " delete milestone: entering deleteImportedSnapshot(num)");
-		p_idata.get()->deleteImportedSnapshot(num);
+		p_idata.get()->deleteImportedSnapshot();
 	    case ACKNOWLEDGE:
 		y2deb(toString(getImportPolicy()) + " delete milestone: entering removeEnvironment()");
 		removeEnvironemt();

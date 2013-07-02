@@ -124,7 +124,7 @@ namespace snapper
     }
 
 
-    void BtrfsImportMetadata::deleteImportedSnapshot(unsigned int num) const
+    void BtrfsImportMetadata::deleteImportedSnapshot() const
     {
 	string::size_type pos = import_subvolume.rfind("/");
 

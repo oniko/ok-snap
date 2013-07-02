@@ -122,7 +122,7 @@ namespace snapper
 
 
     void
-    LvmImportMetadata::deleteImportedSnapshot(unsigned int num) const
+    LvmImportMetadata::deleteImportedSnapshot() const
     {
 	lvm->deleteSnapshot(vg_name, lv_name);
     }

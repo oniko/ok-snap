@@ -5,7 +5,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <asm/types.h>
 #include <sys/ioctl.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
@@ -30,6 +32,7 @@
 #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, struct btrfs_ioctl_vol_args)
 #define BTRFS_IOC_SUBVOL_CREATE _IOW(BTRFS_IOCTL_MAGIC, 14, struct btrfs_ioctl_vol_args)
 #define BTRFS_IOC_SNAP_DESTROY _IOW(BTRFS_IOCTL_MAGIC, 15, struct btrfs_ioctl_vol_args)
+#define BTRFS_IOC_SNAP_CREATE_V2 _IOW(BTRFS_IOCTL_MAGIC, 23, struct btrfs_ioctl_vol_args_v2)
 
 struct btrfs_ioctl_vol_args
 {
@@ -247,16 +250,19 @@ namespace testsuiteimport {
 		throw;
 	    }
 	}
-    }
+    } // lvm
 
 
     namespace btrfs {
 	void btrfs_create_subvolume(const string& root, const string& subvolume)
 	{
+	    std::cout << "btrfs_create_subvolume(" << root << ", " << subvolume << ")" << std::endl;
+
 	    int fddst = open(root.c_str(), O_RDONLY | O_CLOEXEC | O_NOATIME );
 	    if (fddst < 0)
 	    {
-		throw std::exception;
+		std::cerr << "failed to open: " << root << std::endl;
+		throw std::exception();
 	    }
 
 	    struct btrfs_ioctl_vol_args args;
@@ -269,7 +275,7 @@ namespace testsuiteimport {
 
 	    if (ret)
 	    {
-		throw std::exception;
+		throw std::exception();
 	    }
 	}
 
@@ -279,7 +285,8 @@ namespace testsuiteimport {
 	    int fd = open(parent_dir.c_str(), O_RDONLY | O_CLOEXEC | O_NOATIME);
 	    if (fd < 0)
 	    {
-		throw std::exception;
+		std::cerr << "can't open: " << parent_dir << std::endl;
+		throw std::exception();
 	    }
 
 	    struct btrfs_ioctl_vol_args args;
@@ -293,7 +300,7 @@ namespace testsuiteimport {
 
 	    if (ret)
 	    {
-		throw std::exception;
+		throw std::exception();
 	    }
 	}
 
@@ -303,14 +310,14 @@ namespace testsuiteimport {
 
 	    if (fddst < 0 )
 	    {
-		throw std::exception;
+		throw std::exception();
 	    }
 	    
 	    int fd = open(source.c_str(), O_RDONLY | O_CLOEXEC | O_NOATIME);
 	    if (fd < 0)
 	    {
 		close(fddst);
-		throw std::exception;
+		throw std::exception();
 	    }
 
 	    struct btrfs_ioctl_vol_args_v2 args_v2;
@@ -322,7 +329,7 @@ namespace testsuiteimport {
 
 	    int ret = ioctl(fddst, BTRFS_IOC_SNAP_CREATE_V2, &args_v2);
 
-	    if (ret && (errno == ENOTTY || errnor == EINVAL))
+	    if (ret && (errno == ENOTTY || errno == EINVAL))
 	    {
 		struct btrfs_ioctl_vol_args args;
 		memset(&args, 0, sizeof(args));
@@ -338,10 +345,86 @@ namespace testsuiteimport {
 
 	    if (ret)
 	    {
-		throw std::exception;
+		throw std::exception();
 	    }
 	}
-    }
+
+	bool btrfs_subvolume_exists(const string& path)
+	{
+	    struct stat buf;
+
+	    int fd = open(path.c_str(), O_RDONLY | O_NOATIME | O_CLOEXEC | O_NOFOLLOW);
+	    if (fd < 0)
+		return false;
+
+	    int ret = fstat(fd, &buf);
+	    close(fd);
+
+	    return ret ? false : S_ISDIR(buf.st_mode) && buf.st_ino == 256;
+	}
+
+	string deep_mkdirat(const string& root, const string& new_dirs)
+	{
+	    if (new_dirs.empty())
+		throw std::exception();
+
+	    int fd;
+
+	    int rootfd = open(root.c_str(), O_RDONLY | O_NOATIME | O_CLOEXEC);
+	    if (rootfd < 0)
+	    {
+		std::cout << "can't open: " << root << std::endl;
+		throw std::exception();
+	    }
+
+	    string::size_type last_pos = 0;
+	    
+	    for (string::size_type pos = new_dirs.find("/");
+		 pos != string::npos;
+		 last_pos = pos, pos = new_dirs.find("/", last_pos + 1), close(rootfd), rootfd = fd
+		)
+	    {
+		struct stat buf;
+		string tmp = new_dirs.substr(last_pos, pos - last_pos);
+
+		fd = ::openat(rootfd, tmp.c_str(), O_RDONLY | O_NOATIME | O_CLOEXEC);
+		if (fd >= 0)
+		{
+		    if (!::fstat(fd, &buf) && S_ISDIR(buf.st_mode))
+			continue;
+
+		    close(rootfd);
+		    close(fd);
+
+		    std::cout << tmp << " is not a dir" << std::endl;
+
+		    throw std::exception();
+		}
+
+		if(::mkdirat(rootfd, tmp.c_str(), 0777))
+		{
+		    // even in case of EEXIST, someone has outrunned us, throw exception
+		    close(rootfd);
+		    std::cout << "mkdir " << tmp << " failed!" << std::endl;
+		    throw std::exception();
+		}
+
+		fd = ::openat(rootfd, tmp.c_str(), O_RDONLY | O_NOATIME | O_CLOEXEC);
+		if (fd < 0)
+		{
+		    close(rootfd);
+		    std::cout << "last open " << tmp << " failed!" << std::endl;
+		    throw std::exception();
+		}
+	    }
+
+	    close(rootfd);
+
+	    std::cout << "returing " << root << '/' << new_dirs << std::endl;
+
+	    return new_dirs;
+	}
+    } // btrfs
 
     char* SimpleSystemCmd::convert(const string& str)
     {
@@ -458,4 +541,4 @@ namespace testsuiteimport {
 	    exit(EXIT_FAILURE);
 	}
     }
-}}
+}

@@ -18,7 +18,7 @@ namespace testsuiteimport { namespace btrfs
     class BtrfsMetadata
     {
     private:
-	static const string f_subv_prefix = "test_subv";
+	static const string f_subv_prefix;
     protected:
 	static string init_subvolume(const string& root_volume);
 	static string init_snapshot_ro(const string& source, const string& subvolume, const string& name);
@@ -31,6 +31,9 @@ namespace testsuiteimport { namespace btrfs
 
 	const string f_subvolume;
 	const string f_fullpath_subvolume;
+
+	map<string,string> f_raw_valid;
+	map<string,string> f_raw_fullpath_valid;
     };
 
     struct ForeignSubvolume : public BtrfsMetadata
@@ -48,8 +51,6 @@ namespace testsuiteimport { namespace btrfs
 	const string f_subvolume_missing;
 	const string f_subvolume_empty;
 
-	map<string,string> f_raw_valid;
-	map<string,string> f_raw_fullpath_valid;
 	map<string,string> f_raw_foreign;
 	map<string,string> f_raw_missig;
 	map<string,string> f_raw_empty;
@@ -129,6 +130,8 @@ namespace testsuiteimport { namespace btrfs
 
 	map<string,string> f_raw_subvolume;
 	map<string,string> f_raw_subvolume_fullpath;
+	map<string,string> f_raw_subvolume_head_slash;
+	map<string,string> f_raw_subvolume_trail_slash;
     };
 
 
@@ -138,6 +141,36 @@ namespace testsuiteimport { namespace btrfs
 
 	const snapper::BtrfsImportMetadata f_metadata;
 	const snapper::BtrfsImportMetadata f_metadata_fullpath;
+	const snapper::BtrfsImportMetadata f_metadata_head_slash;
+	const snapper::BtrfsImportMetadata f_metadata_trail_slash;
+    };
+
+    struct GetRawMetadata : public ValidMetadata, BtrfsGeneralFixture
+    {
+	GetRawMetadata();
+
+	const snapper::BtrfsImportMetadata f_metadata;
+    };
+
+    struct DeleteImportSnapshotData : public BtrfsMetadata
+    {
+	DeleteImportSnapshotData();
+	~DeleteImportSnapshotData();
+
+	const string f_subvolume_1;
+	const string f_subvolume_2_path;
+	const string f_subvolume_2_name;
+
+	map<string,string> f_raw_1;
+	map<string,string> f_raw_2;
+    };
+
+    struct DeleteImportedSnapshot : public DeleteImportSnapshotData, BtrfsGeneralFixture
+    {
+	DeleteImportedSnapshot();
+
+	const snapper::BtrfsImportMetadata f_metadata_simple;
+	const snapper::BtrfsImportMetadata f_metadata_subdirs;
     };
 
 }}

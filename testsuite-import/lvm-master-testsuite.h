@@ -22,7 +22,7 @@ namespace testsuiteimport { namespace lvm {
 	return false;
     }
 
-    struct LvmImportTestsuite : public ::boost::unit_test::test_suite
+    struct LvmImportTestsuite : public boost::unit_test::test_suite
     {
 	LvmImportTestsuite();
 	~LvmImportTestsuite();

@@ -7,26 +7,37 @@
 
 namespace testsuiteimport { namespace btrfs
 {
-    class BtrfsImportMetadataTest
+    class BtrfsImportMetadataTestClass
     {
     public:
-	BtrfsImportMetadataTest() {}
+	BtrfsImportMetadataTestClass() {}
 
 	void tc_import_ctor();
 
-	// NOTE: depends on ctor
+	// NOTE: depends on:	- ctor
 	void tc_import_compare_metadata();
 
-	//void tc_import_compare_num_true();;
-
-	// NOTE: depends on Btrfs.checkImportedSnapshot()
+	/*
+	 * NOTE: depends on:
+	 *			- ctor
+	 * 			- Btrfs::checkImportedSnapshot()
+	 */
 	void tc_import_check_imported_snapshot();
 
-	// voit tc_import_clone_snapshot();
-	// void tc_import_delete_snapshot();
+	// NOTE: test not needed right now. simply calls Btrfs::cloneSnapshot()
+	//void tc_import_clone_snapshot();
 
+	/*
+	 * NOTE: depends on:
+	 * 			- ctor
+	 * 			- Btrfs::deleteImportedSnapshot()
+	 */
+	void tc_import_delete_snapshot();
+
+	// NOTE: depends on:	- ctor
 	void tc_import_get_raw_metadata();
 
+	// NOTE: depends on:	- ctor
 	void tc_import_get_snapshot_dir();
     };
 
@@ -45,7 +56,17 @@ namespace testsuiteimport { namespace btrfs
 	virtual void test_method();
     };
 
-    struct FGetSnapshotDir : public GeneralFixture
+    struct FGetSnapshotDir : public GeneralFixture, GetSnapshotDir
+    {
+	virtual void test_method();
+    };
+
+    struct FGetRawData : public GeneralFixture, GetRawMetadata
+    {
+	virtual void test_method();
+    };
+
+    struct FDeleteImportedSnapshot : public GeneralFixture, DeleteImportedSnapshot
     {
 	virtual void test_method();
     };

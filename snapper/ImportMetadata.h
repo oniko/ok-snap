@@ -88,7 +88,7 @@ namespace snapper
 	// clone described snapshot into snapper's own snapshot
 	virtual void cloneImportedSnapshot(unsigned int num) const = 0;
 	// delete imported snapshot (ADOPT only import)
-	virtual void deleteImportedSnapshot(unsigned int num) const = 0;
+	virtual void deleteImportedSnapshot() const = 0;
 
 	virtual map<string,string> raw_metadata() const = 0;
 

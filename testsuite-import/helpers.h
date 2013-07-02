@@ -6,17 +6,22 @@
 #include <vector>
 
 #include <boost/noncopyable.hpp>
-#include "btrfsimportmetadata-fixtures.h"
 
 namespace testsuiteimport
 {
     using std::string;
     using std::vector;
 
-    struct SimpleSystemCmdException : public LvmImportTestsuiteException
+    struct ImportTestsuiteException : public std::exception
+    {
+	explicit ImportTestsuiteException() throw() {}
+	virtual const char* what() const throw() { return "generic testsuite import exception"; }
+    };
+
+    struct SimpleSystemCmdException : public ImportTestsuiteException
     {
 	explicit SimpleSystemCmdException() throw() {}
-	virtual const char* what() const throw() { return "Constructor failure"; }
+	virtual const char* what() const throw() { return "SimpleSystemCmd constructor failure"; }
     };
 
     class SimpleSystemCmd : private boost::noncopyable
@@ -43,6 +48,7 @@ namespace testsuiteimport
 	vector<string>::const_iterator stderr_cend() const { return err_vec.end(); }
     };
 
+
     namespace lvm
     {
 
@@ -57,7 +63,7 @@ namespace testsuiteimport
 
 	void modify_fs_uuid(const string& vg_name, const string& lv_name, const string& fs_type, const string& new_uuid = "");
 
-	struct LvmImportTestsuiteException : std::exception
+	struct LvmImportTestsuiteException : public ImportTestsuiteException
 	{
 	    explicit LvmImportTestsuiteException() throw() {}
 	    virtual const char* what() const throw() { return "generic testsuite import lvm exception"; }
@@ -70,6 +76,10 @@ namespace testsuiteimport
 	void btrfs_delete_subvolume(const string& parent_dir, const string& name);
 
 	void btrfs_create_snapshot_ro(const string& source, const string& dest_path, const string& name);
+
+	bool btrfs_subvolume_exists(const string& path);
+
+	string deep_mkdirat(const string& root, const string& new_dirs);
     }
 }
 #endif // TESTSUITE_IMPORT_LVM_HELPERS_H

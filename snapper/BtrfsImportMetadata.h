@@ -21,7 +21,7 @@
 #ifndef SNAPPER_BTRFSIMPORTMETADATA_H
 #define SNAPPER_BTRFSIMPORTMETADATA_H
 
-#define KEY_SUBVOL_ID "subvol_id"
+//#define KEY_SUBVOL_ID "subvol_id"
 #define KEY_SUBVOLUME "subvolume"
 
 #include "snapper/FileUtils.h"
@@ -30,6 +30,7 @@
 
 namespace snapper
 {
+    class Btrfs;
 
     class BtrfsImportMetadata : public ImportMetadata
     {
@@ -41,7 +42,7 @@ namespace snapper
 
 	virtual bool checkImportedSnapshot() const;
 	virtual void cloneImportedSnapshot(unsigned int num) const;
-	virtual void deleteImportedSnapshot(unsigned int num) const;
+	virtual void deleteImportedSnapshot() const;
 
 	virtual map<string, string> raw_metadata() const;
 

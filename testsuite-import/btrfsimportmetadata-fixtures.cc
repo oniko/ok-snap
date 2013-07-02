@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 
@@ -11,35 +12,44 @@
 
 namespace testsuiteimport { namespace btrfs
 {
+    using std::make_pair;
+
+    const string BtrfsMetadata::f_subv_prefix = "test_subv";
+
     string BtrfsMetadata::init_subvolume(const string& root_volume)
     {
+	std::cout << "root_volume: " << root_volume << std::endl;
+
 	int rootfd = open(root_volume.c_str(), O_RDONLY | O_CLOEXEC | O_NOATIME);
 	if (rootfd < 0)
 	{
 	    // TODO: create proper exception
+	    std::cerr << "failed to open root volume" << std::endl;
 	    throw std::exception();
 	}
 
 	unsigned int count = 0;
 
-	std::ostringstream oss;
+	std::ostringstream oss(std::ostringstream::ate);
 	oss << f_subv_prefix << count;
 
 	struct stat buf;
 
-	while (fstatat(rootfd, oss.str().c_str(), &buf, AT_SYMLINK_NOFOLLOW) && count < 100)
+	while ((!fstatat(rootfd, oss.str().c_str(), &buf, AT_SYMLINK_NOFOLLOW) || errno != ENOENT) && count < 100)
 	{
+	    std::cout << "failed to stat: " << root_volume << "/" << oss.str() << std::endl;
 	    count++;
 
-	    if (errno != ENOENT)
+	    /*if (errno != ENOENT)
 	    {
 		close(rootfd);
 		// TODO: create proper exception
+		std::cerr << "failed to stat: " << oss.str() << std::endl;
 		throw std::exception();
-	    }
+	    }*/
 
-	    oss.str(f_subv_prefix);
 	    oss.clear();
+	    oss.str(f_subv_prefix);
 	    oss << count;
 	}
 
@@ -47,6 +57,7 @@ namespace testsuiteimport { namespace btrfs
 
 	if (count >= 100)
 	{
+	    std::cerr << "Ouch!" << std::endl;
 	    throw std::exception();
 	}
 
@@ -78,6 +89,8 @@ namespace testsuiteimport { namespace btrfs
 	: f_subvolume(init_subvolume(BtrfsGeneralFixture::f_conf_root_volume)),
 	f_fullpath_subvolume(BtrfsGeneralFixture::f_conf_root_volume + "/" + init_subvolume(BtrfsGeneralFixture::f_conf_root_volume))
     {
+	f_raw_valid.insert(make_pair(KEY_SUBVOLUME, f_subvolume));
+	f_raw_fullpath_valid.insert(make_pair(KEY_SUBVOLUME, f_fullpath_subvolume));
     }
 
     ValidMetadata::~ValidMetadata()
@@ -89,7 +102,7 @@ namespace testsuiteimport { namespace btrfs
 	{
 	}
 
-	btrfs_delete_subvolume(BtrfsGeneralFixture::f_conf_root_volume, f_fullpath_subvolume.substr(BtrfsGeneralFixture::f_conf_root_volume.length()) + 1);
+	btrfs_delete_subvolume(BtrfsGeneralFixture::f_conf_root_volume, f_fullpath_subvolume.substr(BtrfsGeneralFixture::f_conf_root_volume.length() + 1));
     }
 
 
@@ -109,8 +122,6 @@ namespace testsuiteimport { namespace btrfs
 	f_subvolume_missing("AllWorkAndNoPlayMakesJackADullBoy"),
 	f_subvolume_empty("	 ")
     {
-	f_raw_valid.insert(make_pair(KEY_SUBVOLUME, f_subvolume));
-	f_raw_fullpath_valid.insert(make_pair(KEY_SUBVOLUME, f_raw_fullpath_valid));
 	f_raw_foreign.insert(make_pair(KEY_SUBVOLUME, f_foreign_subvolume));
 	f_raw_missig.insert(make_pair(KEY_SUBVOLUME, f_subvolume_missing));
 	f_raw_empty.insert(make_pair(KEY_SUBVOLUME, f_subvolume_empty));
@@ -122,10 +133,10 @@ namespace testsuiteimport { namespace btrfs
 	f_valid_2(init_subvolume(BtrfsGeneralFixture::f_conf_root_volume))
     {
 	f_raw_valid_1.insert(make_pair(KEY_SUBVOLUME, f_valid_1));
-	f_raw_fullpath_valid_1.make_pair(KEY_SUBVOLUME, BtrfsGeneralFixture::f_conf_root_volume + "/" + f_valid_1);
+	f_raw_fullpath_valid_1.insert(make_pair(KEY_SUBVOLUME, BtrfsGeneralFixture::f_conf_root_volume + "/" + f_valid_1));
 
 	f_raw_valid_2.insert(make_pair(KEY_SUBVOLUME, f_valid_2));
-	f_raw_fullpath_valid_2.make_pair(KEY_SUBVOLUME, BtrfsGeneralFixture::f_conf_root_volume + "/" + f_valid_2);
+	f_raw_fullpath_valid_2.insert(make_pair(KEY_SUBVOLUME, BtrfsGeneralFixture::f_conf_root_volume + "/" + f_valid_2));
     }
 
     CompareData::~CompareData()
@@ -195,6 +206,8 @@ namespace testsuiteimport { namespace btrfs
     {
 	f_raw_subvolume.insert(make_pair(KEY_SUBVOLUME, f_subvolume));
 	f_raw_subvolume_fullpath.insert(make_pair(KEY_SUBVOLUME, f_subvolume_fullpath));
+	f_raw_subvolume_head_slash.insert(make_pair(KEY_SUBVOLUME, "/" + f_subvolume));
+	f_raw_subvolume_trail_slash.insert(make_pair(KEY_SUBVOLUME, f_subvolume + "/"));
     }
 
 
@@ -207,7 +220,45 @@ namespace testsuiteimport { namespace btrfs
     GetSnapshotDir::GetSnapshotDir()
 	: GetSnapshotDirData(), BtrfsGeneralFixture(),
 	f_metadata(f_raw_subvolume, snapper::ImportPolicy::ADOPT, f_btrfs),
-	f_metadata_fullpath(f_raw_subvolume_fullpath, snapper::ImportPolicy::ADOPT, f_btrfs)
+	f_metadata_fullpath(f_raw_subvolume_fullpath, snapper::ImportPolicy::ADOPT, f_btrfs),
+	f_metadata_head_slash(f_raw_subvolume_head_slash, snapper::ImportPolicy::ADOPT, f_btrfs),
+	f_metadata_trail_slash(f_raw_subvolume_trail_slash, snapper::ImportPolicy::ADOPT, f_btrfs)
     {
+    }
+
+    GetRawMetadata::GetRawMetadata()
+	: ValidMetadata(), BtrfsGeneralFixture(),
+	f_metadata(f_raw_valid, snapper::ImportPolicy::ACKNOWLEDGE, f_btrfs)
+    {
+    }
+
+    DeleteImportSnapshotData::DeleteImportSnapshotData()
+	: BtrfsMetadata(),
+	f_subvolume_1(init_subvolume(BtrfsGeneralFixture::f_conf_root_volume)),
+	f_subvolume_2_path("1/2/3"),
+	f_subvolume_2_name(init_subvolume(deep_mkdirat(BtrfsGeneralFixture::f_conf_root_volume, f_subvolume_2_path)))
+    {
+	f_raw_1.insert(make_pair(KEY_SUBVOLUME, f_subvolume_1));
+	f_raw_2.insert(make_pair(KEY_SUBVOLUME, f_subvolume_2_path + "/" + f_subvolume_2_name));
+    }
+
+    DeleteImportSnapshotData::~DeleteImportSnapshotData()
+    {
+	try
+	{
+	    btrfs_delete_subvolume(BtrfsGeneralFixture::f_conf_root_volume, f_subvolume_1);
+	} catch (...)
+	{
+	}
+	btrfs_delete_subvolume(BtrfsGeneralFixture::f_conf_root_volume + "/" + f_subvolume_2_path, f_subvolume_2_name);
+    }
+
+    DeleteImportedSnapshot::DeleteImportedSnapshot()
+	: DeleteImportSnapshotData(), BtrfsGeneralFixture(),
+	f_metadata_simple(f_raw_1, snapper::ImportPolicy::ADOPT, f_btrfs),
+	f_metadata_subdirs(f_raw_2, snapper::ImportPolicy::ADOPT, f_btrfs)
+    {
+	assert(btrfs_subvolume_exists(BtrfsGeneralFixture::f_conf_root_volume + "/" + f_subvolume_1));
+	assert(btrfs_subvolume_exists(BtrfsGeneralFixture::f_conf_root_volume + "/" + f_subvolume_2_path + "/" + f_subvolume_2_name));
     }
 }}

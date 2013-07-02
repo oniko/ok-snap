@@ -49,7 +49,7 @@ namespace snapper
 
 	virtual bool checkImportedSnapshot() const;
 	virtual void cloneImportedSnapshot(unsigned int num) const;
-	virtual void deleteImportedSnapshot(unsigned int num) const;
+	virtual void deleteImportedSnapshot() const;
 
 	virtual map<string, string> raw_metadata() const;
 
