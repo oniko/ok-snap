@@ -15,33 +15,39 @@ namespace testsuiteimport { namespace btrfs
     using std::string;
     using std::map;
 
-    class BtrfsMetadata
+    struct SubvolumeWrapper
     {
+	SubvolumeWrapper(const string& root_path, const string& subdirs, bool ro = false);
+	SubvolumeWrapper(const string& root_path, bool ro = false);
+	~SubvolumeWrapper();
+
+	const string root_path;
+	const string subvolume;
+
+	string fullpath() const { return root_path + "/" + subvolume; }
     private:
+	string dirs;
+	void init(bool rdonly) const;
 	static const string f_subv_prefix;
-    protected:
 	static string init_subvolume(const string& root_volume);
-	static string init_snapshot_ro(const string& source, const string& subvolume, const string& name);
     };
 
-    struct ValidMetadata : public BtrfsMetadata
+    struct ValidMetadata
     {
 	ValidMetadata();
-	~ValidMetadata();
 
-	const string f_subvolume;
-	const string f_fullpath_subvolume;
+	const SubvolumeWrapper f_subvolume;
+	const SubvolumeWrapper f_subvolume_fullpath;
 
 	map<string,string> f_raw_valid;
 	map<string,string> f_raw_fullpath_valid;
     };
 
-    struct ForeignSubvolume : public BtrfsMetadata
+    struct ForeignSubvolume
     {
 	ForeignSubvolume();
-	~ForeignSubvolume();
 
-	const string f_foreign_subvolume;
+	const SubvolumeWrapper f_foreign_subvolume;
     };
 
     struct BtrfsImportConstructor : public ValidMetadata, ForeignSubvolume, BtrfsGeneralFixture
@@ -51,19 +57,20 @@ namespace testsuiteimport { namespace btrfs
 	const string f_subvolume_missing;
 	const string f_subvolume_empty;
 
-	map<string,string> f_raw_foreign;
-	map<string,string> f_raw_missig;
+	map<string,string> f_raw_foreign_fullpath;
+	map<string,string> f_raw_missing;
 	map<string,string> f_raw_empty;
 	map<string,string> f_raw_invalid_key;
+	map<string,string> f_root_volume;
+	map<string,string> f_foreign_root_volume;
     };
 
-    struct CompareData : public BtrfsMetadata
+    struct CompareData
     {
 	CompareData();
-	~CompareData();
 
-	const string f_valid_1;
-	const string f_valid_2;
+	const SubvolumeWrapper f_subvolume_1;
+	const SubvolumeWrapper f_subvolume_2;
 
 	map<string,string> f_raw_valid_1;
 	map<string,string> f_raw_fullpath_valid_1;
@@ -84,13 +91,12 @@ namespace testsuiteimport { namespace btrfs
     };
 
 
-    struct CheckImportData : BtrfsMetadata
+    struct CheckImportData
     {
 	CheckImportData();
-	~CheckImportData();
 
-	const string f_subvolume_rw_1;
-	const string f_subvolume_ro_1;
+	const SubvolumeWrapper f_subvolume_rw_1;
+	const SubvolumeWrapper f_subvolume_ro_1;
 
 	const string f_subvolume_snapshots;
 
@@ -120,13 +126,11 @@ namespace testsuiteimport { namespace btrfs
     };
 
 
-    struct GetSnapshotDirData : public BtrfsMetadata
+    struct GetSnapshotDirData
     {
 	GetSnapshotDirData();
-	~GetSnapshotDirData();
 
-	const string f_subvolume;
-	const string f_subvolume_fullpath;
+	const SubvolumeWrapper f_subvolume;
 
 	map<string,string> f_raw_subvolume;
 	map<string,string> f_raw_subvolume_fullpath;
@@ -152,14 +156,12 @@ namespace testsuiteimport { namespace btrfs
 	const snapper::BtrfsImportMetadata f_metadata;
     };
 
-    struct DeleteImportSnapshotData : public BtrfsMetadata
+    struct DeleteImportSnapshotData
     {
 	DeleteImportSnapshotData();
-	~DeleteImportSnapshotData();
 
-	const string f_subvolume_1;
-	const string f_subvolume_2_path;
-	const string f_subvolume_2_name;
+	const SubvolumeWrapper f_subvolume_1;
+	const SubvolumeWrapper f_subvolume_2;
 
 	map<string,string> f_raw_1;
 	map<string,string> f_raw_2;

@@ -12,10 +12,12 @@
 #include <sys/wait.h>
 
 #include <iostream>
+#include <list>
 #include <sstream>
 #include <vector>
 #include <algorithm>
 #include <iterator>
+
 
 #include <boost/algorithm/string.hpp>
 
@@ -300,6 +302,7 @@ namespace testsuiteimport {
 
 	    if (ret)
 	    {
+		std::cerr << "ioctl(" << name << ", BTRFS_IOC_SNAP_DESTROY) failed" << std::endl;
 		throw std::exception();
 	    }
 	}
@@ -366,28 +369,34 @@ namespace testsuiteimport {
 	string deep_mkdirat(const string& root, const string& new_dirs)
 	{
 	    if (new_dirs.empty())
+	    {
+		std::cerr << "empty new_dirs" << std::endl;
 		throw std::exception();
+	    }
 
 	    int fd;
 
 	    int rootfd = open(root.c_str(), O_RDONLY | O_NOATIME | O_CLOEXEC);
 	    if (rootfd < 0)
 	    {
-		std::cout << "can't open: " << root << std::endl;
+		std::cerr << "can't open root: " << root << std::endl;
 		throw std::exception();
 	    }
 
-	    string::size_type last_pos = 0;
-	    
-	    for (string::size_type pos = new_dirs.find("/");
-		 pos != string::npos;
-		 last_pos = pos, pos = new_dirs.find("/", last_pos + 1), close(rootfd), rootfd = fd
-		)
+	    std::cout << "new_dirs: " << new_dirs << std::endl;
+
+	    vector<string> res;
+	    boost::split(res, new_dirs, boost::is_any_of("/"), boost::token_compress_on);
+
+	    for (vector<string>::const_iterator cit = res.begin();
+		 cit != res.end();
+		 cit++, close(rootfd), rootfd = fd)
 	    {
 		struct stat buf;
-		string tmp = new_dirs.substr(last_pos, pos - last_pos);
+		
+		std::cout << "going to mkdirat: " << *cit << std::endl;
 
-		fd = ::openat(rootfd, tmp.c_str(), O_RDONLY | O_NOATIME | O_CLOEXEC);
+		fd = ::openat(rootfd, (*cit).c_str(), O_RDONLY | O_NOATIME | O_CLOEXEC);
 		if (fd >= 0)
 		{
 		    if (!::fstat(fd, &buf) && S_ISDIR(buf.st_mode))
@@ -396,24 +405,24 @@ namespace testsuiteimport {
 		    close(rootfd);
 		    close(fd);
 
-		    std::cout << tmp << " is not a dir" << std::endl;
+		    std::cerr << *cit << " is not a dir or can't stat it" << std::endl;
 
 		    throw std::exception();
 		}
 
-		if(::mkdirat(rootfd, tmp.c_str(), 0777))
+		if(::mkdirat(rootfd, (*cit).c_str(), 0777))
 		{
 		    // even in case of EEXIST, someone has outrunned us, throw exception
 		    close(rootfd);
-		    std::cout << "mkdir " << tmp << " failed!" << std::endl;
+		    std::cerr << "mkdir " << *cit << " failed!" << std::endl;
 		    throw std::exception();
 		}
 
-		fd = ::openat(rootfd, tmp.c_str(), O_RDONLY | O_NOATIME | O_CLOEXEC);
+		fd = ::openat(rootfd, (*cit).c_str(), O_RDONLY | O_NOATIME | O_CLOEXEC);
 		if (fd < 0)
 		{
 		    close(rootfd);
-		    std::cout << "last open " << tmp << " failed!" << std::endl;
+		    std::cerr << "last open " << *cit << " failed!" << std::endl;
 		    throw std::exception();
 		}
 	    }

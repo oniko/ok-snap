@@ -7,6 +7,7 @@ TEST_VOLUME_X=/testsuite-import-btrfs-x
 
 function cleanup() {
 	umount -f $TEST_VOLUME
+	umount -f $TEST_VOLUME_X
 
 	rmdir $TEST_VOLUME
 	rmdir $TEST_VOLUME_X
