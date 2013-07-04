@@ -49,14 +49,11 @@ namespace snapper
 	virtual string getSnapshotDir(unsigned int num) const;
     private:
 	BtrfsImportMetadata(const string &subvolume, const Btrfs* btrfs);
-	static const ImportTypeId type_id = ImportTypeId::BTRFS;
 
 	const Btrfs* btrfs;
 	uint64_t import_subvol_id; // used in comparing imported snapshots
 
 	string import_subvolume; // no starting or trailing "/" allowed!
-
-	virtual ImportTypeId getImportMetadataId() const { return type_id; }
 
 	virtual bool isEqual(const ImportMetadata &a) const;
 	virtual bool isEqual(unsigned int num) const;

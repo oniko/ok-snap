@@ -26,16 +26,16 @@ namespace testsuiteimport { namespace lvm
 	std::cout << "CreateSnapshotEnvironment ctor" << std::endl;
 
 	std::ostringstream oss;
-	oss << f_snapshots_prefix << f_num;
+	oss << f_conf_lvm_snapshots_prefix << f_num;
 
 	while (mkdir(oss.str().c_str(), 0755) && f_num < 100)
 	{
 	    f_num++;
 
 	    // TODO: WTF?
-	    oss.str(f_snapshots_prefix);
+	    oss.str(f_conf_lvm_snapshots_prefix);
 	    oss.clear();
-	    oss << f_snapshots_prefix << f_num;
+	    oss << f_conf_lvm_snapshots_prefix << f_num;
 
 	    if (errno == EEXIST)
 		continue;
@@ -76,61 +76,7 @@ namespace testsuiteimport { namespace lvm
 
     CreateSnapshotEnvironment::~CreateSnapshotEnvironment()
     {
-	DIR *dr = fdopendir(f_dirfd);
-	if (!dr)
-	{
-	    BOOST_TEST_MESSAGE( "Can't open directory stream" );
-	    close(f_dirfd);
-	    return;
-	}
-
-	long name_max = fpathconf(f_dirfd, _PC_NAME_MAX);
-	if (name_max < 0)
-	    name_max = 255;
-
-	size_t len = offsetof(struct dirent, d_name) + static_cast<size_t>(name_max) + 1;
-	struct dirent *de = static_cast<struct dirent *>(malloc(len));
-	struct dirent *dres;
-
-	while (!readdir_r(dr, de, &dres) && dres != NULL)
-	{
-	    if (strcmp(de->d_name, ".") != 0 && strcmp(de->d_name, "..") != 0)
-	    {
-		std::cout << "going to remove: " << f_snapshot_dir << "/" << de->d_name << std::endl;
-
-		struct stat buff;
-
-		if (fstatat(f_dirfd, de->d_name, &buff, AT_SYMLINK_NOFOLLOW))
-		{
-		    perror("fstatat");
-		    BOOST_TEST_MESSAGE( "Can't fstatat: " << f_snapshot_dir << de->d_name );
-		}
-
-		if (S_ISDIR(buff.st_mode))
-		{
-		    if (unlinkat(f_dirfd, de->d_name, AT_REMOVEDIR))
-		    {
-			perror("unlinkat");
-			BOOST_TEST_MESSAGE( "Can't remove (dir): " << f_snapshot_dir << de->d_name );
-		    }
-		    continue;
-		}
-
-		if (S_ISREG(buff.st_mode))
-		{
-		    if (unlinkat(f_dirfd, de->d_name, 0))
-		    {
-			perror("unlinkat");
-			BOOST_TEST_MESSAGE( "Can't remove: " << f_snapshot_dir << de->d_name );
-		    }
-		    continue;
-		}
-		BOOST_TEST_MESSAGE( "WARN: what file type is this? : " << f_snapshot_dir << de->d_name );
-	    }
-	}
-
-	closedir(dr);
-	free(de);
+	deep_rmdirat(f_dirfd);
 	close(f_dirfd);
 
 	if (rmdir(f_snapshot_dir.c_str()))
@@ -251,9 +197,13 @@ namespace testsuiteimport { namespace lvm
 	: MountSnapshotByDeviceValid()
     {
 	std::cout << "MountSnapshotByDeviceAlreadyMounted ctor" << std::endl;
+	
+	string::size_type open = f_lvm->fstype().find("(");
+	string::size_type close = f_lvm->fstype().find(")");
+	string fstype = f_lvm->fstype().substr(open + 1, close - open - 1);
 
 	int ret = mount(f_dev_path.c_str(), f_mountpoint.c_str(),
-			f_lvm->mount_type.c_str(),
+			fstype.c_str(),
 			MS_NOATIME | MS_NODEV | MS_NOEXEC | MS_RDONLY,
 			NULL);
 
@@ -301,7 +251,7 @@ namespace testsuiteimport { namespace lvm
     }
 
     CheckImportedSnapshotVolumeImport::CheckImportedSnapshotVolumeImport()
-	: LvmGeneralFixture(), f_vg_name(f_lvm->vg_name), f_lv_name(f_lvm->lv_name)
+	: LvmGeneralFixture(), f_vg_name(f_lvm->getVgName()), f_lv_name(f_lvm->getLvName())
     {
 	std::cout << "CheckImportedSnapshotVolumeImport ctor" << std::endl;
     }
@@ -314,7 +264,11 @@ namespace testsuiteimport { namespace lvm
 
 	lvcreate_thin_snapshot_wrapper( f_vg_name, f_origin_name, f_lv_name, false);
 
-	modify_fs_uuid(f_vg_name, f_lv_name, f_lvm->mount_type);
+	string::size_type open = f_lvm->fstype().find("(");
+	string::size_type close = f_lvm->fstype().find(")");
+	string fstype = f_lvm->fstype().substr(open + 1, close - open - 1);
+
+	modify_fs_uuid(f_vg_name, f_lv_name, fstype);
     }
 
     CheckImportedSnapshotFsUuidMismatch::~CheckImportedSnapshotFsUuidMismatch()

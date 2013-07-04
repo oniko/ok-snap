@@ -37,13 +37,10 @@ namespace snapper
     {
     public:
 
-	//friend class Lvm; // ??
-
 	LvmImportMetadata(const map<string,string> &input, ImportPolicy ipolicy, const Lvm* fs);
 
 	virtual string getDevicePath() const;
 
-	virtual ImportTypeId getImportMetadataId() const { return type_id; }
 	virtual bool isEqual(const ImportMetadata &a) const;
 	virtual bool isEqual(unsigned int num) const;
 
@@ -56,7 +53,6 @@ namespace snapper
 	virtual string getSnapshotDir(unsigned int num) const;
     private:
 	LvmImportMetadata(const string &vg_name, const string &lv_name, const Lvm* fs);
-	static const ImportTypeId type_id = ImportTypeId::LVM2;
 
 	const Lvm* lvm;
 

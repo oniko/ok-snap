@@ -18,8 +18,6 @@
  *
  */
 
-#include "config.h"
-
 #include <boost/algorithm/string.hpp>
 
 #include "snapper/Log.h"
@@ -104,8 +102,9 @@ namespace snapper
 
     bool LvmImportMetadata::isEqual(unsigned int num) const
     {
-	return isEqual(LvmImportMetadata(lvm->vg_name, lvm->snapshotLvName(num), lvm));
+	return isEqual(LvmImportMetadata(lvm->getVgName(), lvm->snapshotLvName(num), lvm));
     }
+
 
     bool LvmImportMetadata::checkImportedSnapshot() const
     {

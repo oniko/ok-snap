@@ -16,5 +16,6 @@ noinst_PROGRAMS = testsuitemain
 testsuitemain_SOURCES = testsuitemain.cc lvm-master-testsuite.cc lvmimportmetadata-test.cc \
 			lvmimportmetadata-fixtures.cc lvm-test.cc lvm-fixtures.cc helpers.cc \
 			general-fixtures.cc snapshot-test.cc snapshot-fixtures.cc \
-			btrfs-testsuite.cc btrfsimportmetadata-test.cc btrfsimportmetadata-fixtures.cc
+			btrfs-testsuite.cc btrfsimportmetadata-test.cc btrfsimportmetadata-fixtures.cc \
+			btrfs-test.cc btrfs-fixtures.cc
 

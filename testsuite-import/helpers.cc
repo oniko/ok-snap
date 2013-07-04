@@ -1,8 +1,10 @@
 #include <errno.h>
+#include <dirent.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <asm/types.h>
@@ -366,7 +368,7 @@ namespace testsuiteimport {
 	    return ret ? false : S_ISDIR(buf.st_mode) && buf.st_ino == 256;
 	}
 
-	string deep_mkdirat(const string& root, const string& new_dirs)
+	string deep_mkdirat(const string& root, const string& new_dirs, bool fail_at_eexists)
 	{
 	    if (new_dirs.empty())
 	    {
@@ -399,7 +401,7 @@ namespace testsuiteimport {
 		fd = ::openat(rootfd, (*cit).c_str(), O_RDONLY | O_NOATIME | O_CLOEXEC);
 		if (fd >= 0)
 		{
-		    if (!::fstat(fd, &buf) && S_ISDIR(buf.st_mode))
+		    if (!::fstat(fd, &buf) && S_ISDIR(buf.st_mode) && !fail_at_eexists)
 			continue;
 
 		    close(rootfd);
@@ -433,6 +435,22 @@ namespace testsuiteimport {
 
 	    return new_dirs;
 	}
+
+
+	bool
+	bool_deep_mkdirat(const string& root, const string& new_dirs)
+	{
+	    try
+	    {
+		deep_mkdirat(root, new_dirs, true);
+		return true;
+	    }
+	    catch (...)
+	    {
+		return false;
+	    }
+	}
+
     } // btrfs
 
     char* SimpleSystemCmd::convert(const string& str)
@@ -550,4 +568,81 @@ namespace testsuiteimport {
 	    exit(EXIT_FAILURE);
 	}
     }
+    
+    void
+    deep_rmdirat(int dirfd)
+    {
+	DIR *dr = fdopendir(dirfd);
+	if (!dr)
+	{
+	    std::cerr << "Can't opendir passed fd" << std::endl;
+	    return;
+	}
+
+	long name_max = fpathconf(dirfd, _PC_NAME_MAX);
+	if (name_max < 0)
+	    name_max = 255;
+
+	size_t len = offsetof(struct dirent, d_name) + static_cast<size_t>(name_max) + 1;
+	struct dirent *de = static_cast<struct dirent *>(malloc(len));
+	struct dirent *dres;
+
+	while (!readdir_r(dr, de, &dres) && dres != NULL)
+	{
+	    if (strcmp(de->d_name, ".") != 0 && strcmp(de->d_name, "..") != 0)
+	    {
+		struct stat buff;
+
+		if (fstatat(dirfd, de->d_name, &buff, AT_SYMLINK_NOFOLLOW))
+		{
+// 			perror("fstatat");
+// 			BOOST_TEST_MESSAGE( "Can't fstatat: " << f_snapshot_dir << de->d_name );
+		    //throw std::exception();
+		    std::cerr << "can't stat " << de->d_name << std::endl;
+		}
+
+		if (S_ISDIR(buff.st_mode))
+		{
+		    int fd = openat(dirfd, de->d_name, O_RDONLY | O_NOATIME | O_NOFOLLOW | O_CLOEXEC);
+		    if (fd >= 0)
+		    {
+			deep_rmdirat(fd);
+			close(fd);
+		    }
+
+		    if (unlinkat(dirfd, de->d_name, AT_REMOVEDIR))
+		    {
+			perror("unlinkat");
+			std::cerr <<  "Can't remove (dir): " << de->d_name << std::endl;
+		    }
+		    continue;
+		}
+
+		if (S_ISREG(buff.st_mode) || S_ISLNK(buff.st_mode))
+		{
+		    if (unlinkat(dirfd, de->d_name, 0))
+		    {
+			perror("unlinkat");
+			std::cerr << "Can't remove: " << de->d_name << std::endl;
+		    }
+		    continue;
+		}
+		std::cerr << "WARN: what file type is this? : " << de->d_name << std::endl;
+	    }
+	}
+
+	closedir(dr);
+	free(de);
+    }
+
+    void deep_rmdirat(const string& path)
+    {
+	int fd = open(path.c_str(), O_RDONLY | O_NOATIME | O_CLOEXEC | O_NOFOLLOW);
+	if (fd >= 0)
+	{
+	    deep_rmdirat(fd);
+	    close(fd);
+	}
+    }
+
 }

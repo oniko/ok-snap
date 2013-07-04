@@ -48,6 +48,9 @@ namespace testsuiteimport
 	vector<string>::const_iterator stderr_cend() const { return err_vec.end(); }
     };
 
+    void deep_rmdirat(int fd);
+    void deep_rmdirat(const string& path);
+
 
     namespace lvm
     {
@@ -79,7 +82,8 @@ namespace testsuiteimport
 
 	bool btrfs_subvolume_exists(const string& path);
 
-	string deep_mkdirat(const string& root, const string& new_dirs);
+	string deep_mkdirat(const string& root, const string& new_dirs, bool fail_at_eexists = false);
+	bool bool_deep_mkdirat(const string& root, const string& new_dirs);
     }
 }
 #endif // TESTSUITE_IMPORT_LVM_HELPERS_H

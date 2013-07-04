@@ -30,7 +30,6 @@
 
 namespace snapper
 {
-    class LvmImportMetadata;
 
     struct LvmActivationException : public std::exception
     {
@@ -78,8 +77,6 @@ namespace snapper
     {
     public:
 
-	friend class LvmImportMetadata;
-
 	static Filesystem* create(const string& fstype, const string& subvolume);
 	static bool is_subvolume_ro(const string& vg_name, const string& lv_name);
 	virtual ImportMetadata* createImportMetadata(const map<string,string> &raw_data, ImportPolicy ipolicy) const;
@@ -110,21 +107,23 @@ namespace snapper
 
 	virtual bool checkSnapshot(unsigned int num) const;
 
+	bool checkImportedSnapshot(const string &vg_name, const string& lv_name, bool check_ro = false) const;
+	void deleteSnapshot(const string &vg_name, const string &lv_name) const;
+	void cloneSnapshot(unsigned int num, const string &vg_name, const string &lv_name) const;
+
+	string getVgName() const { return vg_name; }
+	string getLvName() const { return lv_name; }
+	string getFsUuid() const { return fs_uuid; }
     private:
 
 	const string mount_type;
 	const LvmCapabilities* caps;
 
-	bool checkImportedSnapshot(const string &vg_name, const string& lv_name, bool check_ro = false) const;
 	bool detectThinVolumeNames(const MtabData& mtab_data);
 	bool detectThinVolumeNames(const string& vg_name, const string& lv_name) const;
 	void activateSnapshot(const string& vg_name, const string& lv_name) const;
 	void deactivateSnapshot(const string& vg_name, const string& lv_name) const;
 	bool detectInactiveSnapshot(const string& vg_name, const string& lv_name) const;
-
-	void cloneSnapshot(unsigned int num, const string &vg_name, const string &lv_name) const;
-	void deleteSnapshot(const string &vg_name, const string &lv_name) const;
-	string getFsUuid() const { return fs_uuid; }
 
 	string getDevice(unsigned int num) const;
 

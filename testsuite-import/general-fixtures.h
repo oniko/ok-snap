@@ -3,11 +3,9 @@
 
 #include <string>
 
-#define private public
-    #include "snapper/Btrfs.h"
-    #include "snapper/Lvm.h"
-    #include "snapper/Snapper.h"
-#undef private
+#include "snapper/Btrfs.h"
+#include "snapper/Lvm.h"
+#include "snapper/Snapper.h"
 
 #include "snapper/Logger.h"
 
@@ -31,7 +29,8 @@ namespace testsuiteimport
 	    LvmGeneralFixture();
 	    ~LvmGeneralFixture();
 
-	    static const string f_snapshots_prefix;
+	    static const string f_conf_lvm_root_volume;
+	    static const string f_conf_lvm_snapshots_prefix;
 	    static const string f_conf_vg_name;
 	    static const string f_conf_origin_name;
 	    static const string f_test_snapshot_01;
@@ -48,8 +47,9 @@ namespace testsuiteimport
 	    BtrfsGeneralFixture();
 	    ~BtrfsGeneralFixture();
 
-	    static const string f_conf_root_volume;
-	    static const string f_conf_foreign_root_volume;
+	    static const string f_conf_btrfs_root_volume;
+	    static const string f_conf_btrfs_snapshots_prefix;
+	    static const string f_conf_btrfs_foreign_root_volume;
 
 	    const snapper::Snapper *f_snapper;
 	    const snapper::Btrfs *f_btrfs;

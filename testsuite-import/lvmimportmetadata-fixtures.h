@@ -4,10 +4,9 @@
 #include <map>
 #include <string>
 
-#define private public
-    #include "snapper/Lvm.h"
-    #include "snapper/LvmImportMetadata.h"
-#undef private
+#include "snapper/Lvm.h"
+#include "snapper/LvmImportMetadata.h"
+
 
 namespace testsuiteimport { namespace lvm {
 

@@ -129,8 +129,8 @@ namespace testsuiteimport { namespace btrfs
 */
 
     ValidMetadata::ValidMetadata()
-	: f_subvolume(BtrfsGeneralFixture::f_conf_root_volume),
-	f_subvolume_fullpath(BtrfsGeneralFixture::f_conf_root_volume)
+	: f_subvolume(BtrfsGeneralFixture::f_conf_btrfs_root_volume),
+	f_subvolume_fullpath(BtrfsGeneralFixture::f_conf_btrfs_root_volume)
     {
 	f_raw_valid.insert(make_pair(KEY_SUBVOLUME, f_subvolume.subvolume));
 	f_raw_fullpath_valid.insert(make_pair(KEY_SUBVOLUME, f_subvolume.fullpath()));
@@ -138,7 +138,7 @@ namespace testsuiteimport { namespace btrfs
 
 
     ForeignSubvolume::ForeignSubvolume()
-	: f_foreign_subvolume(BtrfsGeneralFixture::f_conf_foreign_root_volume)
+	: f_foreign_subvolume(BtrfsGeneralFixture::f_conf_btrfs_foreign_root_volume)
     {
     }
 
@@ -152,14 +152,14 @@ namespace testsuiteimport { namespace btrfs
 	f_raw_missing.insert(make_pair(KEY_SUBVOLUME, f_subvolume_missing));
 	f_raw_empty.insert(make_pair(KEY_SUBVOLUME, f_subvolume_empty));
 	f_raw_invalid_key.insert(make_pair("subvolumE", f_subvolume.subvolume));
-	f_root_volume.insert(make_pair(KEY_SUBVOLUME, BtrfsGeneralFixture::f_conf_root_volume));
-	f_foreign_root_volume.insert(make_pair(KEY_SUBVOLUME, BtrfsGeneralFixture::f_conf_foreign_root_volume));
+	f_root_volume.insert(make_pair(KEY_SUBVOLUME, BtrfsGeneralFixture::f_conf_btrfs_root_volume));
+	f_foreign_root_volume.insert(make_pair(KEY_SUBVOLUME, BtrfsGeneralFixture::f_conf_btrfs_foreign_root_volume));
     }
 
 
     CompareData::CompareData()
-	: f_subvolume_1(BtrfsGeneralFixture::f_conf_root_volume),
-	f_subvolume_2(BtrfsGeneralFixture::f_conf_root_volume)
+	: f_subvolume_1(BtrfsGeneralFixture::f_conf_btrfs_root_volume),
+	f_subvolume_2(BtrfsGeneralFixture::f_conf_btrfs_root_volume)
     {
 	f_raw_valid_1.insert(make_pair(KEY_SUBVOLUME, f_subvolume_1.subvolume));
 	f_raw_fullpath_valid_1.insert(make_pair(KEY_SUBVOLUME, f_subvolume_1.fullpath()));
@@ -180,8 +180,8 @@ namespace testsuiteimport { namespace btrfs
 
 
     CheckImportData::CheckImportData()
-	: f_subvolume_rw_1(BtrfsGeneralFixture::f_conf_root_volume),
-	f_subvolume_ro_1(BtrfsGeneralFixture::f_conf_root_volume, true),
+	: f_subvolume_rw_1(BtrfsGeneralFixture::f_conf_btrfs_root_volume),
+	f_subvolume_ro_1(BtrfsGeneralFixture::f_conf_btrfs_root_volume, true),
 	f_subvolume_snapshots(".snapshots")
     {
 	f_raw_ro_subvolume.insert(make_pair(KEY_SUBVOLUME, f_subvolume_ro_1.subvolume));
@@ -207,7 +207,7 @@ namespace testsuiteimport { namespace btrfs
 
 
     GetSnapshotDirData::GetSnapshotDirData()
-	: f_subvolume(BtrfsGeneralFixture::f_conf_root_volume)
+	: f_subvolume(BtrfsGeneralFixture::f_conf_btrfs_root_volume)
     {
 	f_raw_subvolume.insert(make_pair(KEY_SUBVOLUME, f_subvolume.subvolume));
 	f_raw_subvolume_fullpath.insert(make_pair(KEY_SUBVOLUME, f_subvolume.fullpath()));
@@ -234,8 +234,8 @@ namespace testsuiteimport { namespace btrfs
 
 
     DeleteImportSnapshotData::DeleteImportSnapshotData()
-	: f_subvolume_1(BtrfsGeneralFixture::f_conf_root_volume),
-	f_subvolume_2(BtrfsGeneralFixture::f_conf_root_volume, string("1/2/3"))
+	: f_subvolume_1(BtrfsGeneralFixture::f_conf_btrfs_root_volume),
+	f_subvolume_2(BtrfsGeneralFixture::f_conf_btrfs_root_volume, string("1/2/3"))
     {
 	f_raw_1.insert(make_pair(KEY_SUBVOLUME, f_subvolume_1.subvolume));
 	f_raw_2.insert(make_pair(KEY_SUBVOLUME, f_subvolume_2.subvolume));

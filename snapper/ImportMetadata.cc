@@ -18,7 +18,8 @@
  *
  */
 
-#include <assert.h>
+//#include <assert.h>
+#include <typeinfo>
 
 #include "snapper/ImportMetadata.h"
 #include "snapper/Exception.h"
@@ -60,8 +61,12 @@ namespace snapper
 	if (&data_a == &data_b)
 	    return true;
 
-	if (data_a.getImportMetadataId() != data_b.getImportMetadataId())
+	// ImportMetadata is base class w/ virtual methods
+	if (typeid(data_a) != typeid(data_b))
 	    return false;
+
+/*	if (data_a.getImportMetadataId() != data_b.getImportMetadataId())
+	    return false;*/
 
 	return data_a.isEqual(data_b);
     }

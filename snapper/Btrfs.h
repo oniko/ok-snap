@@ -29,13 +29,10 @@
 
 namespace snapper
 {
-    class BtrfsImportMetadata;
 
     class Btrfs : public Filesystem
     {
     public:
-
-	friend class BtrfsImportMetadata;
 
 	static Filesystem* create(const string& fstype, const string& subvolume);
 
@@ -72,22 +69,22 @@ namespace snapper
 
 	virtual void cmpDirs(const SDir& dir1, const SDir& dir2, cmpdirs_cb_t cb) const;
 
+	bool checkImportedSnapshot(const string &import_subvolume, bool check_ro = false) const;
+	void cloneSnapshot(unsigned int num, const string &subvolume) const;
+	void deleteSnapshot(const string &dirpath, const string& name) const;
+
     private:
 	uint64_t subvol_id;
 
-	uint64_t get_subvol_id() const { return subvol_id; }
-
 	bool is_subvolume(const struct stat& stat) const;
-
-	bool checkImportedSnapshot(const string &import_subvolume, bool check_ro = false) const;
 
 	bool create_subvolume(int fddst, const string& name) const;
 	bool create_snapshot(int fd, int fddst, const string& name) const;
 	bool delete_subvolume(int fd, const string& name) const;
 
-	void cloneSnapshot(unsigned int num, const string &subvolume) const;
-	void deleteSnapshot(const string &dirpath, const string& name) const;
     };
 
 }
+
+
 #endif

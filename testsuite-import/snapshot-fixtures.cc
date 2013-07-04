@@ -132,7 +132,7 @@ namespace testsuiteimport { namespace lvm
 	lvcreate_thin_snapshot_wrapper(f_conf_vg_name, f_conf_origin_name, f_snapshot_lv_name);
 
 	std::ostringstream oss;
-	oss << f_snapshots_prefix << f_num << "/snapshot";
+	oss << f_conf_lvm_snapshots_prefix << f_num << "/snapshot";
 
 	f_mountpoint = oss.str();
     }
@@ -189,7 +189,7 @@ namespace testsuiteimport { namespace lvm
 	lvcreate_thin_snapshot_wrapper(f_conf_vg_name, f_conf_origin_name, f_snapshot_lv_name);
 
 	std::ostringstream oss;
-	oss << f_snapshots_prefix << f_num << "/snapshot";
+	oss << f_conf_lvm_snapshots_prefix << f_num << "/snapshot";
 
 	f_mountpoint = oss.str();
     }
@@ -228,9 +228,15 @@ namespace testsuiteimport { namespace lvm
 	: f_dev_path(dev)
     {
 	std::cout << "UmountFilesystemSnapshotBase ctor" << std::endl;
+	string type = mount_type;
+
+	string::size_type open = mount_type.find("(");
+	string::size_type close = mount_point.find(")");
+	if (open != string::npos && close != string::npos)
+	    type = mount_point.substr(open + 1, close - open - 1);
 
 	int ret = mount(f_dev_path.c_str(), mount_point.c_str(),
-			mount_type.c_str(),
+			type.c_str(),
 			MS_NOATIME | MS_NODEV | MS_NOEXEC | MS_RDONLY,
 			NULL);
 
@@ -244,14 +250,14 @@ namespace testsuiteimport { namespace lvm
 
     UmountFilesystemSnapshotImportNone::UmountFilesystemSnapshotImportNone()
 	: MountFileSystemSnapshotImportNone(),
-	UmountFilesystemSnapshotBase("/dev/" + f_conf_vg_name + "/" + f_snapshot_lv_name, f_mountpoint, f_lvm->mount_type)
+	UmountFilesystemSnapshotBase("/dev/" + f_conf_vg_name + "/" + f_snapshot_lv_name, f_mountpoint, f_lvm->fstype())
     {
 	f_sh.mount_use_count = 1;
     }
 
     UmountFilesystemSnapshotImportClone::UmountFilesystemSnapshotImportClone()
 	: MountFileSystemSnapshotImportClone(),
-	UmountFilesystemSnapshotBase("/dev/" + f_conf_vg_name + "/" + f_snapshot_lv_name, f_mountpoint, f_lvm->mount_type),
+	UmountFilesystemSnapshotBase("/dev/" + f_conf_vg_name + "/" + f_snapshot_lv_name, f_mountpoint, f_lvm->fstype()),
 	f_dev_origin_path("/dev/" + f_conf_vg_name + "/" + f_clone_origin_name),
 	f_origin_mount_point(f_snapshot_dir + "/tmp_mnt_point")
     {
@@ -260,8 +266,11 @@ namespace testsuiteimport { namespace lvm
 	if (mkdirat(f_dirfd, "tmp_mnt_point", 0755))
 	    BOOST_FAIL( "Can't tmp_mnt_point directory in test environment" );
 
+	string::size_type open = f_lvm->fstype().find("(");
+	string::size_type close = f_lvm->fstype().find(")");
+
 	int ret = mount(f_dev_origin_path.c_str(), f_origin_mount_point.c_str(),
-			f_lvm->mount_type.c_str(),
+			f_lvm->fstype().substr(open + 1, close - open - 1).c_str(),
 			MS_NOATIME | MS_NODEV | MS_NOEXEC | MS_RDONLY,
 			NULL);
 
@@ -286,14 +295,14 @@ namespace testsuiteimport { namespace lvm
 
     UmountFilesystemSnapshotImportAdopt::UmountFilesystemSnapshotImportAdopt()
 	: MountFileSystemSnapshotImportAdopt(),
-	UmountFilesystemSnapshotBase("/dev/" + f_conf_vg_name + "/" + f_snapshot_lv_name, f_mountpoint, f_lvm->mount_type)
+	UmountFilesystemSnapshotBase("/dev/" + f_conf_vg_name + "/" + f_snapshot_lv_name, f_mountpoint, f_lvm->fstype())
     {
 	f_sh.mount_use_count = 1;
     }
 
     UmountFilesystemSnapshotImportAck::UmountFilesystemSnapshotImportAck()
 	: MountFileSystemSnapshotImportAck(),
-	UmountFilesystemSnapshotBase("/dev/" + f_conf_vg_name + "/" + f_snapshot_lv_name, f_mountpoint, f_lvm->mount_type)
+	UmountFilesystemSnapshotBase("/dev/" + f_conf_vg_name + "/" + f_snapshot_lv_name, f_mountpoint, f_lvm->fstype())
     {
 	f_sh.mount_use_count = 1;
     }

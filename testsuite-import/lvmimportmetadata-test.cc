@@ -42,8 +42,8 @@ namespace testsuiteimport { namespace lvm
 
 	BOOST_REQUIRE_NO_THROW( p_imdata.reset(new snapper::LvmImportMetadata(f_raw_data, snapper::ImportPolicy::NONE, f_dummy_lvm)));
 
-	BOOST_CHECK_EQUAL( p_imdata->vg_name, f_raw_data["vg_name"] );
-	BOOST_CHECK_EQUAL( p_imdata->lv_name, f_raw_data["lv_name"] );
+// 	BOOST_CHECK_EQUAL( p_imdata->vg_name, f_raw_data["vg_name"] );
+// 	BOOST_CHECK_EQUAL( p_imdata->lv_name, f_raw_data["lv_name"] );
     }
 
 

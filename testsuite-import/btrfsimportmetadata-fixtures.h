@@ -1,4 +1,3 @@
-
 #ifndef BTRFSIMPORTMETADATA_FIXTURES_H
 #define BTRFSIMPORTMETADATA_FIXTURES_H
 
@@ -7,7 +6,6 @@
 
 #include "snapper/BtrfsImportMetadata.h"
 
-#include "testsuite-import/btrfs-fixtures.h"
 #include "testsuite-import/general-fixtures.h"
 
 namespace testsuiteimport { namespace btrfs

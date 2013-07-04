@@ -97,17 +97,17 @@ namespace snapper
 
     bool BtrfsImportMetadata::isEqual(unsigned int num) const
     {
-	string subvolume = btrfs->snapshotDir(num).substr(btrfs->subvolume.length());
-	subvolume = boost::trim_left_copy_if(subvolume, boost::is_any_of("/"));
-
-	// trim all leading / chars
-	//subvolume = boost::trim_left_if(subvolume, );
-	//boost::starts_with();
-
-	y2deb("isEqual subvolume=" << subvolume);
-
 	try
 	{
+	    string subvolume = btrfs->snapshotDir(num).substr(btrfs->openSubvolumeDir().fullname().length());
+	    subvolume = boost::trim_left_copy_if(subvolume, boost::is_any_of("/"));
+
+	    // trim all leading / chars
+	    //subvolume = boost::trim_left_if(subvolume, );
+	    //boost::starts_with();
+
+	    y2deb("isEqual subvolume=" << subvolume);
+
 	    return isEqual(BtrfsImportMetadata(subvolume, btrfs));
 	}
 	catch (const IOErrorException &e)
@@ -141,7 +141,8 @@ namespace snapper
 
     string BtrfsImportMetadata::getSnapshotDir(unsigned int num) const
     {
-	return (btrfs->subvolume == "/" ? "" : btrfs->subvolume) + "/" + import_subvolume;
+	SDir root_volume = btrfs->openSubvolumeDir();
+	return (root_volume.fullname() == "/" ? "" : root_volume.fullname()) + "/" + import_subvolume;
     }
 
     map<string,string> BtrfsImportMetadata::raw_metadata() const

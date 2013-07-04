@@ -53,7 +53,6 @@ namespace snapper
 
     // keep it 1 byte as it's supposed to be transfered via dbus as the BYTE type
     enum ImportPolicy : unsigned char { NONE = 0, CLONE, ADOPT, ACKNOWLEDGE };
-    enum ImportTypeId : unsigned int { BTRFS, EXT4, LVM2 };
 
     ImportPolicy createImportPolicy(unsigned char raw);
 
@@ -67,7 +66,6 @@ namespace snapper
 	virtual bool isEqual(unsigned int num) const = 0;
 	virtual bool isEqual(const ImportMetadata& idata) const = 0;
 
-	virtual ImportTypeId getImportMetadataId() const = 0;
     public:
 
 	ImportMetadata(ImportPolicy policy) : creation_time((time_t)-1), import_policy(policy) {}

@@ -7,7 +7,8 @@ namespace testsuiteimport
     namespace lvm
     {
 
-	const string LvmGeneralFixture::f_snapshots_prefix =  "/testsuite-import/.snapshots/";
+	const string LvmGeneralFixture::f_conf_lvm_root_volume = "/testsuite-import";
+	const string LvmGeneralFixture::f_conf_lvm_snapshots_prefix = LvmGeneralFixture::f_conf_lvm_root_volume + "/" + ".snapshots/";
 	const string LvmGeneralFixture::f_conf_vg_name = "vg_test";
 	const string LvmGeneralFixture::f_conf_origin_name = "lv_test_thin_1";
 
@@ -27,8 +28,9 @@ namespace testsuiteimport
 
     namespace btrfs
     {
-	const string BtrfsGeneralFixture::f_conf_root_volume = "/testsuite-import-btrfs";
-	const string BtrfsGeneralFixture::f_conf_foreign_root_volume = "/testsuite-import-btrfs-x";
+	const string BtrfsGeneralFixture::f_conf_btrfs_root_volume = "/testsuite-import-btrfs";
+	const string BtrfsGeneralFixture::f_conf_btrfs_snapshots_prefix = BtrfsGeneralFixture::f_conf_btrfs_root_volume + "/" + ".snapshots/";
+	const string BtrfsGeneralFixture::f_conf_btrfs_foreign_root_volume = "/testsuite-import-btrfs-x";
 
 	BtrfsGeneralFixture::BtrfsGeneralFixture()
 	    : f_snapper(new snapper::Snapper("testsuite-import-btrfs")),

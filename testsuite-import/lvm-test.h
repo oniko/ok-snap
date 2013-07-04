@@ -9,8 +9,6 @@ namespace testsuiteimport { namespace lvm
     class LvmTestClass
     {
     public:
-	LvmTestClass() {}
-
 	void tc_create_snapshot_environment();
 	void tc_create_snapshot_environment_dir_exists();
 	void tc_create_snapshot_environment_failure();
