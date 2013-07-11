@@ -191,21 +191,21 @@ namespace snapper
 
 
     Snapshots::iterator
-    Snapper::importSingleSnapshot(const string &description, unsigned char import_policy, const map<string,string>& idata)
+    Snapper::importSingleSnapshot(const string &description, unsigned char import_policy, const string& idata)
     {
 	return snapshots.importSingleSnapshot(description, import_policy, idata);
     }
 
 
     Snapshots::iterator
-    Snapper::importPreSnapshot(const string &description, unsigned char import_policy, const map<string,string>& idata)
+    Snapper::importPreSnapshot(const string &description, unsigned char import_policy, const string& idata)
     {
 	return snapshots.importPreSnapshot(description, import_policy, idata);
     }
 
 
     Snapshots::iterator
-    Snapper::importPostSnapshot(const string &description, Snapshots::const_iterator pre, unsigned char import_policy, const map<string,string>& idata)
+    Snapper::importPostSnapshot(const string &description, Snapshots::const_iterator pre, unsigned char import_policy, const string& idata)
     {
 	return snapshots.importPostSnapshot(description, pre, import_policy, idata);
     }

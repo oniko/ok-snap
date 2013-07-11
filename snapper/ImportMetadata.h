@@ -26,14 +26,12 @@
 #include <stdint.h>
 #include <sys/time.h>
 
-#include <map>
 #include <string>
 
 #include "snapper/Log.h"
 
 namespace snapper
 {
-    using std::map;
     using std::string;
 
     /*
@@ -68,7 +66,7 @@ namespace snapper
 
     public:
 
-	ImportMetadata(ImportPolicy policy) : creation_time((time_t)-1), import_policy(policy) {}
+	ImportMetadata(ImportPolicy policy);
 	virtual ~ImportMetadata() {}
 
 	ImportPolicy getImportPolicy() const { return import_policy; }
@@ -88,7 +86,7 @@ namespace snapper
 	// delete imported snapshot (ADOPT only import)
 	virtual void deleteImportedSnapshot() const = 0;
 
-	virtual map<string,string> raw_metadata() const = 0;
+	virtual string get_raw_metadata() const = 0;
 
 	virtual string getSnapshotDir(unsigned int num) const = 0;
 

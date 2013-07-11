@@ -332,7 +332,7 @@ Client::introspect(DBus::Connection& conn, DBus::Message& msg)
 	"      <arg name='cleanup' type='s' direction='in'/>\n"
 	"      <arg name='userdata' type='a{ss}' direction='in'/>\n"
 	"      <arg name='import-policy' type='y' direction='in'/>\n"
-	"      <arg name='import-metadata' type='a{ss}' direction='in'/>\n"
+	"      <arg name='import-metadata' type='s' direction='in'/>\n"
 	"      <arg name='number' type='u' direction='out'/>\n"
 	"    </method>\n"
 
@@ -342,7 +342,7 @@ Client::introspect(DBus::Connection& conn, DBus::Message& msg)
 	"      <arg name='cleanup' type='s' direction='in'/>\n"
 	"      <arg name='userdata' type='a{ss}' direction='in'/>\n"
 	"      <arg name='import-policy' type='y' direction='in'/>\n"
-	"      <arg name='import-metadata' type='a{ss}' direction='in'/>\n"
+	"      <arg name='import-metadata' type='s' direction='in'/>\n"
 	"      <arg name='number' type='u' direction='out'/>\n"
 	"    </method>\n"
 
@@ -353,7 +353,7 @@ Client::introspect(DBus::Connection& conn, DBus::Message& msg)
 	"      <arg name='cleanup' type='s' direction='in'/>\n"
 	"      <arg name='userdata' type='a{ss}' direction='in'/>\n"
 	"      <arg name='import-policy' type='y' direction='in'/>\n"
-	"      <arg name='import-metadata' type='a{ss}' direction='in'/>\n"
+	"      <arg name='import-metadata' type='s' direction='in'/>\n"
 	"      <arg name='number' type='u' direction='out'/>\n"
 	"    </method>\n"
 
@@ -1298,7 +1298,7 @@ Client::import_single_snapshot(DBus::Connection& conn, DBus::Message& msg)
     string cleanup;
     map<string, string> userdata;
     unsigned char import_policy;
-    map<string, string> raw_import_metadata;
+    string raw_import_metadata;
 
     DBus::Hihi hihi(msg);
     hihi >> config_name >> description >> cleanup >> userdata >> import_policy >> raw_import_metadata;
@@ -1341,7 +1341,7 @@ Client::import_pre_snapshot(DBus::Connection& conn, DBus::Message& msg)
     string cleanup;
     map<string, string> userdata;
     unsigned char import_policy;
-    map<string, string> raw_import_metadata;
+    string raw_import_metadata;
 
     DBus::Hihi hihi(msg);
     hihi >> config_name >> description >> cleanup >> userdata >> import_policy >> raw_import_metadata;
@@ -1385,7 +1385,7 @@ Client::import_post_snapshot(DBus::Connection& conn, DBus::Message& msg)
     string cleanup;
     map<string,string> userdata;
     unsigned char import_policy;
-    map<string,string> raw_import_metadata;
+    string raw_import_metadata;
 
     DBus::Hihi hihi(msg);
     hihi >> config_name >> pre_num >> description >> cleanup >> userdata >> import_policy >> raw_import_metadata;

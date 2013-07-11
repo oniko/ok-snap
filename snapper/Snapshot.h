@@ -227,9 +227,9 @@ namespace snapper
 	iterator createPreSnapshot(string description);
 	iterator createPostSnapshot(string description, const_iterator pre);
 
-	iterator importSingleSnapshot(const string &description, unsigned char raw_import_policy, const map<string,string> &raw_import_metadata);
-	iterator importPreSnapshot(const string &description, unsigned char raw_import_policy, const map<string,string> &raw_import_metadata);
-	iterator importPostSnapshot(const string &description, Snapshots::const_iterator pre, unsigned char raw_import_policy, const map<string,string> &raw_import_metadata);
+	iterator importSingleSnapshot(const string &description, unsigned char raw_import_policy, const string &raw_import_metadata);
+	iterator importPreSnapshot(const string &description, unsigned char raw_import_policy, const string &raw_import_metadata);
+	iterator importPostSnapshot(const string &description, Snapshots::const_iterator pre, unsigned char raw_import_policy, const string &raw_import_metadata);
 
 	iterator createHelper(Snapshot& snapshot);
 	iterator importHelper(Snapshot& snapshot);

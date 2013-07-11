@@ -314,16 +314,16 @@ namespace snapper
 	udev *p_udev;
 
 	if (!(p_udev = udev_new()))
-	    return "";
+	    return string();
 
 	if (!(p_device = udev_device_new_from_devnum(p_udev, 'b', dev)))
 	{
 	    udev_unref(p_udev);
-	    return "";
+	    return string();
 	}
 
 	const char* tmp = udev_device_get_property_value(p_device, "ID_FS_UUID");
-	string ret_str = tmp ? string(tmp) : "";
+	string ret_str(tmp ? tmp : "");
 
 	udev_device_unref(p_device);
 	udev_unref(p_udev);
@@ -338,10 +338,10 @@ namespace snapper
 	struct stat buf;
 
 	if (stat(device_path.c_str(), &buf))
-	    return "";
+	    return string();
 
 	if (!S_ISBLK(buf.st_mode))
-	    return "";
+	    return string();
 
 	return get_fs_uuid_from_udevdb(buf.st_rdev);
     }

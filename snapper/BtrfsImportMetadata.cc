@@ -28,49 +28,41 @@
 
 namespace snapper
 {
-    BtrfsImportMetadata::BtrfsImportMetadata(const map<string,string> &input, ImportPolicy policy, const Btrfs* btrfs)
+    BtrfsImportMetadata::BtrfsImportMetadata(const string &input, ImportPolicy policy, const Btrfs* btrfs)
 	: ImportMetadata(policy), btrfs(btrfs)
     {
-	map<string,string>::const_iterator cit_subv = input.find(KEY_SUBVOLUME);
+	if (input.empty())
+	    throw InvalidImportMetadataException();
 
-	if (cit_subv != input.end())
+	//import_subvolume = cit_subv->second;
+
+	SDir root(btrfs->openSubvolumeDir());
+
+	// remove trailing "/"
+	import_subvolume = boost::trim_right_copy_if(input, boost::is_any_of("/ \t"));
+
+	// remove origin subvolume from import subvolume
+	if (import_subvolume.find(root.fullname()) == 0)
+	    import_subvolume = import_subvolume.substr(root.fullname().length());
+
+	// remove heading "/"
+	import_subvolume = boost::trim_left_copy_if(import_subvolume, boost::is_any_of("/ \t"));
+
+	if (import_subvolume.empty())
 	{
-	    //import_subvolume = cit_subv->second;
-
-	    SDir root(btrfs->openSubvolumeDir());
-
-	    // remove trailing "/"
-	    import_subvolume = boost::trim_right_copy_if(cit_subv->second, boost::is_any_of("/ \t"));
-
-	    // remove origin subvolume from import subvolume
-	    string::size_type pos = import_subvolume.find(root.fullname());
-	    if (pos == 0)
-		import_subvolume = import_subvolume.substr(root.fullname().length());
-
-	    // remove heading "/"
-	    import_subvolume = boost::trim_left_copy_if(import_subvolume, boost::is_any_of("/ \t"));
-
-	    if (import_subvolume.empty())
-	    {
-		y2err("Illegal import metadata");
-		throw InvalidImportMetadataException();
-	    }
-
-	    y2deb("import btrfs subvolume: " << import_subvolume);
-
-	    try
-	    {
-		import_subvol_id = Btrfs::subvolume_id(SDir::deepopen(root, import_subvolume));
-	    }
-	    catch (const IOErrorException &e)
-	    {
-		y2err("couldn't open subvolume or resolve subvolume_id");
-		throw InvalidImportMetadataException();
-	    }
+	    y2err("Illegal import metadata");
+	    throw InvalidImportMetadataException();
 	}
-	else
+
+	y2deb("import btrfs subvolume: " << import_subvolume);
+
+	try
 	{
-	    y2err("Invalid btrfs import metadata");
+	    import_subvol_id = Btrfs::subvolume_id(SDir::deepopen(root, import_subvolume));
+	}
+	catch (const IOErrorException &e)
+	{
+	    y2err("couldn't open subvolume or resolve subvolume_id");
 	    throw InvalidImportMetadataException();
 	}
     }
@@ -102,11 +94,7 @@ namespace snapper
 	    string subvolume = btrfs->snapshotDir(num).substr(btrfs->openSubvolumeDir().fullname().length());
 	    subvolume = boost::trim_left_copy_if(subvolume, boost::is_any_of("/"));
 
-	    // trim all leading / chars
-	    //subvolume = boost::trim_left_if(subvolume, );
-	    //boost::starts_with();
-
-	    y2deb("isEqual subvolume=" << subvolume);
+	    y2deb("isEqual(num) subvolume=" << subvolume);
 
 	    return isEqual(BtrfsImportMetadata(subvolume, btrfs));
 	}
@@ -145,12 +133,9 @@ namespace snapper
 	return (root_volume.fullname() == "/" ? "" : root_volume.fullname()) + "/" + import_subvolume;
     }
 
-    map<string,string> BtrfsImportMetadata::raw_metadata() const
+    string
+    BtrfsImportMetadata::get_raw_metadata() const
     {
-	map<string,string> raw;
-
-	raw.insert(make_pair(KEY_SUBVOLUME, import_subvolume));
-
-	return raw;
+	return import_subvolume;
     }
 }

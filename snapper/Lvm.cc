@@ -331,7 +331,7 @@ namespace snapper
     }
 
 
-    ImportMetadata* Lvm::createImportMetadata(const map<string,string> &raw_data, ImportPolicy ipolicy) const
+    ImportMetadata* Lvm::createImportMetadata(const string &raw_data, ImportPolicy ipolicy) const
     {
 	return new LvmImportMetadata(raw_data, ipolicy, this);
     }
@@ -412,12 +412,12 @@ namespace snapper
     }
 
 
-    bool Lvm::checkImportedSnapshot(const string& vg_name, const string& lv_name, bool check_ro) const
+    bool
+    Lvm::checkImportedSnapshot(const string& vg_name, const string& lv_name, bool check_ro) const
     {
-	// TODO: add check for readonly snapshot!!!
-
 	return vg_name == this->vg_name &&
 	       lv_name != this->lv_name &&
+	       get_fs_uuid("/dev/" + vg_name + "/" + lv_name) == this->fs_uuid &&
 	       detectThinVolumeNames(vg_name, lv_name) &&
 	       (!check_ro || is_subvolume_ro(vg_name, lv_name));
     }

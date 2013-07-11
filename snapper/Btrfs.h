@@ -39,7 +39,7 @@ namespace snapper
 	static uint64_t subvolume_id(const SDir &dir);
 	static bool is_subvolume_ro(const SDir &dir);
 
-	virtual ImportMetadata* createImportMetadata(const map<string,string>& raw_data, ImportPolicy ipolicy) const;
+	virtual ImportMetadata* createImportMetadata(const string& raw_data, ImportPolicy ipolicy) const;
 
 	Btrfs(const string& subvolume);
 

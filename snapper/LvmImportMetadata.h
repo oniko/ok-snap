@@ -18,17 +18,14 @@
  *
  */
 
+
 #ifndef SNAPPER_LVMIMPORTMETADATA_H
 #define SNAPPER_LVMIMPORTMETADATA_H
-
-#define KEY_VG_NAME "vg_name"
-#define KEY_LV_NAME "lv_name"
 
 #include "snapper/ImportMetadata.h"
 
 namespace snapper
 {
-    using std::map;
     using std::string;
 
     class Lvm;
@@ -37,22 +34,22 @@ namespace snapper
     {
     public:
 
-	LvmImportMetadata(const map<string,string> &input, ImportPolicy ipolicy, const Lvm* fs);
+	LvmImportMetadata(const string &input, ImportPolicy ipolicy, const Lvm* fs);
 
 	virtual string getDevicePath() const;
-
-	virtual bool isEqual(const ImportMetadata &a) const;
-	virtual bool isEqual(unsigned int num) const;
 
 	virtual bool checkImportedSnapshot() const;
 	virtual void cloneImportedSnapshot(unsigned int num) const;
 	virtual void deleteImportedSnapshot() const;
 
-	virtual map<string, string> raw_metadata() const;
+	virtual string get_raw_metadata() const;
 
 	virtual string getSnapshotDir(unsigned int num) const;
     private:
 	LvmImportMetadata(const string &vg_name, const string &lv_name, const Lvm* fs);
+
+	virtual bool isEqual(const ImportMetadata &a) const;
+	virtual bool isEqual(unsigned int num) const;
 
 	const Lvm* lvm;
 

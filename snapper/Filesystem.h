@@ -49,7 +49,7 @@ namespace snapper
 	virtual ~Filesystem() {}
 
 	static Filesystem* create(const string& fstype, const string& subvolume);
-	virtual ImportMetadata* createImportMetadata(const map<string,string> &raw_data, ImportPolicy policy) const = 0;
+	virtual ImportMetadata* createImportMetadata(const string &raw_data, ImportPolicy policy) const = 0;
 
 	virtual string fstype() const = 0;
 

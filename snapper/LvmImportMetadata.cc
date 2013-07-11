@@ -32,26 +32,27 @@
 
 namespace snapper
 {
-    LvmImportMetadata::LvmImportMetadata(const map<string,string> &input, ImportPolicy ipolicy, const Lvm* lvm)
+    LvmImportMetadata::LvmImportMetadata(const string &input, ImportPolicy ipolicy, const Lvm* lvm)
 	: ImportMetadata(ipolicy), lvm(lvm)
     {
 	y2deb("LvmImportMetadata constructor");
 
-	map<string,string>::const_iterator cit = input.find(KEY_VG_NAME);
-	if (cit == input.end())
+	string::size_type pos = input.find("/");
+	if (pos == string::npos)
 	{
-	    y2err("can't get volume group name from raw import metadata");
+	    y2err("Invalid LVM import metadata format, request: " << input);
 	    throw InvalidImportMetadataException();
 	}
-	vg_name = cit->second;
 
-	cit = input.find(KEY_LV_NAME);
-	if (cit == input.end())
+	vg_name = input.substr(0, pos);
+	lv_name = input.substr(pos + 1);
+
+	if (vg_name.empty() || lv_name.empty() || lv_name.find("/") != string::npos)
 	{
-	    y2err("can't get logical volume name from raw import metadata");
+	    y2err("Invalid LVM import metadata format, request: " << input);
 	    throw InvalidImportMetadataException();
 	}
-	lv_name = cit->second;
+
 
 	// TODO: LVM will support format options for time string later.
 	//	 use "%F %T" output format instead of hardcoded "%F %T %z"
@@ -106,10 +107,10 @@ namespace snapper
     }
 
 
-    bool LvmImportMetadata::checkImportedSnapshot() const
+    bool
+    LvmImportMetadata::checkImportedSnapshot() const
     {
-	    return lvm->checkImportedSnapshot(vg_name, lv_name, (import_policy != CLONE)) &&
-		    get_fs_uuid(getDevicePath()) == lvm->getFsUuid();
+	return lvm->checkImportedSnapshot(vg_name, lv_name, get_fs_uuid(getDevicePath()), (import_policy != CLONE));
     }
 
 
@@ -126,14 +127,10 @@ namespace snapper
 	lvm->deleteSnapshot(vg_name, lv_name);
     }
 
-    map<string,string> LvmImportMetadata::raw_metadata() const
+    string
+    LvmImportMetadata::get_raw_metadata() const
     {
-	map<string,string> raw;
-
-	raw.insert(make_pair(KEY_VG_NAME, vg_name));
-	raw.insert(make_pair(KEY_LV_NAME, lv_name));
-
-	return raw;
+	return vg_name + "/" + lv_name;
     }
 
     string LvmImportMetadata::getSnapshotDir(unsigned int num) const

@@ -240,22 +240,24 @@ namespace snapper
 
 		    if (policy != NONE)
 		    {
-			map<string,string> raw_import_metadata;
+			string raw;
 
-			const list<const xmlNode *> nodes = getChildNodes(getChildNode(node, "import"), "import_metadata");
-			for (list<const xmlNode*>::const_iterator nit = nodes.begin(); nit != nodes.end(); nit++)
-			{
-			    string key, value;
-			    getChildValue(*nit, "key", key);
-			    getChildValue(*nit, "value", value);
-			    if (!key.empty())
-				raw_import_metadata[key] = value;
-			}
+			//const list<const xmlNode *> nodes = getChildNodes(getChildNode(node, "import"), "import_metadata");
+			const xmlNode* imd_node = getChildNode(getChildNode(node, "import"), "import_metadata");
+// 			for (list<const xmlNode*>::const_iterator nit = nodes.begin(); nit != nodes.end(); nit++)
+// 			{
+// 			    string key, value;
+// 			    getChildValue(*nit, "key", key);
+// 			    getChildValue(*nit, "value", value);
+// 			    if (!key.empty())
+// 				raw_import_metadata[key] = value;
+// 			}
+			raw = getChildValue(imd_node, "value", raw);
 
-			y2deb("raw_import_metadata: " << raw_import_metadata);
+			y2deb("raw import metadata: " << raw);
 
 			try {
-			    p_imdata = snapper->getFilesystem()->createImportMetadata(raw_import_metadata, policy);
+			    p_imdata = snapper->getFilesystem()->createImportMetadata(raw, policy);
 			}
 			catch (const InvalidImportMetadataException &e)
 			{
@@ -531,14 +533,11 @@ namespace snapper
 	    xmlNode* import_node = xmlNewChild(node, "import");
 	    xmlNewAttr(import_node, "policy", toString(getImportPolicy()).c_str());
 
-	    const map<string,string> raw = p_idata.get()->raw_metadata();
+	    string raw = p_idata.get()->get_raw_metadata();
 
-	    for (map<string,string>::const_iterator cit = raw.begin(); cit != raw.end(); cit++)
-	    {
-		xmlNode* imdata_node = xmlNewChild(import_node, "import_metadata");
-		setChildValue(imdata_node, "key", cit->first);
-		setChildValue(imdata_node, "value", cit->second);
-	    }
+	    xmlNode* imdata_node = xmlNewChild(import_node, "import_metadata");
+	    setChildValue(imdata_node, "key", "subvolume");
+	    setChildValue(imdata_node, "value", raw);
 	}
 
 	string file_name = "info.xml";
@@ -721,7 +720,7 @@ namespace snapper
 
 
     Snapshots::iterator
-    Snapshots::importSingleSnapshot(const string &description, unsigned char raw_import_policy, const map<string,string> &raw_import_metadata)
+    Snapshots::importSingleSnapshot(const string &description, unsigned char raw_import_policy, const string &raw_import_metadata)
     {
 	ImportPolicy ipolicy = createImportPolicy(raw_import_policy);
 
@@ -741,7 +740,7 @@ namespace snapper
 
 
     Snapshots::iterator
-    Snapshots::importPreSnapshot(const string &description, unsigned char raw_import_policy, const map<string,string> &raw_import_metadata)
+    Snapshots::importPreSnapshot(const string &description, unsigned char raw_import_policy, const string &raw_import_metadata)
     {
 	ImportPolicy ipolicy = createImportPolicy(raw_import_policy);
 
@@ -761,7 +760,7 @@ namespace snapper
 
 
     Snapshots::iterator
-    Snapshots::importPostSnapshot(const string &description, Snapshots::const_iterator pre, unsigned char raw_import_policy, const map<string,string> &raw_import_metadata)
+    Snapshots::importPostSnapshot(const string &description, Snapshots::const_iterator pre, unsigned char raw_import_policy, const string &raw_import_metadata)
     {
 	if (pre == entries.end() || pre->isCurrent() || pre->getType() != PRE ||
 	    findPost(pre) != entries.end())

@@ -144,29 +144,29 @@ read_userdata(const string& s, const map<string, string>& old = map<string, stri
 
 
 /* NOTE: this for testing purpose only */
-map<string,string>
-read_import_metadata(const string& in)
-{
-    string::size_type pos = in.find_first_of('/');
-
-    map<string,string> import_metadata;
-
-    if (pos != string::npos)
-    {
-	string vg_name = boost::trim_copy(in.substr(0, pos));
-	string lv_name = boost::trim_copy(in.substr(pos + 1));
-
-	if (!vg_name.empty() && !lv_name.empty())
-	{
-	    import_metadata.insert(make_pair("vg_name", vg_name));
-	    import_metadata.insert(make_pair("lv_name", lv_name));
-	}
-    }
-
-    import_metadata.insert(make_pair("subvolume", boost::trim_copy(in)));
-
-    return import_metadata;
-}
+// map<string,string>
+// read_import_metadata(const string& in)
+// {
+//     string::size_type pos = in.find_first_of('/');
+// 
+//     map<string,string> import_metadata;
+// 
+//     if (pos != string::npos)
+//     {
+// 	string vg_name = boost::trim_copy(in.substr(0, pos));
+// 	string lv_name = boost::trim_copy(in.substr(pos + 1));
+// 
+// 	if (!vg_name.empty() && !lv_name.empty())
+// 	{
+// 	    import_metadata.insert(make_pair("vg_name", vg_name));
+// 	    import_metadata.insert(make_pair("lv_name", lv_name));
+// 	}
+//     }
+// 
+//     import_metadata.insert(make_pair("subvolume", boost::trim_copy(in)));
+// 
+//     return import_metadata;
+// }
 
 string
 show_userdata(const map<string, string>& userdata)
@@ -1315,8 +1315,7 @@ command_import(DBus::Connection& conn)
 	exit(EXIT_FAILURE);
     }
 
-    // TODO: not complete at all. maybe I'll fallback to pure string passed into dbus
-    map<string, string> import_metadata = read_import_metadata(getopts.popArg());
+    string import_metadata = getopts.popArg();
 
     enum ImportType { I_SINGLE, I_PRE, I_POST };
 

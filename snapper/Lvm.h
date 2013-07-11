@@ -79,7 +79,7 @@ namespace snapper
 
 	static Filesystem* create(const string& fstype, const string& subvolume);
 	static bool is_subvolume_ro(const string& vg_name, const string& lv_name);
-	virtual ImportMetadata* createImportMetadata(const map<string,string> &raw_data, ImportPolicy ipolicy) const;
+	virtual ImportMetadata* createImportMetadata(const string &raw_data, ImportPolicy ipolicy) const;
 
 	Lvm(const string& subvolume, const string& mount_type);
 

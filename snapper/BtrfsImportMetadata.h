@@ -18,11 +18,9 @@
  *
  */
 
+
 #ifndef SNAPPER_BTRFSIMPORTMETADATA_H
 #define SNAPPER_BTRFSIMPORTMETADATA_H
-
-//#define KEY_SUBVOL_ID "subvol_id"
-#define KEY_SUBVOLUME "subvolume"
 
 #include "snapper/FileUtils.h"
 #include "snapper/ImportMetadata.h"
@@ -36,7 +34,7 @@ namespace snapper
     {
     public:
 
-	BtrfsImportMetadata(const map<string,string> &input, ImportPolicy policy, const Btrfs* btrfs);
+	BtrfsImportMetadata(const string &input, ImportPolicy policy, const Btrfs* btrfs);
 
 	virtual string getDevicePath() const;
 
@@ -44,7 +42,7 @@ namespace snapper
 	virtual void cloneImportedSnapshot(unsigned int num) const;
 	virtual void deleteImportedSnapshot() const;
 
-	virtual map<string, string> raw_metadata() const;
+	virtual string get_raw_metadata() const;
 
 	virtual string getSnapshotDir(unsigned int num) const;
     private:

@@ -106,16 +106,16 @@ unsigned int
 command_import_single_xsnapshot(DBus::Connection& conn, const string& config_name,
 				const string& description, const string& cleanup,
 				const map<string, string>& userdata, unsigned char import_policy,
-				const map<string, string>& import_metadata);
+				const string& import_metadata);
 
 unsigned int
 command_import_pre_xsnapshot(DBus::Connection& conn, const string& config_name,
 				const string& description, const string& cleanup,
 				const map<string, string>& userdata, unsigned char import_policy,
-				const map<string, string>& import_metadata);
+				const string& import_metadata);
 
 unsigned int
 command_import_post_xsnapshot(DBus::Connection& conn, const string& config_name,
 			      unsigned int prenum, const string& description,
 			      const string& cleanup, const map<string, string>& userdata,
-			      unsigned char import_policy, const map<string, string>& import_metadata);
+			      unsigned char import_policy, const string& import_metadata);

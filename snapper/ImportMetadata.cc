@@ -46,6 +46,15 @@ namespace snapper
 	}
     }
 
+
+    ImportMetadata::ImportMetadata(ImportPolicy policy)
+	: creation_time((time_t)-1), import_policy(policy)
+    {
+	if (import_policy == ImportPolicy::NONE)
+	    throw InvalidImportMetadataException();
+    }
+
+
     bool operator==(const ImportMetadata& data, unsigned int num)
     {
 	return data.isEqual(num);
@@ -64,9 +73,6 @@ namespace snapper
 	// ImportMetadata is base class w/ virtual methods
 	if (typeid(data_a) != typeid(data_b))
 	    return false;
-
-/*	if (data_a.getImportMetadataId() != data_b.getImportMetadataId())
-	    return false;*/
 
 	return data_a.isEqual(data_b);
     }
