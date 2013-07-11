@@ -1,64 +1,84 @@
+#include "testsuite-import/helpers.h"
 #include "testsuite-import/lvmimportmetadata-fixtures.h"
 
 #include "snapper/Exception.h"
 
-namespace testsuiteimport { namespace lvm {
+namespace testsuiteimport { namespace lvm
+{
 
-    using std::make_pair;   
+    LvmSubvolumeWrapper::LvmSubvolumeWrapper(const string& vg_name, const string& lv_orig_name, const string& lv_name, bool ro)
+	: vg_name(vg_name), lv_name(lv_name), lv_orig_name(lv_orig_name)
+    {
+	lvcreate_thin_snapshot_wrapper(vg_name, lv_orig_name, lv_name, ro);
+    }
+
+
+    LvmSubvolumeWrapper::~LvmSubvolumeWrapper()
+    {
+	try
+	{
+	    lvremove_wrapper(vg_name, lv_name);
+	}
+	catch (const ImportTestsuiteException &e) {}
+    }
+
 
     ValidMetadata::ValidMetadata()
-	: f_dummy_lvm(reinterpret_cast<const snapper::Lvm *>(123456789))
+	: f_dummy_lvm(reinterpret_cast<const snapper::Lvm *>(123456789)),
+	f_raw_data("some_vg/some_lv")
     {
-	f_raw_data.insert(make_pair("vg_name", "some_string"));
-	f_raw_data.insert(make_pair("lv_name", "some_string"));
-	f_raw_data.insert(make_pair("the_answer", "42"));
     }
+
 
     LvmImportConstructor::LvmImportConstructor()
-	: ValidMetadata()
-    {
-	f_raw_data_missing_vg.insert(make_pair("lv_name", "some_string"));
-	f_raw_data_missing_vg.insert(make_pair("the_answer", "42"));
-
-	f_raw_data_missing_lv.insert(make_pair("vg_name", "some_string"));
-	f_raw_data_missing_lv.insert(make_pair("the_answer", "42"));
-    }    
-
-    EqualFalseTestMetadata::EqualFalseTestMetadata()
-	: ValidMetadata()
-    {
-	f_raw_data_diff_in_vg.insert(make_pair("vg_name", "different_string"));
-	f_raw_data_diff_in_vg.insert(*f_raw_data.find("lv_name"));
-
-	f_raw_data_diff_in_lv.insert(*f_raw_data.find("vg_name"));
-	f_raw_data_diff_in_lv.insert(make_pair("lv_name", "different_string"));
-
-	f_raw_data_different.insert(make_pair("vg_name", "and_now_for_some-"));
-	f_raw_data_different.insert(make_pair("lv_name", "thing_completely_different"));
-    }
-
-    CopyConstructor::CopyConstructor()
-	: ValidMetadata(), f_origin(f_raw_data, snapper::ImportPolicy::NONE, f_dummy_lvm)
+	: ValidMetadata(), f_raw_data_missing_vg("/some_lv"),
+	f_raw_data_missing_lv("some_vg/"),
+	f_raw_data_illegal_1("some_vg/some_lv/some_nonsense"),
+	f_raw_data_illegal_2("/looks_like/ordinary_path"),
+	f_raw_data_illegal_3("vg/lv_with_trailing/"),
+	f_raw_data_illegal_4("missing_slash_in_subvolume_string"),
+	f_raw_data_empty("")
     {
     }
 
-    EqualMethodTrue::EqualMethodTrue()
-	: CopyConstructor(), f_raw_data_copy(f_raw_data)
+
+    LvmCompareImportMetadata::LvmCompareImportMetadata()
+	: ValidMetadata(),
+	f_lvm_import_metadata(f_raw_data, snapper::ImportPolicy::ADOPT, f_dummy_lvm),
+	f_lvm_import_metadata_identical(f_raw_data, snapper::ImportPolicy::CLONE, f_dummy_lvm),
+	f_lvm_import_metadata_diff_in_vg("another_vg" + "/" + f_raw_data.substr(f_raw_data.find("/") + 1), snapper::ImportPolicy::ADOPT, f_dummy_lvm),
+	f_lvm_import_metadata_diff_in_lv(f_raw_data.substr(0, f_raw_data.find("/")) + "/" + "another_lv", snapper::ImportPolicy::ADOPT, f_dummy_lvm),
+	f_lvm_import_metadata_different("another_vg/another_lv", snapper::ImportPolicy::ADOPT, f_dummy_lvm)
     {
-	f_raw_data_copy["the_answer"] = "43";
-	f_p_origin_copy = new snapper::LvmImportMetadata(f_raw_data_copy, snapper::ImportPolicy::NONE, f_dummy_lvm);
     }
 
-    EqualMethodTrue::~EqualMethodTrue()
+
+    LvmGetDevicePath::LvmGetDevicePath()
+	: ValidMetadata(), f_expected_retval("/dev/" + f_raw_data)
     {
-	delete f_p_origin_copy;
     }
 
-    EqualMethodFalse::EqualMethodFalse()
-	: EqualFalseTestMetadata(), f_origin(f_raw_data, snapper::ImportPolicy::NONE, f_dummy_lvm),
-	f_data_diff_in_vg(f_raw_data_diff_in_vg, snapper::ImportPolicy::NONE, f_dummy_lvm),
-	f_data_diff_in_lv(f_raw_data_diff_in_lv, snapper::ImportPolicy::NONE, f_dummy_lvm),
-	f_data_different(f_raw_data_different, snapper::ImportPolicy::NONE, f_dummy_lvm)
+
+    CheckImportedSnapshot::CheckImportedSnapshot()
+	: LvmCheckImportedSnapshot(),
+	f_clone_import_data_valid_ro(f_ro_valid_vg_name + "/" + f_ro_valid_lv_name, snapper::ImportPolicy::CLONE, f_lvm),
+	f_clone_import_data_valid_rw(f_rw_valid_vg_name + "/" + f_rw_valid_lv_name, snapper::ImportPolicy::CLONE, f_lvm),
+	f_clone_import_missing_lv(f_missing_lv_vg_name + "/" + f_missing_lv_lv_name, snapper::ImportPolicy::CLONE, f_lvm),
+	f_clone_import_nonthin_lv(f_nonthin_vg_name + "/" + f_nonthin_lv_name, snapper::ImportPolicy::CLONE, f_lvm),
+	f_clone_import_foreign_vg(f_foreign_vg_vg_name + "/" + f_foreign_vg_lv_name, snapper::ImportPolicy::CLONE, f_lvm),
+	f_clone_import_current_subvolume(f_current_subvolume_vg_name + "/" + f_current_subvolume_lv_name, snapper::ImportPolicy::CLONE, f_lvm),
+	f_adopt_import_data_valid_ro(f_ro_valid_vg_name + "/" + f_ro_valid_lv_name, snapper::ImportPolicy::ADOPT, f_lvm),
+	f_adopt_import_data_rw(f_rw_valid_vg_name + "/" + f_rw_valid_lv_name, snapper::ImportPolicy::ADOPT, f_lvm),
+	f_adopt_import_missing_lv(f_missing_lv_vg_name + "/" + f_missing_lv_lv_name, snapper::ImportPolicy::ADOPT, f_lvm),
+	f_adopt_import_nonthin_lv(f_nonthin_vg_name + "/" + f_nonthin_lv_name, snapper::ImportPolicy::ADOPT, f_lvm),
+	f_adopt_import_foreign_vg(f_foreign_vg_vg_name + "/" + f_foreign_vg_lv_name, snapper::ImportPolicy::ADOPT, f_lvm),
+	f_adopt_import_current_subvolume(f_current_subvolume_vg_name + "/" + f_current_subvolume_lv_name, snapper::ImportPolicy::ADOPT, f_lvm),
+	f_ack_import_data_valid_ro(f_ro_valid_vg_name + "/" + f_ro_valid_lv_name, snapper::ImportPolicy::ACKNOWLEDGE, f_lvm),
+	f_ack_import_data_rw(f_rw_valid_vg_name + "/" + f_rw_valid_lv_name, snapper::ImportPolicy::ACKNOWLEDGE, f_lvm),
+	f_ack_import_missing_lv(f_missing_lv_vg_name + "/" + f_missing_lv_lv_name, snapper::ImportPolicy::ACKNOWLEDGE, f_lvm),
+	f_ack_import_nonthin_lv(f_nonthin_vg_name + "/" + f_nonthin_lv_name, snapper::ImportPolicy::ACKNOWLEDGE, f_lvm),
+	f_ack_import_foreign_vg(f_foreign_vg_vg_name + "/" + f_foreign_vg_lv_name, snapper::ImportPolicy::ACKNOWLEDGE, f_lvm),
+	f_ack_import_current_subvolume(f_current_subvolume_vg_name + "/" + f_current_subvolume_lv_name, snapper::ImportPolicy::ACKNOWLEDGE, f_lvm)
     {
     }
 

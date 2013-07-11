@@ -12,27 +12,25 @@ namespace testsuiteimport { namespace lvm
 	LvmImportMetadataTestClass() {}
 
 	void tc_import_ctor();
-	//void tc_import_copy_ctor();
-	void tc_import_equal_method_true();
-	void tc_import_equal_method_false();
-	// void tc_import_check_imported_snapshot();
+
+	void tc_import_compare_metadata();
+
+	void tc_import_check_imported_snapshot();
 	// void tc_import_raw_metadata();
 	// void tc_import_get_snapshot_dir();
     };
+
 
     struct FLvmImportConstructor : public GeneralFixture, LvmImportConstructor
     {
 	virtual void test_method();
     };
 
-    struct FEqualMethodTrue : public GeneralFixture, EqualMethodTrue
+
+    struct FLvmIMDataCheckImportedSnapshot : public GeneralFixture, CheckImportedSnapshot
     {
 	virtual void test_method();
     };
 
-    struct FEqualMethodFalse : public GeneralFixture, EqualMethodFalse
-    {
-	virtual void test_method();
-    };
 }}
 #endif //LVMIMPORTMETADATA_TEST_H

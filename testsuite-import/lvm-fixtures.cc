@@ -118,7 +118,9 @@ namespace testsuiteimport { namespace lvm
 
 
     CloneSnapshotValid::CloneSnapshotValid()
-	: CreateSnapshotEnvironment(), f_vg_name("vg_test"), f_lv_name("lv_test_snapshot_01"),
+	: CreateSnapshotEnvironment(),
+	f_vg_name(LvmGeneralFixture::f_conf_lvm_vg_name),
+	f_lv_name("lv_test_snapshot_01"),
 	f_origin_name("lv_test_thin_1")  
     {
 	std::cout << "CloneSnapshotValid ctor" << std::endl;

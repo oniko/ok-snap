@@ -55,11 +55,13 @@ struct btrfs_ioctl_vol_args_v2
 
 #endif //HAVE_LIBBTRFS
 
-namespace testsuiteimport {
+namespace testsuiteimport
+{
     using std::string;
     using std::vector;
 
-    namespace lvm {
+    namespace lvm
+    {
 
 	bool check_lv_exists(const string& vg_name, const string& lv_name)
 	{

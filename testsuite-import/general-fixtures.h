@@ -31,8 +31,10 @@ namespace testsuiteimport
 
 	    static const string f_conf_lvm_root_volume;
 	    static const string f_conf_lvm_snapshots_prefix;
-	    static const string f_conf_vg_name;
-	    static const string f_conf_origin_name;
+	    static const string f_conf_lvm_vg_name;
+	    static const string f_conf_lvm_foreign_vg_name;
+	    static const string f_conf_lvm_origin_lv_name;
+	    static const string f_conf_lvm_foreign_origin_lv_name;
 	    static const string f_test_snapshot_01;
 
 	    const snapper::Snapper *f_snapper;

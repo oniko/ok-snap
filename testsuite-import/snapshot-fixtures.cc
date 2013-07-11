@@ -42,16 +42,16 @@ namespace testsuiteimport { namespace lvm
 	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1, NULL),
 	f_snapshot_lv_name(f_lvm->snapshotLvName(f_num))
     {
-	lvcreate_thin_snapshot_wrapper(f_conf_vg_name, f_conf_origin_name, f_snapshot_lv_name);
+	lvcreate_thin_snapshot_wrapper(f_conf_lvm_vg_name, f_conf_lvm_origin_lv_name, f_snapshot_lv_name);
     }
 
     DeleteFilesystemSnapshotImportTypeNone::~DeleteFilesystemSnapshotImportTypeNone()
     {
 	try
 	{
-	    lvremove_wrapper(f_conf_vg_name, f_lvm->snapshotLvName(f_num) );
+	    lvremove_wrapper(f_conf_lvm_vg_name, f_lvm->snapshotLvName(f_num) );
 	    std::cerr << "DeleteFilesystemSnapshotImportTypeNone dtor: "
-		      << f_conf_vg_name << "/" << f_lvm->snapshotLvName(f_num)
+		      << f_conf_lvm_vg_name << "/" << f_lvm->snapshotLvName(f_num)
 		      << " has not been removed" << std::endl;
 	}
 	catch (const LvmImportTestsuiteException &e) {}
@@ -59,19 +59,19 @@ namespace testsuiteimport { namespace lvm
 
     DeleteFilesystemSnapshotImportTypeClone::DeleteFilesystemSnapshotImportTypeClone()
 	: CreateSnapshotEnvironmentDirExists(1), f_snapshot_lv_name(f_lvm->snapshotLvName(f_num)),
-	rm(f_conf_vg_name, f_snapshot_lv_name), f_p_idata(new snapper::LvmImportMetadata(rm.f_raw_data, snapper::ImportPolicy::CLONE, f_lvm)),
+	rm(f_conf_lvm_vg_name, f_snapshot_lv_name), f_p_idata(new snapper::LvmImportMetadata(rm.f_raw_data, snapper::ImportPolicy::CLONE, f_lvm)),
 	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1, f_p_idata)
     {
-	lvcreate_thin_snapshot_wrapper(f_conf_vg_name, f_conf_origin_name, f_snapshot_lv_name);
+	lvcreate_thin_snapshot_wrapper(f_conf_lvm_vg_name, f_conf_lvm_origin_lv_name, f_snapshot_lv_name);
     }
 
     DeleteFilesystemSnapshotImportTypeClone::~DeleteFilesystemSnapshotImportTypeClone()
     {
 	try
 	{
-	    lvremove_wrapper(f_conf_vg_name, f_lvm->snapshotLvName(f_num) );
+	    lvremove_wrapper(f_conf_lvm_vg_name, f_lvm->snapshotLvName(f_num) );
 	    std::cerr << "DeleteFilesystemSnapshotImportTypeClone dtor: "
-		      << f_conf_vg_name << "/" << f_lvm->snapshotLvName(f_num)
+		      << f_conf_lvm_vg_name << "/" << f_lvm->snapshotLvName(f_num)
 		      << " has not been removed" << std::endl;
 	}
 	catch (const LvmImportTestsuiteException &e) {}
@@ -79,19 +79,19 @@ namespace testsuiteimport { namespace lvm
 
     DeleteFilesystemSnapshotImportTypeAdopt::DeleteFilesystemSnapshotImportTypeAdopt()
 	: CreateSnapshotEnvironmentDirExists(1), f_snapshot_lv_name(f_test_snapshot_01),
-	rm(f_conf_vg_name, f_snapshot_lv_name), f_p_idata(new snapper::LvmImportMetadata(rm.f_raw_data, snapper::ImportPolicy::ADOPT, f_lvm)),
+	rm(f_conf_lvm_vg_name, f_snapshot_lv_name), f_p_idata(new snapper::LvmImportMetadata(rm.f_raw_data, snapper::ImportPolicy::ADOPT, f_lvm)),
 	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1, f_p_idata)
     {
-	lvcreate_thin_snapshot_wrapper(f_conf_vg_name, f_conf_origin_name, f_snapshot_lv_name);
+	lvcreate_thin_snapshot_wrapper(f_conf_lvm_vg_name, f_conf_lvm_origin_lv_name, f_snapshot_lv_name);
     }
 
     DeleteFilesystemSnapshotImportTypeAdopt::~DeleteFilesystemSnapshotImportTypeAdopt()
     {
 	try
 	{
-	    lvremove_wrapper(f_conf_vg_name, f_snapshot_lv_name);
+	    lvremove_wrapper(f_conf_lvm_vg_name, f_snapshot_lv_name);
 	    std::cerr << "DeleteFilesystemSnapshotImportTypeAdopt dtor: "
-		      << f_conf_vg_name << "/" << f_lvm->snapshotLvName(f_num)
+		      << f_conf_lvm_vg_name << "/" << f_lvm->snapshotLvName(f_num)
 		      << " has not been removed" << std::endl;
 	}
 	catch (const LvmImportTestsuiteException &e) {}
@@ -99,22 +99,22 @@ namespace testsuiteimport { namespace lvm
 
     DeleteFilesystemSnapshotImportTypeAcknowledge::DeleteFilesystemSnapshotImportTypeAcknowledge()
 	: CreateSnapshotEnvironmentDirExists(1), f_snapshot_lv_name(f_test_snapshot_01),
-	rm(f_conf_vg_name, f_snapshot_lv_name), f_p_idata(new snapper::LvmImportMetadata(rm.f_raw_data, snapper::ImportPolicy::ACKNOWLEDGE, f_lvm)),
+	rm(f_conf_lvm_vg_name, f_snapshot_lv_name), f_p_idata(new snapper::LvmImportMetadata(rm.f_raw_data, snapper::ImportPolicy::ACKNOWLEDGE, f_lvm)),
 	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1, f_p_idata)
     {
-	lvcreate_thin_snapshot_wrapper(f_conf_vg_name, f_conf_origin_name, f_snapshot_lv_name);
+	lvcreate_thin_snapshot_wrapper(f_conf_lvm_vg_name, f_conf_lvm_origin_lv_name, f_snapshot_lv_name);
     }
 
     DeleteFilesystemSnapshotImportTypeAcknowledge::~DeleteFilesystemSnapshotImportTypeAcknowledge()
     {
 	try
 	{
-	    lvremove_wrapper(f_conf_vg_name, f_snapshot_lv_name);
+	    lvremove_wrapper(f_conf_lvm_vg_name, f_snapshot_lv_name);
 	}
 	catch (const LvmImportTestsuiteException &e)
 	{
 	    std::cerr << "DeleteFilesystemSnapshotImportTypeAcknowledge dtor: "
-		      << f_conf_vg_name << "/" << f_lvm->snapshotLvName(f_num)
+		      << f_conf_lvm_vg_name << "/" << f_lvm->snapshotLvName(f_num)
 		      << " has been removed!" << std::endl;
 	}
     }
@@ -129,7 +129,7 @@ namespace testsuiteimport { namespace lvm
 	: CreateSnapshotEnvironmentDirExists(1),
 	f_snapshot_lv_name(f_lvm->snapshotLvName(f_num))
     {
-	lvcreate_thin_snapshot_wrapper(f_conf_vg_name, f_conf_origin_name, f_snapshot_lv_name);
+	lvcreate_thin_snapshot_wrapper(f_conf_lvm_vg_name, f_conf_lvm_origin_lv_name, f_snapshot_lv_name);
 
 	std::ostringstream oss;
 	oss << f_conf_lvm_snapshots_prefix << f_num << "/snapshot";
@@ -144,11 +144,11 @@ namespace testsuiteimport { namespace lvm
 
 	try
 	{
-	    lvremove_wrapper(f_conf_vg_name, f_snapshot_lv_name );
+	    lvremove_wrapper(f_conf_lvm_vg_name, f_snapshot_lv_name );
 	}
 	catch (const LvmImportTestsuiteException &e)
 	{
-	    std::cerr << "lvremove_wrapper( " << f_conf_vg_name << ", " << f_snapshot_lv_name << " ) failed" << std::endl;
+	    std::cerr << "lvremove_wrapper( " << f_conf_lvm_vg_name << ", " << f_snapshot_lv_name << " ) failed" << std::endl;
 	}
     }
 
@@ -157,28 +157,28 @@ namespace testsuiteimport { namespace lvm
 	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) - 1, NULL)
     {
 	std::cout << "MountFileSystemSnapshotImportNone ctor" << std::endl
-		  << "vg/lv: " << f_conf_vg_name << "/" << f_snapshot_lv_name << std::endl;
+		  << "vg/lv: " << f_conf_lvm_vg_name << "/" << f_snapshot_lv_name << std::endl;
     }
 
     MountFileSystemSnapshotImportClone::MountFileSystemSnapshotImportClone()
 	: MountFileSystemSnapshotSimpleBase(),
 	f_clone_origin_name("lv_clone_origin_name"),
-	rm(f_conf_vg_name, f_clone_origin_name),
+	rm(f_conf_lvm_vg_name, f_clone_origin_name),
 	f_p_idata(new snapper::LvmImportMetadata(rm.f_raw_data, snapper::ImportPolicy::CLONE, f_lvm)),
 	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t)-1, f_p_idata)
     {
-	lvcreate_thin_snapshot_wrapper(f_conf_vg_name, f_conf_origin_name, f_clone_origin_name);
+	lvcreate_thin_snapshot_wrapper(f_conf_lvm_vg_name, f_conf_lvm_origin_lv_name, f_clone_origin_name);
     }
 
     MountFileSystemSnapshotImportClone::~MountFileSystemSnapshotImportClone()
     {
 	try
 	{
-	    lvremove_wrapper(f_conf_vg_name, f_clone_origin_name);
+	    lvremove_wrapper(f_conf_lvm_vg_name, f_clone_origin_name);
 	}
 	catch (const LvmImportTestsuiteException &e)
 	{
-	    std::cerr << "lvremove_wrapper( " << f_conf_vg_name << ", " << f_clone_origin_name << " ) failed" << std::endl;
+	    std::cerr << "lvremove_wrapper( " << f_conf_lvm_vg_name << ", " << f_clone_origin_name << " ) failed" << std::endl;
 	}
     }
 
@@ -186,7 +186,7 @@ namespace testsuiteimport { namespace lvm
 	: CreateSnapshotEnvironmentDirExists(1),
 	f_snapshot_lv_name("lv_test_import_snapshot")
     {
-	lvcreate_thin_snapshot_wrapper(f_conf_vg_name, f_conf_origin_name, f_snapshot_lv_name);
+	lvcreate_thin_snapshot_wrapper(f_conf_lvm_vg_name, f_conf_lvm_origin_lv_name, f_snapshot_lv_name);
 
 	std::ostringstream oss;
 	oss << f_conf_lvm_snapshots_prefix << f_num << "/snapshot";
@@ -201,24 +201,24 @@ namespace testsuiteimport { namespace lvm
 
 	try
 	{
-	    lvremove_wrapper(f_conf_vg_name, f_snapshot_lv_name );
+	    lvremove_wrapper(f_conf_lvm_vg_name, f_snapshot_lv_name );
 	}
 	catch (const LvmImportTestsuiteException &e)
 	{
-	    std::cerr << "lvremove_wrapper( " << f_conf_vg_name << ", " << f_snapshot_lv_name << " ) failed" << std::endl;
+	    std::cerr << "lvremove_wrapper( " << f_conf_lvm_vg_name << ", " << f_snapshot_lv_name << " ) failed" << std::endl;
 	}
     }
 
     MountFileSystemSnapshotImportAdopt::MountFileSystemSnapshotImportAdopt()
 	: MountFileSystemSnapshotImportBase(),
-	rm(f_conf_vg_name, f_snapshot_lv_name),
+	rm(f_conf_lvm_vg_name, f_snapshot_lv_name),
 	f_p_idata(new snapper::LvmImportMetadata(rm.f_raw_data, snapper::ImportPolicy::ADOPT, f_lvm)),
 	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1, f_p_idata)
     {
     }
 
     MountFileSystemSnapshotImportAck::MountFileSystemSnapshotImportAck()
-	: MountFileSystemSnapshotImportBase(), rm(f_conf_vg_name, f_snapshot_lv_name),
+	: MountFileSystemSnapshotImportBase(), rm(f_conf_lvm_vg_name, f_snapshot_lv_name),
 	f_p_idata(new snapper::LvmImportMetadata(rm.f_raw_data, snapper::ImportPolicy::ACKNOWLEDGE, f_lvm)),
 	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1, f_p_idata)
     {
@@ -250,15 +250,15 @@ namespace testsuiteimport { namespace lvm
 
     UmountFilesystemSnapshotImportNone::UmountFilesystemSnapshotImportNone()
 	: MountFileSystemSnapshotImportNone(),
-	UmountFilesystemSnapshotBase("/dev/" + f_conf_vg_name + "/" + f_snapshot_lv_name, f_mountpoint, f_lvm->fstype())
+	UmountFilesystemSnapshotBase("/dev/" + f_conf_lvm_vg_name + "/" + f_snapshot_lv_name, f_mountpoint, f_lvm->fstype())
     {
 	f_sh.mount_use_count = 1;
     }
 
     UmountFilesystemSnapshotImportClone::UmountFilesystemSnapshotImportClone()
 	: MountFileSystemSnapshotImportClone(),
-	UmountFilesystemSnapshotBase("/dev/" + f_conf_vg_name + "/" + f_snapshot_lv_name, f_mountpoint, f_lvm->fstype()),
-	f_dev_origin_path("/dev/" + f_conf_vg_name + "/" + f_clone_origin_name),
+	UmountFilesystemSnapshotBase("/dev/" + f_conf_lvm_vg_name + "/" + f_snapshot_lv_name, f_mountpoint, f_lvm->fstype()),
+	f_dev_origin_path("/dev/" + f_conf_lvm_vg_name + "/" + f_clone_origin_name),
 	f_origin_mount_point(f_snapshot_dir + "/tmp_mnt_point")
     {
 	std::cout << "UmountFilesystemSnapshotImportClone ctor" << std::endl;
@@ -295,14 +295,14 @@ namespace testsuiteimport { namespace lvm
 
     UmountFilesystemSnapshotImportAdopt::UmountFilesystemSnapshotImportAdopt()
 	: MountFileSystemSnapshotImportAdopt(),
-	UmountFilesystemSnapshotBase("/dev/" + f_conf_vg_name + "/" + f_snapshot_lv_name, f_mountpoint, f_lvm->fstype())
+	UmountFilesystemSnapshotBase("/dev/" + f_conf_lvm_vg_name + "/" + f_snapshot_lv_name, f_mountpoint, f_lvm->fstype())
     {
 	f_sh.mount_use_count = 1;
     }
 
     UmountFilesystemSnapshotImportAck::UmountFilesystemSnapshotImportAck()
 	: MountFileSystemSnapshotImportAck(),
-	UmountFilesystemSnapshotBase("/dev/" + f_conf_vg_name + "/" + f_snapshot_lv_name, f_mountpoint, f_lvm->fstype())
+	UmountFilesystemSnapshotBase("/dev/" + f_conf_lvm_vg_name + "/" + f_snapshot_lv_name, f_mountpoint, f_lvm->fstype())
     {
 	f_sh.mount_use_count = 1;
     }
