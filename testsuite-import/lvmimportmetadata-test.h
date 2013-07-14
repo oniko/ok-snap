@@ -15,9 +15,17 @@ namespace testsuiteimport { namespace lvm
 
 	void tc_import_compare_metadata();
 
+	// repeat fs test
 	void tc_import_check_imported_snapshot();
-	// void tc_import_raw_metadata();
-	// void tc_import_get_snapshot_dir();
+	
+	// trivial test
+	void tc_clone_imported_snapshot();
+
+	// trivial test
+	void tc_delete_imported_snapshot();
+
+	void tc_import_raw_metadata();
+	void tc_import_get_snapshot_dir();
     };
 
 
@@ -27,10 +35,17 @@ namespace testsuiteimport { namespace lvm
     };
 
 
+    struct FLvmCompareCheck : public GeneralFixture, LvmCompareImportMetadata
+    {
+	virtual void test_method();
+    };
+
+
     struct FLvmIMDataCheckImportedSnapshot : public GeneralFixture, CheckImportedSnapshot
     {
 	virtual void test_method();
     };
+
 
 }}
 #endif //LVMIMPORTMETADATA_TEST_H

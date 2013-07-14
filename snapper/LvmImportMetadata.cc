@@ -89,7 +89,7 @@ namespace snapper
     string
     LvmImportMetadata::getDevicePath() const
     {
-	return "/dev/" + vg_name + "/" + lv_name;
+	return "/dev/" + get_raw_metadata();
     }
 
 
@@ -110,7 +110,7 @@ namespace snapper
     bool
     LvmImportMetadata::checkImportedSnapshot() const
     {
-	return lvm->checkImportedSnapshot(vg_name, lv_name, get_fs_uuid(getDevicePath()), (import_policy != CLONE));
+	return lvm->checkImportedSnapshot(vg_name, lv_name, (import_policy != CLONE));
     }
 
 

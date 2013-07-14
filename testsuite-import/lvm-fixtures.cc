@@ -25,17 +25,16 @@ namespace testsuiteimport { namespace lvm
     {
 	std::cout << "CreateSnapshotEnvironment ctor" << std::endl;
 
-	std::ostringstream oss;
+	std::ostringstream oss(std::ios_base::ate);
 	oss << f_conf_lvm_snapshots_prefix << f_num;
 
 	while (mkdir(oss.str().c_str(), 0755) && f_num < 100)
 	{
 	    f_num++;
 
-	    // TODO: WTF?
 	    oss.str(f_conf_lvm_snapshots_prefix);
 	    oss.clear();
-	    oss << f_conf_lvm_snapshots_prefix << f_num;
+	    oss << f_num;
 
 	    if (errno == EEXIST)
 		continue;

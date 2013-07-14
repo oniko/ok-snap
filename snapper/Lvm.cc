@@ -322,6 +322,7 @@ namespace snapper
 	    throw ImportSnapshotFailedException();
     }
 
+
     void
     Lvm::deleteSnapshot(const string &vg_name, const string &lv_name) const
     {
@@ -415,8 +416,7 @@ namespace snapper
     bool
     Lvm::checkImportedSnapshot(const string& vg_name, const string& lv_name, bool check_ro) const
     {
-	return vg_name == this->vg_name &&
-	       lv_name != this->lv_name &&
+	return (vg_name != this->vg_name || lv_name != this->lv_name) &&
 	       get_fs_uuid("/dev/" + vg_name + "/" + lv_name) == this->fs_uuid &&
 	       detectThinVolumeNames(vg_name, lv_name) &&
 	       (!check_ro || is_subvolume_ro(vg_name, lv_name));

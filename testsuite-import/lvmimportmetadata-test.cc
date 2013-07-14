@@ -13,25 +13,20 @@ namespace testsuiteimport { namespace lvm
 	fixture->test_method();
     }
 
-/*
-    void LvmImportMetadataTestClass::tc_import_copy_ctor()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FCopyConstructor());
-	fixture->test_method();
-    }
-*/
 
-    void LvmImportMetadataTestClass::tc_import_equal_method_true()
+    void LvmImportMetadataTestClass::tc_import_compare_metadata()
     {
-	boost::scoped_ptr<GeneralFixture> fixture(new FEqualMethodTrue());
+	boost::scoped_ptr<GeneralFixture> fixture(new FLvmCompareCheck());
 	fixture->test_method();
     }
 
-    void LvmImportMetadataTestClass::tc_import_equal_method_false()
+
+    void LvmImportMetadataTestClass::tc_import_check_imported_snapshot()
     {
-	boost::scoped_ptr<GeneralFixture> fixture(new FEqualMethodFalse());
+	boost::scoped_ptr<GeneralFixture> fixture(new FLvmIMDataCheckImportedSnapshot());
 	fixture->test_method();
     }
+
 
     void FLvmImportConstructor::test_method()
     {
@@ -40,11 +35,26 @@ namespace testsuiteimport { namespace lvm
 	BOOST_CHECK_THROW( p_imdata.reset(new snapper::LvmImportMetadata(f_raw_data_missing_vg, snapper::ImportPolicy::NONE, f_dummy_lvm)), snapper::InvalidImportMetadataException );
 	BOOST_CHECK_THROW( p_imdata.reset(new snapper::LvmImportMetadata(f_raw_data_missing_lv, snapper::ImportPolicy::NONE, f_dummy_lvm)), snapper::InvalidImportMetadataException );
 
-	BOOST_REQUIRE_NO_THROW( p_imdata.reset(new snapper::LvmImportMetadata(f_raw_data, snapper::ImportPolicy::NONE, f_dummy_lvm)));
-
-// 	BOOST_CHECK_EQUAL( p_imdata->vg_name, f_raw_data["vg_name"] );
-// 	BOOST_CHECK_EQUAL( p_imdata->lv_name, f_raw_data["lv_name"] );
+	BOOST_CHECK_NO_THROW( p_imdata.reset(new snapper::LvmImportMetadata(f_raw_data, snapper::ImportPolicy::CLONE, f_dummy_lvm)) );
+	BOOST_CHECK_THROW( p_imdata.reset(new snapper::LvmImportMetadata(f_raw_data, snapper::ImportPolicy::NONE, f_dummy_lvm)), snapper::InvalidImportMetadataException );
     }
+
+
+    void FLvmCompareCheck::test_method()
+    {
+	BOOST_CHECK_EQUAL( f_lvm_import_metadata, f_lvm_import_metadata_identical );
+	BOOST_CHECK_NE( f_lvm_import_metadata, f_lvm_import_metadata_diff_in_lv );
+	BOOST_CHECK_NE( f_lvm_import_metadata, f_lvm_import_metadata_diff_in_vg );
+	BOOST_CHECK_NE( f_lvm_import_metadata, f_lvm_import_metadata_different );
+    }
+
+
+    void FLvmIMDataCheckImportedSnapshot::test_method()
+    {
+	
+    }
+
+    
 
 
     void FEqualMethodTrue::test_method()

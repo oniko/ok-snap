@@ -9,7 +9,13 @@ namespace testsuiteimport { namespace lvm
     LvmSubvolumeWrapper::LvmSubvolumeWrapper(const string& vg_name, const string& lv_orig_name, const string& lv_name, bool ro)
 	: vg_name(vg_name), lv_name(lv_name), lv_orig_name(lv_orig_name)
     {
-	lvcreate_thin_snapshot_wrapper(vg_name, lv_orig_name, lv_name, ro);
+	lvcreate_thin_snapshot_wrapper(vg_name, lv_orig_name, lv_name, ro);	    
+    }
+
+
+    LvmSubvolumeWrapper::LvmSubvolumeWrapper(const string& vg_name, const string& lv_name)
+    {
+	lvcreate_non_thin_lv_wrapper(vg_name, lv_name);
     }
 
 
@@ -60,26 +66,41 @@ namespace testsuiteimport { namespace lvm
 
 
     CheckImportedSnapshot::CheckImportedSnapshot()
-	: LvmCheckImportedSnapshot(),
-	f_clone_import_data_valid_ro(f_ro_valid_vg_name + "/" + f_ro_valid_lv_name, snapper::ImportPolicy::CLONE, f_lvm),
-	f_clone_import_data_valid_rw(f_rw_valid_vg_name + "/" + f_rw_valid_lv_name, snapper::ImportPolicy::CLONE, f_lvm),
+	: LvmIMCheckImportedSnapshot(),
+	f_clone_import_data_valid_ro(f_ro_subvolume.subvolume(), snapper::ImportPolicy::CLONE, f_lvm),
+	f_clone_import_data_valid_rw(f_rw_subvolume.subvolume(), snapper::ImportPolicy::CLONE, f_lvm),
 	f_clone_import_missing_lv(f_missing_lv_vg_name + "/" + f_missing_lv_lv_name, snapper::ImportPolicy::CLONE, f_lvm),
-	f_clone_import_nonthin_lv(f_nonthin_vg_name + "/" + f_nonthin_lv_name, snapper::ImportPolicy::CLONE, f_lvm),
-	f_clone_import_foreign_vg(f_foreign_vg_vg_name + "/" + f_foreign_vg_lv_name, snapper::ImportPolicy::CLONE, f_lvm),
+	f_clone_import_nonthin_lv(f_nonthin_subvolume.subvolume(), snapper::ImportPolicy::CLONE, f_lvm),
+	f_clone_import_foreign_vg(f_foreign_vg_subvolume.subvolume(), snapper::ImportPolicy::CLONE, f_lvm),
 	f_clone_import_current_subvolume(f_current_subvolume_vg_name + "/" + f_current_subvolume_lv_name, snapper::ImportPolicy::CLONE, f_lvm),
-	f_adopt_import_data_valid_ro(f_ro_valid_vg_name + "/" + f_ro_valid_lv_name, snapper::ImportPolicy::ADOPT, f_lvm),
-	f_adopt_import_data_rw(f_rw_valid_vg_name + "/" + f_rw_valid_lv_name, snapper::ImportPolicy::ADOPT, f_lvm),
+	f_adopt_import_data_valid_ro(f_ro_subvolume.subvolume(), snapper::ImportPolicy::ADOPT, f_lvm),
+	f_adopt_import_data_rw(f_rw_subvolume.subvolume(), snapper::ImportPolicy::ADOPT, f_lvm),
 	f_adopt_import_missing_lv(f_missing_lv_vg_name + "/" + f_missing_lv_lv_name, snapper::ImportPolicy::ADOPT, f_lvm),
-	f_adopt_import_nonthin_lv(f_nonthin_vg_name + "/" + f_nonthin_lv_name, snapper::ImportPolicy::ADOPT, f_lvm),
-	f_adopt_import_foreign_vg(f_foreign_vg_vg_name + "/" + f_foreign_vg_lv_name, snapper::ImportPolicy::ADOPT, f_lvm),
+	f_adopt_import_nonthin_lv(f_nonthin_subvolume.subvolume(), snapper::ImportPolicy::ADOPT, f_lvm),
+	f_adopt_import_foreign_vg(f_foreign_vg_subvolume.subvolume(), snapper::ImportPolicy::ADOPT, f_lvm),
 	f_adopt_import_current_subvolume(f_current_subvolume_vg_name + "/" + f_current_subvolume_lv_name, snapper::ImportPolicy::ADOPT, f_lvm),
-	f_ack_import_data_valid_ro(f_ro_valid_vg_name + "/" + f_ro_valid_lv_name, snapper::ImportPolicy::ACKNOWLEDGE, f_lvm),
-	f_ack_import_data_rw(f_rw_valid_vg_name + "/" + f_rw_valid_lv_name, snapper::ImportPolicy::ACKNOWLEDGE, f_lvm),
+	f_ack_import_data_valid_ro(f_ro_subvolume.subvolume(), snapper::ImportPolicy::ACKNOWLEDGE, f_lvm),
+	f_ack_import_data_rw(f_rw_subvolume.subvolume(), snapper::ImportPolicy::ACKNOWLEDGE, f_lvm),
 	f_ack_import_missing_lv(f_missing_lv_vg_name + "/" + f_missing_lv_lv_name, snapper::ImportPolicy::ACKNOWLEDGE, f_lvm),
-	f_ack_import_nonthin_lv(f_nonthin_vg_name + "/" + f_nonthin_lv_name, snapper::ImportPolicy::ACKNOWLEDGE, f_lvm),
-	f_ack_import_foreign_vg(f_foreign_vg_vg_name + "/" + f_foreign_vg_lv_name, snapper::ImportPolicy::ACKNOWLEDGE, f_lvm),
+	f_ack_import_nonthin_lv(f_nonthin_subvolume.subvolume(), snapper::ImportPolicy::ACKNOWLEDGE, f_lvm),
+	f_ack_import_foreign_vg(f_foreign_vg_subvolume.subvolume(), snapper::ImportPolicy::ACKNOWLEDGE, f_lvm),
 	f_ack_import_current_subvolume(f_current_subvolume_vg_name + "/" + f_current_subvolume_lv_name, snapper::ImportPolicy::ACKNOWLEDGE, f_lvm)
     {
     }
+
+
+    LvmIMCheckImportedSnapshot::LvmIMCheckImportedSnapshot()
+	: LvmGeneralFixture(), f_missing_lv_vg_name(LvmGeneralFixture::f_conf_lvm_vg_name),
+	f_missing_lv_lv_name("ThisIsMissingLogVol"),
+	f_nonthin_subvolume(LvmGeneralFixture::f_conf_lvm_vg_name, "test_non_thin_volume_01"),
+	f_foreign_vg_subvolume(LvmGeneralFixture::f_conf_lvm_vg_name, "test_lv_volume_01"),
+	f_current_subvolume_vg_name(LvmGeneralFixture::f_conf_lvm_vg_name),
+	f_current_subvolume_lv_name(LvmGeneralFixture::f_conf_lvm_origin_lv_name),
+	f_rw_wrong_fs_uuid_subvolume(LvmGeneralFixture::f_conf_lvm_vg_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name, "test_lv_wrong_fs_uuid_01", false),
+	f_rw_subvolume(LvmGeneralFixture::f_conf_lvm_vg_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name, "test_rw_snapshot_01", false),
+	f_ro_wrong_fs_uuid_subvolume(LvmGeneralFixture::f_conf_lvm_vg_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name, "test_ro_snapshot_01")
+    {
+    }
+
 
 }}

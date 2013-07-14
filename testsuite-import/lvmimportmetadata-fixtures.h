@@ -2,21 +2,28 @@
 #define LVMIMPORTMETADATA_FIXTURES_H
 
 #include "testsuite-import/general-fixtures.h"
+#include "testsuite-import/lvm-fixtures.h"
 
 #include <string>
+#include <boost/concept_check.hpp>
 
 #include "snapper/Lvm.h"
 #include "snapper/LvmImportMetadata.h"
 
 
-namespace testsuiteimport { namespace lvm {
+namespace testsuiteimport { namespace lvm
+{
 
     using std::string;
 
+    // TODO: move me somewhere else lvm-fixtures.h?
     struct LvmSubvolumeWrapper
     {
 	LvmSubvolumeWrapper(const string& vg_name, const string& lv_orig_name, const string& lv_name, bool ro = true);
+	LvmSubvolumeWrapper(const string& vg_name, const string& lv_name);
 	~LvmSubvolumeWrapper();
+
+	string subvolume() const { return vg_name + "/" + lv_name; }
 
 	const string vg_name;
 	const string lv_name;
@@ -70,48 +77,62 @@ namespace testsuiteimport { namespace lvm {
 
 
     // TODO: move me into lvm-fixtures
-    struct LvmCheckImportedSnapshot : public LvmGeneralFixture
+    struct LvmIMCheckImportedSnapshot : public LvmGeneralFixture
     {
-	LvmCheckImportedSnapshot();
-	~LvmCheckImportedSnapshot();
+	LvmIMCheckImportedSnapshot();
+	~LvmIMCheckImportedSnapshot();
 
 	// missing lv test
 	const string f_missing_lv_vg_name;
 	const string f_missing_lv_lv_name;
 
 	// not a thin volume
-	const string f_nonthin_vg_name;
-	const string f_nonthin_lv_name;
+// 	const string f_nonthin_vg_name;
+// 	const string f_nonthin_lv_name;
+	const LvmSubvolumeWrapper f_nonthin_subvolume;
 
+	// about to be removed. condition is useless
 	// foreign vg test case
-	const string f_foreign_vg_vg_name;
-	const string f_foreign_vg_lv_name;
+// 	const string f_foreign_vg_vg_name;
+// 	const string f_foreign_vg_lv_name;
+	const LvmSubvolumeWrapper f_foreign_vg_subvolume;
 
-	// current subvolume test case (aka trying import snapshot 0)
+	// current subvolume test case (aka exercise importing snapshot 0)
 	const string f_current_subvolume_vg_name;
 	const string f_current_subvolume_lv_name;
 
 	// test for rw enabled snapshots
-	const string f_rw_wrong_fs_uuid_vg_name;
-	const string f_rw_wrong_fs_uuid_lv_name;
+// 	const string f_rw_wrong_fs_uuid_vg_name;
+// 	const string f_rw_wrong_fs_uuid_lv_name;
+	const LvmSubvolumeWrapper f_rw_wrong_fs_uuid_subvolume;
 
-	const string f_rw_valid_vg_name;
-	const string f_rw_valid_lv_name;
+// 	const string f_rw_valid_vg_name;
+// 	const string f_rw_valid_lv_name;
+	const LvmSubvolumeWrapper f_rw_subvolume;
 
 	// test for ro snapshots
-	const string f_ro_wrong_fs_uuid_vg_name;
-	const string f_ro_wrong_fs_uuid_lv_name;
+// 	const string f_ro_wrong_fs_uuid_vg_name;
+// 	const string f_ro_wrong_fs_uuid_lv_name;
+	const LvmSubvolumeWrapper f_ro_wrong_fs_uuid_subvolume;
 
-	const string f_ro_valid_vg_name;
-	const string f_ro_valid_lv_name;
+// 	const string f_ro_valid_vg_name;
+// 	const string f_ro_valid_lv_name;
+	const LvmSubvolumeWrapper f_ro_subvolume;
     };
 
 
-    struct CheckImportedSnapshot : public LvmCheckImportedSnapshot
+    struct CheckImportedSnapshot : public LvmIMCheckImportedSnapshot
     {
 	CheckImportedSnapshot();
 
+	const CreateSnapshotEnvironment f_env_for_failures;
+
 	// tests for CLONE import policy
+	const CreateSnapshotEnvironment f_clone_env_01;
+	const CreateSnapshotEnvironment f_clone_env_02;
+
+	const LvmSubvolumeWrapper f_lvm_subvolume_
+
 	const snapper::LvmImportMetadata f_clone_import_data_valid_ro;
 	const snapper::LvmImportMetadata f_clone_import_data_valid_rw;
 	const snapper::LvmImportMetadata f_clone_import_missing_lv;
@@ -120,6 +141,8 @@ namespace testsuiteimport { namespace lvm {
 	const snapper::LvmImportMetadata f_clone_import_current_subvolume;
 
 	// tests for ADOPT policy
+	const CreateSnapshotEnvironment f_adopt_env_01;
+
 	const snapper::LvmImportMetadata f_adopt_import_data_valid_ro;
 	const snapper::LvmImportMetadata f_adopt_import_data_rw;
 	const snapper::LvmImportMetadata f_adopt_import_missing_lv;
@@ -128,6 +151,8 @@ namespace testsuiteimport { namespace lvm {
 	const snapper::LvmImportMetadata f_adopt_import_current_subvolume;
 
 	// tests for ACKNOWLEDGE policy
+	const CreateSnapshotEnvironment f_ack_env_01;
+
 	const snapper::LvmImportMetadata f_ack_import_data_valid_ro;
 	const snapper::LvmImportMetadata f_ack_import_data_rw;
 	const snapper::LvmImportMetadata f_ack_import_missing_lv;
@@ -137,25 +162,12 @@ namespace testsuiteimport { namespace lvm {
     };
 
 
-//     struct EqualMethodTrue : public CopyConstructor
-//     {
-// 	EqualMethodTrue();
-// 	~EqualMethodTrue();
-//
-// 	map<string,string> f_raw_data_copy;
-// 	snapper::LvmImportMetadata* f_p_origin_copy;
-//     };
+    struct CloneSnapshot
+    {
+	CloneSnapshot();
+	~CloneSnapshot();
+    };
 
 
-//     struct EqualMethodFalse : public EqualFalseTestMetadata
-//     {
-// 	EqualMethodFalse();
-//
-// 	const snapper::LvmImportMetadata f_origin;
-//
-// 	const snapper::LvmImportMetadata f_data_diff_in_vg;
-// 	const snapper::LvmImportMetadata f_data_diff_in_lv;
-// 	const snapper::LvmImportMetadata f_data_different;
-//     };
 }}
 #endif //LVMIMPORTMETADATA_FIXTURES_H

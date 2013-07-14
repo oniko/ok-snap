@@ -117,7 +117,7 @@ namespace snapper
 	string::size_type pos = import_subvolume.rfind("/");
 
 	if (pos == string::npos)
-	    btrfs->deleteSnapshot("", import_subvolume);
+	    btrfs->deleteSnapshot(string(), import_subvolume);
 	else
 	    btrfs->deleteSnapshot(import_subvolume.substr(0, pos), import_subvolume.substr(pos + 1));
     }
