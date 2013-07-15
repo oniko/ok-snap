@@ -111,50 +111,45 @@ namespace testsuiteimport { namespace lvm
 
     void FCreateSnapshotEnvironment::test_method()
     {
-	BOOST_REQUIRE_NO_THROW( f_lvm->createSnapshotEnvironment(f_num) );
+	BOOST_REQUIRE_NO_THROW( f_lvm->createSnapshotEnvironment(f_valid_info_dir.f_num) );
 
 	struct stat buff;
 
-	BOOST_CHECK_EQUAL( fstatat(f_dirfd, "snapshot", &buff, AT_SYMLINK_NOFOLLOW), 0 );
+	BOOST_CHECK_EQUAL( fstatat(f_valid_info_dir.get_dirfd(), "snapshot", &buff, AT_SYMLINK_NOFOLLOW), 0 );
 	BOOST_CHECK_NE( S_ISDIR(buff.st_mode), 0 );
-    }
 
-    void FCreateSnapshotEnvironmentDirExists::test_method()
-    {
-	BOOST_REQUIRE_NO_THROW( f_lvm->createSnapshotEnvironment(f_num) );
+	// Dir Exists
+	BOOST_REQUIRE_NO_THROW( f_lvm->createSnapshotEnvironment(f_info_snapshot_dir_exists.f_num) );
 
-	struct stat buff;
-
-	BOOST_CHECK_EQUAL( fstatat(f_dirfd, "snapshot", &buff, AT_SYMLINK_NOFOLLOW), 0 );
+	BOOST_CHECK_EQUAL( fstatat(f_valid_info_dir_exists.get_dirfd(), "snapshot", &buff, AT_SYMLINK_NOFOLLOW), 0 );
 	BOOST_CHECK_NE( S_ISDIR(buff.st_mode), 0 );
+
+	// file in place of Info dir
+	BOOST_CHECK_THROW( f_lvm->createSnapshotEnvironment(f_invalid_snapshot_dir.f_num), snapper::CreateSnapshotFailedException );
     }
 
-    void FCreateSnapshotEnvironmentFailure::test_method()
-    {
-	BOOST_CHECK_THROW( f_lvm->createSnapshotEnvironment(f_num), snapper::CreateSnapshotFailedException );
-    }
 
     void FCreateSnapshotFailOnEnvironment::test_method()
     {
 	BOOST_REQUIRE_THROW( f_lvm->createSnapshot(f_num), snapper::CreateSnapshotFailedException );
 
-	BOOST_CHECK( !check_lv_exists(f_conf_vg_name, f_lvm->snapshotLvName(f_num)) );
+	BOOST_CHECK_EQUAL( check_lv_exists(f_conf_vg_name, f_lvm->snapshotLvName(f_num)), false );
     }
 
-    void FCloneSnapshotValid::test_method()
+
+    void FCloneSnapshot::test_method()
     {
-	BOOST_REQUIRE_NO_THROW( f_lvm->cloneSnapshot(f_num, f_vg_name, f_lv_name ) );
+	// valid
+	BOOST_REQUIRE_NO_THROW( f_lvm->cloneSnapshot(f_info_dir_1.f_num, f_valid_subvolume.vg_name, f_valid_subvolume.lv_name ) );
 
-	BOOST_REQUIRE( check_lv_exists( f_vg_name, f_lvm->snapshotLvName(f_num)) );
-	BOOST_CHECK( check_is_thin( f_vg_name, f_lvm->snapshotLvName(f_num)) );
-    }
-    
-    void FCloneSnapshotMissingOrigin::test_method()
-    {
-	BOOST_REQUIRE_THROW( f_lvm->cloneSnapshot(f_num, f_vg_name, f_lv_name ), snapper::ImportSnapshotFailedException );
+	BOOST_REQUIRE( check_lv_exists( f_vg_name, f_lvm->snapshotLvName(f_info_dir_1.f_num)) );
+	BOOST_CHECK( check_is_thin( f_vg_name, f_lvm->snapshotLvName(f_info_dir_1.f_num)) );
 
-	BOOST_CHECK( !check_lv_exists( f_vg_name, f_lvm->snapshotLvName(f_num)) );
+	// missing
+	BOOST_REQUIRE_THROW( f_lvm->cloneSnapshot(f_info_dir_2.f_num, f_missing_lv_vg, f_missing_lv_lv ), snapper::ImportSnapshotFailedException );
+	BOOST_CHECK( !check_lv_exists( f_vg_name, f_lvm->snapshotLvName(f_info_dir_2.f_num)) );
     }
+
 
     void FMountSnapshotByDeviceValid::test_method()
     {

@@ -49,7 +49,7 @@ namespace testsuiteimport { namespace lvm
     };
 
 
-    struct DeleteFilesystemSnapshotImportTypeNone : public CreateSnapshotEnvironmentDirExists
+    struct DeleteFilesystemSnapshotImportTypeNone : public InfoDirWithSnapshotDir
     {
 	DeleteFilesystemSnapshotImportTypeNone();
 	~DeleteFilesystemSnapshotImportTypeNone();
@@ -58,7 +58,7 @@ namespace testsuiteimport { namespace lvm
 	const string f_snapshot_lv_name;
     };
 
-    struct DeleteFilesystemSnapshotImportTypeClone : public CreateSnapshotEnvironmentDirExists
+    struct DeleteFilesystemSnapshotImportTypeClone : public InfoDirWithSnapshotDir
     {
 	DeleteFilesystemSnapshotImportTypeClone();
 	~DeleteFilesystemSnapshotImportTypeClone();
@@ -70,7 +70,7 @@ namespace testsuiteimport { namespace lvm
 	const snapper::Snapshot f_sh;
     };
 
-    struct DeleteFilesystemSnapshotImportTypeAdopt : public CreateSnapshotEnvironmentDirExists
+    struct DeleteFilesystemSnapshotImportTypeAdopt : public InfoDirWithSnapshotDir
     {
 	DeleteFilesystemSnapshotImportTypeAdopt();
 	~DeleteFilesystemSnapshotImportTypeAdopt();
@@ -82,7 +82,7 @@ namespace testsuiteimport { namespace lvm
 	const snapper::Snapshot f_sh;
     };
 
-    struct DeleteFilesystemSnapshotImportTypeAcknowledge : public CreateSnapshotEnvironmentDirExists
+    struct DeleteFilesystemSnapshotImportTypeAcknowledge : public InfoDirWithSnapshotDir
     {
 	DeleteFilesystemSnapshotImportTypeAcknowledge();
 	~DeleteFilesystemSnapshotImportTypeAcknowledge();
@@ -102,7 +102,7 @@ namespace testsuiteimport { namespace lvm
 	const snapper::Snapshot f_sh;
     };
 
-    struct MountFileSystemSnapshotSimpleBase : public CreateSnapshotEnvironmentDirExists
+    struct MountFileSystemSnapshotSimpleBase : public InfoDirWithSnapshotDir
     {
 	MountFileSystemSnapshotSimpleBase();
 	~MountFileSystemSnapshotSimpleBase();
@@ -131,7 +131,7 @@ namespace testsuiteimport { namespace lvm
 	const snapper::Snapshot f_sh;
     };
 
-    struct MountFileSystemSnapshotImportBase : public CreateSnapshotEnvironmentDirExists
+    struct MountFileSystemSnapshotImportBase : public InfoDirWithSnapshotDir
     {
 	MountFileSystemSnapshotImportBase();
 	virtual ~MountFileSystemSnapshotImportBase();

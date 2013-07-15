@@ -7,52 +7,82 @@
 #include "testsuite-import/general-fixtures.h"
 
 namespace testsuiteimport { namespace lvm
-{    
+{
     using std::map;
     using std::string;
 
-    struct CreateSnapshotEnvironment : public LvmGeneralFixture {
-	CreateSnapshotEnvironment();
-	CreateSnapshotEnvironment(unsigned int num);
-	~CreateSnapshotEnvironment();
+    // TODO: move me somewhere else lvm-fixtures.h?
+    struct LvmSubvolumeWrapper
+    {
+	LvmSubvolumeWrapper(const string& vg_name, const string& lv_orig_name, const string& lv_name, bool ro = true);
+	LvmSubvolumeWrapper(const string& vg_name, const string& lv_name);
+	~LvmSubvolumeWrapper();
 
-	string f_snapshot_dir;
+	string subvolume() const { return vg_name + "/" + lv_name; }
 
-	int f_dirfd;
+	const string vg_name;
+	const string lv_name;
+	const string lv_orig_name;
+    };
+
+
+    struct InfoDirectory : public LvmGeneralFixture {
+	InfoDirectory();
+	InfoDirectory(unsigned int num);
+	~InfoDirectory();
+
+	string f_info_dir;
+
 	unsigned int f_num;
+
+	unsigned int get_dirfd() const { return f_dirfd; }
+    protected:
+	int f_dirfd;
+    private:
+	void infodir_init();
+    };
+
+
+    struct InfoDirWithSnapshotDir : public InfoDirectory {
+	InfoDirWithSnapshotDir();
+	InfoDirWithSnapshotDir(unsigned int num);
     private:
 	void init();
     };
 
-    struct CreateSnapshotEnvironmentDirExists : public CreateSnapshotEnvironment {
-	CreateSnapshotEnvironmentDirExists();
-	CreateSnapshotEnvironmentDirExists(unsigned int num);
+
+    struct InfoDirWithInvalidSnapshotDir : public InfoDirectory {
+	InfoDirWithInvalidSnapshotDir();
+	InfoDirWithInvalidSnapshotDir(unsigned int num);
     private:
 	void init();
     };
 
-    struct CreateSnapshotEnvironmentFailure : public CreateSnapshotEnvironment {
-	CreateSnapshotEnvironmentFailure();
+
+    struct CreateSnapshotEnvironment
+    {
+	const InfoDirectory f_valid_info_dir;
+	const InfoDirWithSnapshotDir f_info_snapshot_dir_exists;
+	const InfoDirWithInvalidSnapshotDir f_invalid_snapshot_dir;
     };
 
-    struct CloneSnapshotValid : public CreateSnapshotEnvironment {
-	CloneSnapshotValid();
-	~CloneSnapshotValid();
 
-	const string f_vg_name;
-	const string f_lv_name;
-	const string f_origin_name;
-    };    
+    struct LvmCloneSnapshot : public LvmGeneralFixture
+    {
+	LvmCloneSnapshot();
+	~LvmCloneSnapshot();
 
-    struct CloneSnapshotMissingOrigin : public CreateSnapshotEnvironment {
-	CloneSnapshotMissingOrigin();
-	~CloneSnapshotMissingOrigin() {}
+	const LvmSubvolumeWrapper f_valid_subvolume;
 
-	const string f_vg_name;
-	const string f_lv_name;
+	const string f_missing_lv_vg;
+	const string f_missing_lv_lv;
+
+	const InfoDirectory f_info_dir_1;
+	const InfoDirectory f_info_dir_2;
     };
 
-    struct MountSnapshotByDeviceValid : public CreateSnapshotEnvironmentDirExists
+
+    struct MountSnapshotByDeviceValid : public InfoDirWithSnapshotDir
     {
 	MountSnapshotByDeviceValid();
 	~MountSnapshotByDeviceValid();
@@ -70,7 +100,7 @@ namespace testsuiteimport { namespace lvm
 	MountSnapshotByDeviceAlreadyMounted();
     };
 
-    struct MountSnapshotByDeviceInvalidDevice : public CreateSnapshotEnvironmentDirExists
+    struct MountSnapshotByDeviceInvalidDevice : public InfoDirWithSnapshotDir
     {
 	MountSnapshotByDeviceInvalidDevice();
 	~MountSnapshotByDeviceInvalidDevice() {}

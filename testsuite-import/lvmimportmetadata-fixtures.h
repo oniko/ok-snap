@@ -5,7 +5,6 @@
 #include "testsuite-import/lvm-fixtures.h"
 
 #include <string>
-#include <boost/concept_check.hpp>
 
 #include "snapper/Lvm.h"
 #include "snapper/LvmImportMetadata.h"
@@ -16,19 +15,7 @@ namespace testsuiteimport { namespace lvm
 
     using std::string;
 
-    // TODO: move me somewhere else lvm-fixtures.h?
-    struct LvmSubvolumeWrapper
-    {
-	LvmSubvolumeWrapper(const string& vg_name, const string& lv_orig_name, const string& lv_name, bool ro = true);
-	LvmSubvolumeWrapper(const string& vg_name, const string& lv_name);
-	~LvmSubvolumeWrapper();
-
-	string subvolume() const { return vg_name + "/" + lv_name; }
-
-	const string vg_name;
-	const string lv_name;
-	const string lv_orig_name;
-    };
+    
 
 
     struct ValidMetadata
@@ -38,6 +25,8 @@ namespace testsuiteimport { namespace lvm
 
 	const snapper::Lvm* f_dummy_lvm;
 	const string f_raw_data;
+
+	const snapper::LvmImportMetadata f_lvm_import_metadata;
     };
 
 
@@ -59,7 +48,6 @@ namespace testsuiteimport { namespace lvm
     {
 	LvmCompareImportMetadata();
 
-	const snapper::LvmImportMetadata f_lvm_import_metadata;
 	const snapper::LvmImportMetadata f_lvm_import_metadata_identical;
 
 	const snapper::LvmImportMetadata f_lvm_import_metadata_diff_in_vg;
@@ -125,13 +113,11 @@ namespace testsuiteimport { namespace lvm
     {
 	CheckImportedSnapshot();
 
-	const CreateSnapshotEnvironment f_env_for_failures;
+	const InfoDirectory f_env_for_failures;
 
 	// tests for CLONE import policy
-	const CreateSnapshotEnvironment f_clone_env_01;
-	const CreateSnapshotEnvironment f_clone_env_02;
-
-	const LvmSubvolumeWrapper f_lvm_subvolume_
+	//const CreateSnapshotEnvironment f_clone_env_01;
+	//const CreateSnapshotEnvironment f_clone_env_02;
 
 	const snapper::LvmImportMetadata f_clone_import_data_valid_ro;
 	const snapper::LvmImportMetadata f_clone_import_data_valid_rw;
@@ -141,7 +127,7 @@ namespace testsuiteimport { namespace lvm
 	const snapper::LvmImportMetadata f_clone_import_current_subvolume;
 
 	// tests for ADOPT policy
-	const CreateSnapshotEnvironment f_adopt_env_01;
+	//const CreateSnapshotEnvironment f_adopt_env_01;
 
 	const snapper::LvmImportMetadata f_adopt_import_data_valid_ro;
 	const snapper::LvmImportMetadata f_adopt_import_data_rw;
@@ -151,7 +137,7 @@ namespace testsuiteimport { namespace lvm
 	const snapper::LvmImportMetadata f_adopt_import_current_subvolume;
 
 	// tests for ACKNOWLEDGE policy
-	const CreateSnapshotEnvironment f_ack_env_01;
+	//const CreateSnapshotEnvironment f_ack_env_01;
 
 	const snapper::LvmImportMetadata f_ack_import_data_valid_ro;
 	const snapper::LvmImportMetadata f_ack_import_data_rw;
@@ -162,11 +148,16 @@ namespace testsuiteimport { namespace lvm
     };
 
 
-    struct CloneSnapshot
+    struct CloneSnapshot : public LvmGeneralFixture
     {
 	CloneSnapshot();
-	~CloneSnapshot();
+
+	const InfoDirectory f_env;
+	const LvmSubvolumeWrapper f_origin_volume;
+	const snapper::LvmImportMetadata f_clone_valid_metadata;
     };
+
+
 
 
 }}

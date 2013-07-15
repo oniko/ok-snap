@@ -31,7 +31,8 @@ namespace testsuiteimport { namespace lvm
 
     ValidMetadata::ValidMetadata()
 	: f_dummy_lvm(reinterpret_cast<const snapper::Lvm *>(123456789)),
-	f_raw_data("some_vg/some_lv")
+	f_raw_data("some_vg/some_lv"),
+	f_lvm_import_metadata(f_raw_data, snapper::ImportPolicy::ADOPT, f_dummy_lvm)
     {
     }
 
@@ -50,7 +51,6 @@ namespace testsuiteimport { namespace lvm
 
     LvmCompareImportMetadata::LvmCompareImportMetadata()
 	: ValidMetadata(),
-	f_lvm_import_metadata(f_raw_data, snapper::ImportPolicy::ADOPT, f_dummy_lvm),
 	f_lvm_import_metadata_identical(f_raw_data, snapper::ImportPolicy::CLONE, f_dummy_lvm),
 	f_lvm_import_metadata_diff_in_vg("another_vg" + "/" + f_raw_data.substr(f_raw_data.find("/") + 1), snapper::ImportPolicy::ADOPT, f_dummy_lvm),
 	f_lvm_import_metadata_diff_in_lv(f_raw_data.substr(0, f_raw_data.find("/")) + "/" + "another_lv", snapper::ImportPolicy::ADOPT, f_dummy_lvm),
@@ -101,6 +101,15 @@ namespace testsuiteimport { namespace lvm
 	f_ro_wrong_fs_uuid_subvolume(LvmGeneralFixture::f_conf_lvm_vg_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name, "test_ro_snapshot_01")
     {
     }
+
+
+    CloneSnapshot::CloneSnapshot()
+	: f_env(0),
+	f_origin_volume(LvmGeneralFixture::f_conf_lvm_vg_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name, "test_clone_snapshot_01"),
+	f_clone_valid_metadata(f_origin_volume.subvolume(), snapper::ImportPolicy::CLONE, f_lvm)
+    {
+    }
+
 
 
 }}

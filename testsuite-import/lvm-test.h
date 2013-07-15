@@ -9,55 +9,49 @@ namespace testsuiteimport { namespace lvm
     class LvmTestClass
     {
     public:
+	void tc_lvm_snapshot_dir();
 	void tc_create_snapshot_environment();
-	void tc_create_snapshot_environment_dir_exists();
-	void tc_create_snapshot_environment_failure();
-	void tc_create_snapshot_fail_on_environment();
-	//void tc_remove_snapshot_environment(); // TODO: Nothing to test right now
+ 	void tc_create_snapshot_fail_on_environment();
+	//void tc_remove_snapshot_environment();
 	void tc_clone_snapshot();
-	void tc_clone_snapshot_missing_origin();
+// 	void tc_clone_snapshot_missing_origin();
 	void tc_mount_snapshot_by_device();
-	void tc_mount_snapshot_by_device_already_mounted();
-	void tc_mount_snapshot_by_device_missing_device();
+// 	void tc_mount_snapshot_by_device_already_mounted();
+// 	void tc_mount_snapshot_by_device_missing_device();
 	void tc_check_imported_snapshot();
-	void tc_check_imported_snapshot_wrong_vg();
-	void tc_check_imported_snapshot_volume_import();
-	void tc_check_imported_snapshot_fs_uuid_mismatch();
-	void tc_check_imported_snapshot_non_thin_lv();
+// 	void tc_check_imported_snapshot_wrong_vg();
+// 	void tc_check_imported_snapshot_volume_import();
+// 	void tc_check_imported_snapshot_fs_uuid_mismatch();
+// 	void tc_check_imported_snapshot_non_thin_lv();
 	void tc_lvm_delete_snapshot_by_vg_lv();
-	void tc_lvm_delete_snapshot_by_vg_lv_missing();
+// 	void tc_lvm_delete_snapshot_by_vg_lv_missing();
     };
+
 
     struct FCreateSnapshotEnvironment : public GeneralFixture, CreateSnapshotEnvironment
     {
 	virtual void test_method();
     };
 
-    struct FCreateSnapshotEnvironmentDirExists : public GeneralFixture, CreateSnapshotEnvironmentDirExists
+
+    struct FCreateSnapshotFailOnEnvironment : public GeneralFixture, InfoDirWithInvalidSnapshotDir
     {
 	virtual void test_method();
     };
 
-    struct FCreateSnapshotEnvironmentFailure : public GeneralFixture, CreateSnapshotEnvironmentFailure
+
+    struct FCloneSnapshot : public GeneralFixture, LvmCloneSnapshot
     {
 	virtual void test_method();
     };
 
-    struct FCreateSnapshotFailOnEnvironment : public GeneralFixture, CreateSnapshotEnvironmentFailure
+
+    struct FMountSnapshotBySubvolume : public GeneralFixture
     {
 	virtual void test_method();
     };
-    
-    struct FCloneSnapshotValid : public GeneralFixture, CloneSnapshotValid
-    {
-	virtual void test_method();
-    };
-    
-    struct FCloneSnapshotMissingOrigin : public GeneralFixture, CloneSnapshotMissingOrigin
-    {
-	virtual void test_method();
-    };
-    
+
+
     struct FMountSnapshotByDeviceValid : public GeneralFixture, MountSnapshotByDeviceValid
     {
 	virtual void test_method();

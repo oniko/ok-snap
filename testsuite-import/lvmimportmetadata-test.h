@@ -13,18 +13,44 @@ namespace testsuiteimport { namespace lvm
 
 	void tc_import_ctor();
 
+	/*
+	 * NOTE: depends on:
+	 *		- ctor
+	 */
 	void tc_import_compare_metadata();
 
-	// repeat fs test
+	/*
+	 * NOTE: depends on:
+	 *		- ctor
+	 *		- Lvm::checkImportdSnapshot()
+	 */
 	void tc_import_check_imported_snapshot();
 	
-	// trivial test
+	/*
+	 * NOTE: depends on:
+	 *		- ctor
+	 *		- Lvm::cloneSnapshot()
+	 */
 	void tc_clone_imported_snapshot();
 
-	// trivial test
+	/*
+	 * NOTE: depends on:
+	 *		- ctor
+	 *		- Lvm::deleteSnapshot()
+	 */
 	void tc_delete_imported_snapshot();
 
+	/*
+	 * NOTE: depends on:
+	 *		- ctor
+	 */
 	void tc_import_raw_metadata();
+
+	/*
+	 * NOTE: depends on:
+	 *		- ctor
+	 *		- Lvm::snapshotDir()
+	 */
 	void tc_import_get_snapshot_dir();
     };
 
@@ -46,6 +72,29 @@ namespace testsuiteimport { namespace lvm
 	virtual void test_method();
     };
 
+
+    struct FCloneImportedSnapshot : public GeneralFixture, CloneSnapshot
+    {
+	virtual void test_method();
+    };
+
+
+    struct FDeleteImportedSnapshot : public GeneralFixture, CloneSnapshot
+    {
+	virtual void test_method();
+    };
+
+
+    struct FGetRawData : public GeneralFixture, ValidMetadata
+    {
+	virtual void test_method();
+    };
+
+
+    struct FGetSnapshotDir : public GeneralFixture, LvmGeneralFixture
+    {
+	virtual void test_method();
+    };
 
 }}
 #endif //LVMIMPORTMETADATA_TEST_H
