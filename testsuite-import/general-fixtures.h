@@ -3,6 +3,8 @@
 
 #include <string>
 
+#include <boost/noncopyable.hpp>
+
 #include "snapper/Btrfs.h"
 #include "snapper/Lvm.h"
 #include "snapper/Snapper.h"
@@ -12,6 +14,54 @@
 namespace testsuiteimport
 {
     using std::string;
+
+    class SubvolumeWrapper : public boost::noncopyable
+    {
+    public:
+	virtual ~SubvolumeWrapper() {}
+
+	virtual bool is_mounted() const = 0;
+	virtual bool exists() const = 0;
+
+	virtual string fstype() const = 0;
+	virtual string infos_dir() const = 0;
+    };
+
+
+    class InfoDirectory {
+    public:
+	InfoDirectory(const string& infos_dir_loc);
+	InfoDirectory(const string& infos_dir_loc, unsigned int num);
+	~InfoDirectory();
+
+	string f_info_dir;
+
+	unsigned int f_num;
+
+	unsigned int get_dirfd() const { return f_dirfd; }
+    protected:
+	int f_dirfd;
+    private:
+	void infodir_init();
+	const string infos_dir;
+    };
+
+
+    class InfoDirWithSnapshotDir : public InfoDirectory {
+	InfoDirWithSnapshotDir(const string& infos_dir_loc);
+	InfoDirWithSnapshotDir(const string& infos_dir_loc, unsigned int num);
+    private:
+	void init();
+    };
+
+
+    class InfoDirWithInvalidSnapshotDir : public InfoDirectory {
+	InfoDirWithInvalidSnapshotDir(const string& infos_dir_loc);
+	InfoDirWithInvalidSnapshotDir(const string& infos_dir_loc, unsigned int num);
+    private:
+	void init();
+    };
+
 
     namespace lvm
     {

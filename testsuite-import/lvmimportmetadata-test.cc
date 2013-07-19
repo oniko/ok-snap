@@ -1,11 +1,22 @@
-#include <boost/test/unit_test.hpp>
-#include <boost/scoped_ptr.hpp>
-
 #include "snapper/Exception.h"
 
 #include "testsuite-import/helpers.h"
 #include "testsuite-import/general-test.h"
 #include "testsuite-import/lvmimportmetadata-test.h"
+
+#include <boost/test/unit_test.hpp>
+#include <boost/scoped_ptr.hpp>
+
+namespace snapper
+{
+    // NOTE: this is requirement for BOOST_..._EQUAL tests
+    std::ostream&
+    operator<<(std::ostream& out, const snapper::LvmImportMetadata& idata)
+    {
+	out << idata.get_raw_metadata();
+	return out;
+    }
+}
 
 namespace testsuiteimport { namespace lvm
 {
@@ -109,7 +120,7 @@ namespace testsuiteimport { namespace lvm
 
 	// check ACKNOWLEDGE import type
 	BOOST_CHECK_EQUAL( f_ack_import_data_valid_ro, true );
-	BOOST_CHECK_EQUAL( f_ack_import_data_valid_rw, false );
+	BOOST_CHECK_EQUAL( f_ack_import_data_rw, false );
 	BOOST_CHECK_EQUAL( f_ack_import_missing_lv, false );
 	BOOST_CHECK_EQUAL( f_ack_import_nonthin_lv, false );
 	BOOST_CHECK_EQUAL( f_ack_import_foreign_vg, false ); // expected failure

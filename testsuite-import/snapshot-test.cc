@@ -4,513 +4,197 @@
 #include "testsuite-import/helpers.h"
 #include "testsuite-import/snapshot-test.h"
 
-namespace testsuiteimport { namespace lvm
+namespace testsuiteimport
 {
-    void SnapshotTestClass::tc_snapshot_simple_ctor()
+    void
+    SnapshotTestClass::tc_snapshot_ctor()
     {
-	boost::scoped_ptr<GeneralFixture> fixture(new FSimpleConstructorValid());
+	boost::scoped_ptr<GeneralFixture> fixture(new FSnapsotCtor(fixtures->ctor_fixture()));
 	fixture->test_method();
     }
 
-    void SnapshotTestClass::tc_snapshot_import_ctor()
+
+    FSnapshotCtor::FSnapshotCtor(const GeneralSnapshotCtorFixture& gfix)
+	: f(gfix), f_type(snapper::SnapshotType::PRE), f_num(42),
+	f_date(1234554321), f_ctor_clone_passed(false), f_ctor_adopt_passed(false),
+	f_ctor_ack_passed(false)
     {
-	boost::scoped_ptr<GeneralFixture> fixture(new FImportConstructorValid());
-	fixture->test_method();
     }
 
-    void SnapshotTestClass::tc_delete_filesystem_snapshot_import_type_none()
+
+    FSnapshotCtor::~FSnapshotCtor()
     {
-	boost::scoped_ptr<GeneralFixture> fixture(new FDeleteFilesystemSnapshotImportTypeNone());
-	fixture->test_method();
+	if (!f_ctor_clone_passed)
+	    delete f.clone_data;
+	if (!f_ctor_adopt_passed)
+	    delete f.adopt_data;
+	if (!f_ctor_ack_passed)
+	    delete f.ack_data;
     }
 
-    void SnapshotTestClass::tc_delete_filesystem_snapshot_import_type_clone()
+
+    FSnapshotGetImportPolicy::FSnapshotGetImportPolicy(const GeneralGetImportPolicyFixture& gfix)
+	: f_sh_none(gfix.snapper, snapper::SnapshotType::SINGLE, 42, 1234554321),
+	f_sh_clone(gfix.snapper, snapper::SnapshotType::SINGLE, 43, 1234554321, gfix.clone_data),
+	f_sh_adopt(gfix.snapper, snapper::SnapshotType::SINGLE, 44, 1234554321, gfix.adopt_data),
+	f_sh_ack(gfix.snapper, snapper::SnapshotType::SINGLE, 44, 1234554321, gfix.ack_data)
     {
-	boost::scoped_ptr<GeneralFixture> fixture(new FDeleteFilesystemSnapshotImportTypeClone());
-	fixture->test_method();
     }
 
-    void SnapshotTestClass::tc_delete_filesystem_snapshot_import_type_adopt()
+
+//     FSnapshotMountFilesystem::FSnapshotMountFilesystem(const GeneralMountFilesystemFixture& gfix)
+//     try
+// 	: f(gfix), f_info_none(f.infos_dir, 1),
+// 	f_info_none_user(f.infos_dir, 1), f_info_clone(f.infos_dir, 1),
+// 	f_info_clone_user(f.infos_dir, 1), f_info_adopt(f.infos_dir, 1),
+// 	f_info_adopt_user(f.infos_dir, 1), f_info_ack(f.infos_dir, 1),
+// 	f_info_ack_user(f.infos_dir, 1),
+// 	f_sh_none(f.snapper, snapper::SnapshotType::PRE, f_info_none.f_num, 1234554321),
+// 	f_sh_none_user(f.snapper, snapper::SnapshotType::PRE, f_info_none_user.f_num, 1234554321),
+// 	f_sh_clone(f.snapper, snapper::SnapshotType::PRE, f_info_clone.f_num, 1234554321),
+// 	f_sh_clone_user(f.snapper, snapper::SnapshotType::PRE, f_info_clone_user.f_num, 1234554321),
+// 	f_sh_adopt(f.snapper, snapper::SnapshotType::PRE, f_info_adopt.f_num, 1234554321),
+// 	f_sh_adopt_user(f.snapper, snapper::SnapshotType::PRE, f_info_adopt_user.f_num, 1234554321),
+// 	f_sh_ack(f.snapper, snapper::SnapshotType::PRE, f_info_ack.f_num, 1234554321),
+// 	f_sh_ack_user(f.snapper, snapper::SnapshotType::PRE, f_info_ack_user.f_num, 1234554321)
+//     {
+//     }
+//     catch (const std::exception& e)
+//     {
+// 	delete f.subvol_none;
+// 	delete f.subvol_none_user;
+// 	delete f.subvol_clone;
+// 	delete f.subvol_clone_user;
+// 	delete f.subvol_clone_orig;
+// 	delete f.subvol_clone_orig_user;
+// 	delete f.subvol_adopt;
+// 	delete f.subvol_adopt_user;
+// 	delete f.subvol_ack;
+// 	delete f.subvol_ack_user;
+// 
+// 	delete f.im_clone;
+// 	delete f.im_clone_user;
+// 
+// 	delete f.im_adopt;
+// 	delete f.im_adopt_user;
+// 
+// 	delete f.im_ack;
+// 	delete f.im_ack_user;
+//     }
+
+
+    FSnapshotMountFilesystem::~FSnapshotMountFilesystem()
     {
-	boost::scoped_ptr<GeneralFixture> fixture(new FDeleteFilesystemSnapshotImportTypeAdopt());
-	fixture->test_method();
+	delete f.subvol_none;
+	delete f.subvol_none_user;
+	delete f.subvol_clone;
+	delete f.subvol_clone_user;
+	delete f.subvol_clone_orig;
+	delete f.subvol_clone_orig_user;
+	delete f.subvol_adopt;
+	delete f.subvol_adopt_user;
+	delete f.subvol_ack;
+	delete f.subvol_ack_user;
     }
 
-    void SnapshotTestClass::tc_delete_filesystem_snapshot_import_type_ack()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FDeleteFilesystemSnapshotImportTypeAcknowledge());
-	fixture->test_method();
-    }
 
-    void SnapshotTestClass::tc_delete_filesystem_snapshot_origin()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FDeleteFileSystemSnapshotOrigin());
-	fixture->test_method();
-    }
-
-    void SnapshotTestClass::tc_mount_filesystem_snapshot_import_none_non_user_request()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FMountFileSystemSnapshotImportNone());
-	fixture->test_method();
-    }
-
-    void SnapshotTestClass::tc_mount_filesystem_snapshot_import_none_user_request()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FMountFileSystemSnapshotImportNoneUserRequest());
-	fixture->test_method();
-    }
-
-    void SnapshotTestClass::tc_mount_filesystem_snapshot_import_clone_non_user_request()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FMountFileSystemSnapshotImportClone());
-	fixture->test_method();
-    }
-
-    void SnapshotTestClass::tc_mount_filesystem_snapshot_import_clone_user_request()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FMountFileSystemSnapshotImportCloneUserRequest());
-	fixture->test_method();
-    }
-
-    void SnapshotTestClass::tc_mount_filesystem_snapshot_import_adopt_non_user_request()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FMountFileSystemSnapshotImportAdopt());
-	fixture->test_method();
-    }
-
-    void SnapshotTestClass::tc_mount_filesystem_snapshot_import_adopt_user_request()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FMountFileSystemSnapshotImportAdoptUserRequest());
-	fixture->test_method();
-    }
-
-    void SnapshotTestClass::tc_mount_filesystem_snapshot_import_ack_non_user_request()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FMountFileSystemSnapshotImportAck());
-	fixture->test_method();
-    }
-
-    void SnapshotTestClass::tc_mount_filesystem_snapshot_import_ack_user_request()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FMountFileSystemSnapshotImportAckUserRequest());
-	fixture->test_method();
-    }
-
-    void SnapshotTestClass::tc_umount_filesystem_snapshot_import_none_non_user_request()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FUmountFilesystemSnapshotImportNone());
-	fixture->test_method();
-    }
-
-    void SnapshotTestClass::tc_umount_filesystem_snapshot_import_none_user_request()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FUmountFilesystemSnapshotImportNoneUserRequest());
-	fixture->test_method();
-    }
-
-    void SnapshotTestClass::tc_umount_filesystem_snapshot_import_clone_non_user_request()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FUmountFilesystemSnapshotImportClone());
-	fixture->test_method();
-    }
-
-    void SnapshotTestClass::tc_umount_filesystem_snapshot_import_clone_user_request()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FUmountFilesystemSnapshotImportCloneUserRequest());
-	fixture->test_method();
-    }
-
-    void SnapshotTestClass::tc_umount_filesystem_snapshot_import_adopt_non_user_request()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FUmountFilesystemSnapshotImportAdopt());
-	fixture->test_method();
-    }
-
-    void SnapshotTestClass::tc_umount_filesystem_snapshot_import_adopt_user_request()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FUmountFilesystemSnapshotImportAdoptUserRequest());
-	fixture->test_method();
-    }
-
-    void SnapshotTestClass::tc_umount_filesystem_snapshot_import_ack_non_user_request()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FUmountFilesystemSnapshotImportAck());
-	fixture->test_method();
-    }
-
-    void SnapshotTestClass::tc_umount_filesystem_snapshot_import_ack_user_request()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FUmountFilesystemSnapshotImportAckUserRequest());
-	fixture->test_method();
-    }
-
-    void SnapshotTestClass::tc_umount_filesystem_snapshot_invalid()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FUmountFilesystemInvalid());
-	fixture->test_method();
-    }
-
-    void SnapshotTestClass::tc_handle_umount_filesystem_snapshot_non_user_request()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FHandleUmountFilesystemSnapshot());
-	fixture->test_method();
-    }
-
-    void SnapshotTestClass::tc_handle_umount_filesystem_snapshot_user_request()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FHandleUmountFilesystemSnapshotUserRequest());
-	fixture->test_method();
-    }
-
-    void FSimpleConstructorValid::test_method()
+    void FSnapshotCtor::test_method()
     {
 	boost::scoped_ptr<snapper::Snapshot> snapshot;
 
-	BOOST_REQUIRE_NO_THROW( snapshot.reset(new snapper::Snapshot(f_dummy_snapper, f_type, f_num, f_date, NULL)) );
-
+	BOOST_REQUIRE_NO_THROW( snapshot.reset(new snapper::Snapshot(f_snapper, f_type, f_num, f_date)) );
 	BOOST_CHECK_EQUAL( snapshot->getType(), f_type );
 	BOOST_CHECK_EQUAL( snapshot->getNum(), f_num );
 	BOOST_CHECK_EQUAL( snapshot->getDate(), f_date );
 	BOOST_CHECK_EQUAL( snapshot->getUid(), 0 );
 	BOOST_CHECK_EQUAL( snapshot->getPreNum(), 0 );
-	BOOST_CHECK_EQUAL( snapshot->getImportPolicy(), snapper::ImportPolicy::NONE );
 
-	// check few private attributes (essential tests for further testing)
-	BOOST_CHECK_EQUAL( snapshot->snapper, f_dummy_snapper );
-	BOOST_CHECK( snapshot->p_idata.get() == NULL );
-    }
-
-    void FImportConstructorValid::test_method()
-    {
-	boost::scoped_ptr<snapper::Snapshot> snapshot;
-
-	BOOST_REQUIRE_NO_THROW( snapshot.reset(new snapper::Snapshot(f_dummy_snapper, f_type, f_num, f_date, f_dummy_idata)) );
-
+	BOOST_REQUIRE_NO_THROW( snapshot.reset(new snapper::Snapshot(f_snapper, f_type, f_num, f_date, f_clone_data)) );
+	f_ctor_clone_passed = true;
 	BOOST_CHECK_EQUAL( snapshot->getType(), f_type );
 	BOOST_CHECK_EQUAL( snapshot->getNum(), f_num );
 	BOOST_CHECK_EQUAL( snapshot->getDate(), f_date );
 	BOOST_CHECK_EQUAL( snapshot->getUid(), 0 );
 	BOOST_CHECK_EQUAL( snapshot->getPreNum(), 0 );
-	BOOST_CHECK_EQUAL( snapshot->getImportPolicy(), f_import_policy );
 
-	// check few private attributes (essential tests for further testing)
-	BOOST_CHECK_EQUAL( snapshot->snapper, f_dummy_snapper );
-	BOOST_CHECK_EQUAL( snapshot->p_idata.get(), f_dummy_idata );
+	BOOST_REQUIRE_NO_THROW( snapshot.reset(new snapper::Snapshot(f_snapper, f_type, f_num, f_date, f_adopt_data)) );
+	f_ctor_adopt_passed = true;
+	BOOST_CHECK_EQUAL( snapshot->getType(), f_type );
+	BOOST_CHECK_EQUAL( snapshot->getNum(), f_num );
+	BOOST_CHECK_EQUAL( snapshot->getDate(), f_date );
+	BOOST_CHECK_EQUAL( snapshot->getUid(), 0 );
+	BOOST_CHECK_EQUAL( snapshot->getPreNum(), 0 );
+
+	BOOST_REQUIRE_NO_THROW( snapshot.reset(new snapper::Snapshot(f_snapper, f_type, f_num, f_date, f_ack_data)) );
+	f_ctor_ack_passed = true;
+	BOOST_CHECK_EQUAL( snapshot->getType(), f_type );
+	BOOST_CHECK_EQUAL( snapshot->getNum(), f_num );
+	BOOST_CHECK_EQUAL( snapshot->getDate(), f_date );
+	BOOST_CHECK_EQUAL( snapshot->getUid(), 0 );
+	BOOST_CHECK_EQUAL( snapshot->getPreNum(), 0 );
     }
 
-    void FDeleteFilesystemSnapshotImportTypeNone::test_method()
+
+    void FSnapshotGetImportPolicy::test_method()
     {
-	BOOST_REQUIRE_NO_THROW( f_sh.deleteFilesystemSnapshot() );
-
-	// TODO: Lvm dependant test here, move elsewhere
-	BOOST_CHECK( !check_lv_exists(f_conf_vg_name, f_snapshot_lv_name) );
+	BOOST_CHECK_EQUAL( f_sh_none.getImportPolicy(), snapper::ImportPolicy::NONE );
+	BOOST_CHECK_EQUAL( f_sh_clone.getImportPolicy(), snapper::ImportPolicy::CLONE );
+	BOOST_CHECK_EQUAL( f_sh_adopt.getImportPolicy(), snapper::ImportPolicy::ADOPT );
+	BOOST_CHECK_EQUAL( f_sh_ack.getImportPolicy(), snapper::ImportPolicy::ACKNOWLEDGE );
     }
 
-    void FDeleteFilesystemSnapshotImportTypeClone::test_method()
+
+    void FSnapshotGetSnapshotDir::test_method()
     {
-	BOOST_REQUIRE_NO_THROW( f_sh.deleteFilesystemSnapshot() );
-
-	BOOST_CHECK( !check_lv_exists(f_conf_vg_name, f_snapshot_lv_name) );
+	BOOST_CHECK_EQUAL( f_sh_none.snapshotDir(), f.expected_none );
+	BOOST_CHECK_EQUAL( f_sh_clone.snapshotDir(), f.expected_clone );
+	BOOST_CHECK_EQUAL( f_sh_adopt.snapshotDir(), f.expected_adopt );
+	BOOST_CHECK_EQUAL( f_sh_ack.snapshotDir(), f.expected_ack );
     }
 
-    void FDeleteFilesystemSnapshotImportTypeAdopt::test_method()
+
+    void FSnapshotMountFilesystem::test_method()
     {
-	BOOST_REQUIRE_NO_THROW( f_sh.deleteFilesystemSnapshot() );
+	// ------------------- NONE
+	BOOST_REQUIRE_NO_THROW( f_sh_none.mountFilesystemSnapshot(false) );
+	BOOST_CHECK_EQUAL( f.subvol_none->is_mounted(), true );
+	BOOST_CHECK_NO_THROW( f_sh_none.mountFilesystemSnapshot(false) );
 
-	BOOST_CHECK( !check_lv_exists(f_conf_vg_name, f_snapshot_lv_name) );
+	// ------------------- NONE user
+	BOOST_REQUIRE_NO_THROW( f_sh_none_user.mountFilesystemSnapshot(true) );
+	BOOST_CHECK_EQUAL( f.subvol_none_user->is_mounted(), true );
+	BOOST_CHECK_NO_THROW( f_sh_none_user.mountFilesystemSnapshot(true) );
+
+	// ------------------- CLONE
+	BOOST_REQUIRE_NO_THROW( f_sh_clone.mountFilesystemSnapshot(false) );
+	BOOST_CHECK_EQUAL( f.subvol_clone->is_mounted(), true );
+	BOOST_CHECK_EQUAL( f.subvol_clone_orig->is_mounted(), false );
+	BOOST_CHECK_NO_THROW( f_sh_clone.mountFilesystemSnapshot(false) );
+
+	// ------------------- CLONE user
+	BOOST_REQUIRE_NO_THROW( f_sh_clone_user.mountFilesystemSnapshot(true) );
+	BOOST_CHECK_EQUAL( f.subvol_clone_user->is_mounted(), true );
+	BOOST_CHECK_EQUAL( f.subvol_clone_orig_user->is_mounted(), false );
+	BOOST_CHECK_NO_THROW( f_sh_clone_user.mountFilesystemSnapshot(true) );
+
+	// ------------------- ADOPT
+	BOOST_REQUIRE_NO_THROW( f_sh_adopt.mountFilesystemSnapshot(true) );
+	BOOST_CHECK_EQUAL( f.subvol_adopt->is_mounted(), true );
+	BOOST_CHECK_NO_THROW( f_sh_adopt.mountFilesystemSnapshot(true) );
+
+	// ------------------- ADOPT user
+	BOOST_REQUIRE_NO_THROW( f_sh_adopt_user.mountFilesystemSnapshot(true) );
+	BOOST_CHECK_EQUAL( f.subvol_adopt_user->is_mounted(), true );
+	BOOST_CHECK_NO_THROW( f_sh_adopt_user.mountFilesystemSnapshot(true) );
+
+	// ------------------- ACKNOWLEDGE
+	BOOST_REQUIRE_NO_THROW( f_sh_ack.mountFilesystemSnapshot(true) );
+	BOOST_CHECK_EQUAL( f.subvol_ack->is_mounted(), true );
+	BOOST_CHECK_NO_THROW( f_sh_ack.mountFilesystemSnapshot(true) );
+
+	// ------------------- ACKNOWLEDGE user
+	BOOST_REQUIRE_NO_THROW( f_sh_ack_user.mountFilesystemSnapshot(true) );
+	BOOST_CHECK_EQUAL( f.subvol_ack_user->is_mounted(), true );
+	BOOST_CHECK_NO_THROW( f_sh_ack_user.mountFilesystemSnapshot(true) );
     }
-
-    void FDeleteFilesystemSnapshotImportTypeAcknowledge::test_method()
-    {
-	BOOST_REQUIRE_NO_THROW( f_sh.deleteFilesystemSnapshot() );
-
-	BOOST_CHECK( check_lv_exists(f_conf_vg_name, f_snapshot_lv_name) );
-    }
-
-    void FDeleteFileSystemSnapshotOrigin::test_method()
-    {
-	BOOST_CHECK_THROW( f_sh.deleteFilesystemSnapshot(), snapper::IllegalSnapshotException );
-
-	BOOST_CHECK( check_lv_exists( f_conf_vg_name, f_conf_origin_name) );
-    }
-
-    void FMountFileSystemSnapshotImportNone::test_method()
-    {
-	unsigned int mount_count = f_sh.mount_use_count;
-
-	BOOST_REQUIRE_NO_THROW( f_sh.mountFilesystemSnapshot(false) );
-
-	BOOST_CHECK( check_is_mounted(f_conf_vg_name, f_snapshot_lv_name) );
-
-	BOOST_CHECK_EQUAL( mount_count + 1, f_sh.mount_use_count );
-    }
-
-    void FMountFileSystemSnapshotImportNoneUserRequest::test_method()
-    {
-	unsigned int mount_count = f_sh.mount_use_count;
-
-	BOOST_REQUIRE_NO_THROW( f_sh.mountFilesystemSnapshot(true) );
-
-	BOOST_CHECK( check_is_mounted(f_conf_vg_name, f_snapshot_lv_name) );
-
-	BOOST_REQUIRE_NO_THROW( f_sh.mountFilesystemSnapshot(true) );
-
-	BOOST_CHECK_EQUAL( mount_count, f_sh.mount_use_count );
-	BOOST_CHECK( f_sh.mount_user_request );
-    }
-
-    void FMountFileSystemSnapshotImportClone::test_method()
-    {
-	unsigned int mount_count = f_sh.mount_use_count;
-
-	BOOST_REQUIRE_NO_THROW( f_sh.mountFilesystemSnapshot(false) );
-
-	BOOST_CHECK( check_is_mounted(f_conf_vg_name, f_snapshot_lv_name) );
-	BOOST_CHECK( !check_is_mounted(f_conf_vg_name, f_clone_origin_name) );
-
-	BOOST_CHECK_EQUAL( mount_count + 1, f_sh.mount_use_count );
-    }
-
-    void FMountFileSystemSnapshotImportCloneUserRequest::test_method()
-    {
-	unsigned int mount_count = f_sh.mount_use_count;
-
-	BOOST_REQUIRE_NO_THROW( f_sh.mountFilesystemSnapshot(true) );
-
-	BOOST_CHECK( check_is_mounted(f_conf_vg_name, f_snapshot_lv_name) );
-	BOOST_CHECK( !check_is_mounted(f_conf_vg_name, f_clone_origin_name) );
-
-	BOOST_REQUIRE_NO_THROW( f_sh.mountFilesystemSnapshot(true) );
-
-	BOOST_CHECK_EQUAL( mount_count, f_sh.mount_use_count );
-	BOOST_CHECK( f_sh.mount_user_request );
-    }
-
-    void FMountFileSystemSnapshotImportAdopt::test_method()
-    {
-	unsigned int mount_count = f_sh.mount_use_count;
-
-	BOOST_REQUIRE_NO_THROW( f_sh.mountFilesystemSnapshot(false) );
-
-	BOOST_CHECK( check_is_mounted(f_conf_vg_name, f_snapshot_lv_name) );
-
-	BOOST_CHECK_EQUAL( mount_count + 1, f_sh.mount_use_count );
-    }
-
-    void FMountFileSystemSnapshotImportAdoptUserRequest::test_method()
-    {
-	unsigned int mount_count = f_sh.mount_use_count;
-
-	BOOST_REQUIRE_NO_THROW( f_sh.mountFilesystemSnapshot(true) );
-
-	BOOST_CHECK( check_is_mounted(f_conf_vg_name, f_snapshot_lv_name) );
-
-	BOOST_REQUIRE_NO_THROW( f_sh.mountFilesystemSnapshot(true) );
-
-	BOOST_CHECK_EQUAL( mount_count, f_sh.mount_use_count );
-	BOOST_CHECK( f_sh.mount_user_request );
-    }
-
-    void FMountFileSystemSnapshotImportAck::test_method()
-    {
-	unsigned int mount_count = f_sh.mount_use_count;
-
-	BOOST_REQUIRE_NO_THROW( f_sh.mountFilesystemSnapshot(false) );
-
-	BOOST_CHECK( check_is_mounted(f_conf_vg_name, f_snapshot_lv_name) );
-
-	BOOST_CHECK_EQUAL( mount_count + 1, f_sh.mount_use_count );
-    }
-
-    void FMountFileSystemSnapshotImportAckUserRequest::test_method()
-    {
-	unsigned int mount_count = f_sh.mount_use_count;
-
-	BOOST_REQUIRE_NO_THROW( f_sh.mountFilesystemSnapshot(true) );
-
-	BOOST_CHECK( check_is_mounted(f_conf_vg_name, f_snapshot_lv_name) );
-
-	BOOST_REQUIRE_NO_THROW( f_sh.mountFilesystemSnapshot(true) );
-
-	BOOST_CHECK_EQUAL( mount_count, f_sh.mount_use_count );
-	BOOST_CHECK( f_sh.mount_user_request );
-    }
-
-    void FUmountFilesystemSnapshotImportNone::test_method()
-    {
-	unsigned int mount_count = f_sh.mount_use_count;
-
-	BOOST_REQUIRE_NO_THROW( f_sh.umountFilesystemSnapshot(false) );
-
-	BOOST_CHECK_EQUAL( mount_count, f_sh.mount_use_count + 1);
-
-	BOOST_CHECK( check_is_mounted(f_conf_vg_name, f_snapshot_lv_name) );
-    }
-
-    void FUmountFilesystemSnapshotImportNoneUserRequest::test_method()
-    {
-	unsigned int mount_count = f_sh.mount_use_count;
-
-	BOOST_REQUIRE_NO_THROW( f_sh.umountFilesystemSnapshot(true) );
-
-	BOOST_CHECK_EQUAL( mount_count, f_sh.mount_use_count );
-
-	f_sh.mount_use_count = 0;
-
-	BOOST_REQUIRE_NO_THROW( f_sh.umountFilesystemSnapshot(true) );
-
-	BOOST_CHECK( !check_is_mounted(f_conf_vg_name, f_snapshot_lv_name) );
-	BOOST_CHECK( !f_sh.mount_user_request );
-    }
-
-    void FUmountFilesystemSnapshotImportClone::test_method()
-    {
-	unsigned int mount_count = f_sh.mount_use_count;
-
-	BOOST_REQUIRE_NO_THROW( f_sh.umountFilesystemSnapshot(false) );
-
-	BOOST_CHECK_EQUAL( mount_count, f_sh.mount_use_count + 1);
-
-	BOOST_CHECK( check_is_mounted(f_conf_vg_name, f_snapshot_lv_name) );
-	BOOST_CHECK( check_is_mounted(f_conf_vg_name, f_clone_origin_name) );
-    }
-
-    void FUmountFilesystemSnapshotImportCloneUserRequest::test_method()
-    {
-	unsigned int mount_count = f_sh.mount_use_count;
-
-	BOOST_REQUIRE_NO_THROW( f_sh.umountFilesystemSnapshot(true) );
-
-	BOOST_CHECK_EQUAL( mount_count, f_sh.mount_use_count );
-	BOOST_CHECK( check_is_mounted(f_conf_vg_name, f_snapshot_lv_name) );
-	BOOST_CHECK( check_is_mounted(f_conf_vg_name, f_clone_origin_name) );
-
-	mount_count = f_sh.mount_use_count = 0;
-
-	BOOST_REQUIRE_NO_THROW( f_sh.umountFilesystemSnapshot(true) );
-
-	BOOST_CHECK( !check_is_mounted(f_conf_vg_name, f_snapshot_lv_name) );
-	// test if cloned origin is not affected by umount
-	BOOST_CHECK( check_is_mounted(f_conf_vg_name, f_clone_origin_name) );
-	BOOST_CHECK( !f_sh.mount_user_request );
-    }
-
-    void FUmountFilesystemSnapshotImportAdopt::test_method()
-    {
-	unsigned int mount_count = f_sh.mount_use_count;
-
-	BOOST_REQUIRE_NO_THROW( f_sh.umountFilesystemSnapshot(false) );
-
-	BOOST_CHECK_EQUAL( mount_count, f_sh.mount_use_count + 1);
-
-	BOOST_CHECK( check_is_mounted(f_conf_vg_name, f_snapshot_lv_name) );
-    }
-
-    void FUmountFilesystemSnapshotImportAdoptUserRequest::test_method()
-    {
-	unsigned int mount_count = f_sh.mount_use_count;
-
-	BOOST_REQUIRE_NO_THROW( f_sh.umountFilesystemSnapshot(true) );
-
-	BOOST_CHECK_EQUAL( mount_count, f_sh.mount_use_count );
-
-	f_sh.mount_use_count = 0;
-
-	BOOST_REQUIRE_NO_THROW( f_sh.umountFilesystemSnapshot(true) );
-
-	BOOST_CHECK( !check_is_mounted(f_conf_vg_name, f_snapshot_lv_name) );
-	BOOST_CHECK( !f_sh.mount_user_request );
-    }
-
-    void FUmountFilesystemSnapshotImportAck::test_method()
-    {
-	unsigned int mount_count = f_sh.mount_use_count;
-
-	BOOST_REQUIRE_NO_THROW( f_sh.umountFilesystemSnapshot(false) );
-
-	BOOST_CHECK_EQUAL( mount_count, f_sh.mount_use_count + 1);
-
-	BOOST_CHECK( check_is_mounted(f_conf_vg_name, f_snapshot_lv_name) );
-    }
-
-    void FUmountFilesystemSnapshotImportAckUserRequest::test_method()
-    {
-	unsigned int mount_count = f_sh.mount_use_count;
-
-	BOOST_REQUIRE_NO_THROW( f_sh.umountFilesystemSnapshot(true) );
-
-	BOOST_CHECK_EQUAL( mount_count, f_sh.mount_use_count );
-
-	f_sh.mount_use_count = 0;
-
-	BOOST_REQUIRE_NO_THROW( f_sh.umountFilesystemSnapshot(true) );
-
-	BOOST_CHECK( !check_is_mounted(f_conf_vg_name, f_snapshot_lv_name) );
-	BOOST_CHECK( !f_sh.mount_user_request );
-    }
-
-    void FUmountFilesystemInvalid::test_method()
-    {
-	BOOST_REQUIRE_THROW( f_sh.umountFilesystemSnapshot(true), snapper::IllegalSnapshotException );
-
-	BOOST_CHECK( check_is_mounted(f_conf_vg_name, f_conf_origin_name ) );
-    }
-
-    void FHandleUmountFilesystemSnapshot::test_method()
-    {
-	f_sh.mount_user_request = false;
-	f_sh.mount_checked = true;
-	unsigned int mount_count = f_sh.mount_use_count = 1;
-
-	BOOST_REQUIRE_NO_THROW( f_sh.handleUmountFilesystemSnapshot() );
-	BOOST_REQUIRE( check_is_mounted(f_conf_vg_name, f_snapshot_lv_name) );
-	BOOST_REQUIRE_EQUAL( mount_count, f_sh.mount_use_count );
-
-	f_sh.mount_checked = false;
-
-	BOOST_REQUIRE_NO_THROW( f_sh.handleUmountFilesystemSnapshot() );
-	BOOST_REQUIRE( check_is_mounted(f_conf_vg_name, f_snapshot_lv_name) );
-	BOOST_CHECK_EQUAL( mount_count, f_sh.mount_use_count );
-
-	f_sh.mount_use_count = mount_count = 0;
-
-	BOOST_REQUIRE_NO_THROW( f_sh.handleUmountFilesystemSnapshot() );
-	BOOST_REQUIRE( check_is_mounted(f_conf_vg_name, f_snapshot_lv_name) );
-	BOOST_REQUIRE_EQUAL( mount_count, f_sh.mount_use_count );
-
-	f_sh.mount_checked = true;
-
-	BOOST_REQUIRE_NO_THROW( f_sh.handleUmountFilesystemSnapshot() );
-	BOOST_CHECK( !check_is_mounted(f_conf_vg_name, f_snapshot_lv_name) );
-	BOOST_CHECK_EQUAL( mount_count, f_sh.mount_use_count );
-    }
-
-    void FHandleUmountFilesystemSnapshotUserRequest::test_method()
-    {
-	f_sh.mount_user_request = true;
-	f_sh.mount_checked = true;
-	unsigned int mount_count = f_sh.mount_use_count = 1;
-
-	BOOST_REQUIRE_NO_THROW( f_sh.handleUmountFilesystemSnapshot() );
-	BOOST_REQUIRE( check_is_mounted(f_conf_vg_name, f_snapshot_lv_name) );
-	BOOST_REQUIRE_EQUAL( mount_count, f_sh.mount_use_count );
-
-	f_sh.mount_checked = false;
-
-	BOOST_REQUIRE_NO_THROW( f_sh.handleUmountFilesystemSnapshot() );
-	BOOST_REQUIRE( check_is_mounted(f_conf_vg_name, f_snapshot_lv_name) );
-	BOOST_REQUIRE_EQUAL( mount_count, f_sh.mount_use_count );
-
-	f_sh.mount_use_count = mount_count = 0;
-
-	BOOST_REQUIRE_NO_THROW( f_sh.handleUmountFilesystemSnapshot() );
-	BOOST_REQUIRE( check_is_mounted(f_conf_vg_name, f_snapshot_lv_name) );
-	BOOST_REQUIRE_EQUAL( mount_count, f_sh.mount_use_count );
-
-	f_sh.mount_checked = true;
-
-	BOOST_REQUIRE_NO_THROW( f_sh.handleUmountFilesystemSnapshot() );
-	BOOST_CHECK( check_is_mounted(f_conf_vg_name, f_snapshot_lv_name) );
-	BOOST_CHECK_EQUAL( mount_count, f_sh.mount_use_count );
-    }
-}}
+}

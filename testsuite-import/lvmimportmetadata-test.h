@@ -1,8 +1,15 @@
 #ifndef LVMIMPORTMETADATA_TEST_H
 #define LVMIMPORTMETADATA_TEST_H
 
+#include <ostream>
+
 #include "testsuite-import/general-test.h"
 #include "lvmimportmetadata-fixtures.h"
+
+namespace snapper
+{
+    std::ostream& operator<<(std::ostream& out, const snapper::LvmImportMetadata& idata);
+}
 
 namespace testsuiteimport { namespace lvm
 {
@@ -91,10 +98,11 @@ namespace testsuiteimport { namespace lvm
     };
 
 
-    struct FGetSnapshotDir : public GeneralFixture, LvmGeneralFixture
+    struct FGetSnapshotDir : public GeneralFixture, GetSnapshotDir
     {
 	virtual void test_method();
     };
 
+    
 }}
 #endif //LVMIMPORTMETADATA_TEST_H

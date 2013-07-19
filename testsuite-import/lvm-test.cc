@@ -1,7 +1,7 @@
 #include <fcntl.h>
-//#include <sys/types.h>
+#include <sys/types.h>
 #include <sys/stat.h>
-//#include <unistd.h>
+#include <unistd.h>
 
 #include <boost/test/unit_test.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -13,89 +13,52 @@
 
 namespace testsuiteimport { namespace lvm
 {
-    void LvmTestClass::tc_create_snapshot_environment()
+    void
+    LvmTestClass::tc_create_snapshot_environment()
     {
 	boost::scoped_ptr<GeneralFixture> fixture(new FCreateSnapshotEnvironment());
 	fixture->test_method();
     }
 
-    void LvmTestClass::tc_create_snapshot_environment_dir_exists()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FCreateSnapshotEnvironmentDirExists());
-	fixture->test_method();
-    }
 
-    void LvmTestClass::tc_create_snapshot_environment_failure()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FCreateSnapshotEnvironmentFailure());
-	fixture->test_method();
-    }
-
-    void LvmTestClass::tc_create_snapshot_fail_on_environment()
+    void
+    LvmTestClass::tc_create_snapshot_fail_on_environment()
     {
 	boost::scoped_ptr<GeneralFixture> fixture(new FCreateSnapshotFailOnEnvironment());
 	fixture->test_method();
     }
 
-    void LvmTestClass::tc_clone_snapshot()
+
+    void
+    LvmTestClass::tc_remove_snapshot_environment()
     {
-	boost::scoped_ptr<GeneralFixture> fixture(new FCloneSnapshotValid());
+	boost::scoped_ptr<GeneralFixture> fixture(new FRemoveSnapshotEnvironment());
 	fixture->test_method();
     }
 
-    void LvmTestClass::tc_clone_snapshot_missing_origin()
+
+    void
+    LvmTestClass::tc_clone_snapshot()
     {
-	boost::scoped_ptr<GeneralFixture> fixture(new FCloneSnapshotMissingOrigin());
+	boost::scoped_ptr<GeneralFixture> fixture(new FCloneSnapshot());
 	fixture->test_method();
     }
 
-    void LvmTestClass::tc_mount_snapshot_by_device()
+
+    void
+    LvmTestClass::tc_mount_snapshot_by_subvolume()
     {
-	boost::scoped_ptr<GeneralFixture> fixture(new FMountSnapshotByDeviceValid());
+	boost::scoped_ptr<GeneralFixture> fixture(new FMountSnapshotBySubvolume());
 	fixture->test_method();
     }
 
-    void LvmTestClass::tc_mount_snapshot_by_device_already_mounted()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FMountSnapshotByDeviceAlreadyMounted());
-	fixture->test_method();
-    }
-
-    void LvmTestClass::tc_mount_snapshot_by_device_missing_device()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FMountSnapshotByDeviceInvalidDevice());
-	fixture->test_method();
-    }
 
     void LvmTestClass::tc_check_imported_snapshot()
     {
-	boost::scoped_ptr<GeneralFixture> fixture(new FCheckImportedSnapshotValid());
+	boost::scoped_ptr<GeneralFixture> fixture(new FCheckImportedSnapshot());
 	fixture->test_method();
     }
 
-    void LvmTestClass::tc_check_imported_snapshot_wrong_vg()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FCheckImportedSnapshotWrongVg());
-	fixture->test_method();
-    }
-
-    void LvmTestClass::tc_check_imported_snapshot_volume_import()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FCheckImportedSnapshotVolumeImport());
-	fixture->test_method();
-    }
-
-    void LvmTestClass::tc_check_imported_snapshot_fs_uuid_mismatch()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FCheckImportedSnapshotFsUuidMismatch());
-	fixture->test_method();
-    }
-
-    void LvmTestClass::tc_check_imported_snapshot_non_thin_lv()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FCheckImportedSnapshotNonThinLv());
-	fixture->test_method();
-    }
 
     void LvmTestClass::tc_lvm_delete_snapshot_by_vg_lv()
     {
@@ -103,11 +66,6 @@ namespace testsuiteimport { namespace lvm
 	fixture->test_method();
     }
 
-    void LvmTestClass::tc_lvm_delete_snapshot_by_vg_lv_missing()
-    {
-	boost::scoped_ptr<GeneralFixture> fixture(new FDeleteSnapshotByVgLvMissing());
-	fixture->test_method();
-    }
 
     void FCreateSnapshotEnvironment::test_method()
     {
@@ -121,7 +79,7 @@ namespace testsuiteimport { namespace lvm
 	// Dir Exists
 	BOOST_REQUIRE_NO_THROW( f_lvm->createSnapshotEnvironment(f_info_snapshot_dir_exists.f_num) );
 
-	BOOST_CHECK_EQUAL( fstatat(f_valid_info_dir_exists.get_dirfd(), "snapshot", &buff, AT_SYMLINK_NOFOLLOW), 0 );
+	BOOST_CHECK_EQUAL( fstatat(f_info_snapshot_dir_exists.get_dirfd(), "snapshot", &buff, AT_SYMLINK_NOFOLLOW), 0 );
 	BOOST_CHECK_NE( S_ISDIR(buff.st_mode), 0 );
 
 	// file in place of Info dir
@@ -131,9 +89,19 @@ namespace testsuiteimport { namespace lvm
 
     void FCreateSnapshotFailOnEnvironment::test_method()
     {
-	BOOST_REQUIRE_THROW( f_lvm->createSnapshot(f_num), snapper::CreateSnapshotFailedException );
+	BOOST_REQUIRE_THROW( f_lvm->createSnapshot(f_invalid_snap_dir.f_num), snapper::CreateSnapshotFailedException );
 
-	BOOST_CHECK_EQUAL( check_lv_exists(f_conf_vg_name, f_lvm->snapshotLvName(f_num)), false );
+	BOOST_CHECK_EQUAL( check_lv_exists(LvmGeneralFixture::f_conf_lvm_vg_name, f_lvm->snapshotLvName(f_invalid_snap_dir.f_num)), false );
+    }
+
+
+    void FRemoveSnapshotEnvironment::test_method()
+    {
+	BOOST_REQUIRE_NO_THROW( f_lvm->removeSnapshotEnvironment(f_snapshot_dir.f_num) );
+
+	struct stat buf;
+	BOOST_REQUIRE_NE( fstatat(f_snapshot_dir.get_dirfd(), "snapshot", &buf, AT_SYMLINK_NOFOLLOW), 0);
+	BOOST_CHECK_EQUAL( errno, ENOENT );
     }
 
 
@@ -142,68 +110,68 @@ namespace testsuiteimport { namespace lvm
 	// valid
 	BOOST_REQUIRE_NO_THROW( f_lvm->cloneSnapshot(f_info_dir_1.f_num, f_valid_subvolume.vg_name, f_valid_subvolume.lv_name ) );
 
-	BOOST_REQUIRE( check_lv_exists( f_vg_name, f_lvm->snapshotLvName(f_info_dir_1.f_num)) );
-	BOOST_CHECK( check_is_thin( f_vg_name, f_lvm->snapshotLvName(f_info_dir_1.f_num)) );
+	BOOST_REQUIRE( check_lv_exists( f_valid_subvolume.vg_name, f_lvm->snapshotLvName(f_info_dir_1.f_num)) );
+	BOOST_CHECK( check_is_thin( f_valid_subvolume.vg_name, f_lvm->snapshotLvName(f_info_dir_1.f_num)) );
 
 	// missing
 	BOOST_REQUIRE_THROW( f_lvm->cloneSnapshot(f_info_dir_2.f_num, f_missing_lv_vg, f_missing_lv_lv ), snapper::ImportSnapshotFailedException );
-	BOOST_CHECK( !check_lv_exists( f_vg_name, f_lvm->snapshotLvName(f_info_dir_2.f_num)) );
+	BOOST_CHECK( !check_lv_exists( f_valid_subvolume.vg_name, f_lvm->snapshotLvName(f_info_dir_2.f_num)) );
     }
 
 
-    void FMountSnapshotByDeviceValid::test_method()
+    void
+    FMountSnapshotBySubvolume::test_method()
     {
-	BOOST_REQUIRE_NO_THROW( f_lvm->mountSnapshot(f_num, f_dev_path) );
+	BOOST_REQUIRE_NO_THROW( f_lvm->mountSnapshot(f_snapshot_dir_1.f_num, f_mount_volume.devicepath()) );
+	BOOST_REQUIRE_EQUAL( check_is_mounted(f_mount_volume.vg_name, f_mount_volume.lv_name), true );
 
-	BOOST_CHECK( check_is_mounted(f_vg_name, f_lv_name) );
+	// test mounting already mounted snopshet
+	BOOST_REQUIRE_NO_THROW( f_lvm->mountSnapshot(f_snapshot_dir_1.f_num, f_mount_volume.devicepath()) );
+	BOOST_REQUIRE_EQUAL( check_is_mounted(f_mount_volume.vg_name, f_mount_volume.lv_name), true );
+
+	BOOST_CHECK_THROW( f_lvm->mountSnapshot(f_snapshot_dir_2.f_num, f_missing_dev_path), snapper::MountSnapshotFailedException );
     }
 
-    void FMountSnapshotByDeviceAlreadyMounted::test_method()
+
+    void
+    FCheckImportedSnapshot::test_method()
     {
-	BOOST_REQUIRE_NO_THROW ( f_lvm->mountSnapshot(f_num, f_dev_path ) );
+	BOOST_CHECK_EQUAL( f_lvm->checkImportedSnapshot(f_missing_vg_vg, f_missing_vg_lv, true), false );
+	BOOST_CHECK_EQUAL( f_lvm->checkImportedSnapshot(f_missing_vg_vg, f_missing_vg_lv, false), false );
 
-	BOOST_CHECK( check_is_mounted(f_vg_name, f_lv_name) );
+	BOOST_CHECK_EQUAL( f_lvm->checkImportedSnapshot(f_missing_lv_vg, f_missing_lv_lv, true), false );
+	BOOST_CHECK_EQUAL( f_lvm->checkImportedSnapshot(f_missing_lv_vg, f_missing_lv_lv, false), false );
+
+	BOOST_CHECK_EQUAL( f_lvm->checkImportedSnapshot(f_nonthin_subvolume.vg_name, f_nonthin_subvolume.lv_name, true), false );
+	BOOST_CHECK_EQUAL( f_lvm->checkImportedSnapshot(f_nonthin_subvolume.vg_name, f_nonthin_subvolume.lv_name, false), false );
+
+	// 2 expected failures
+	BOOST_CHECK_EQUAL( f_lvm->checkImportedSnapshot(f_foreign_vg_subvolume.vg_name, f_foreign_vg_subvolume.lv_name, true), false );
+	BOOST_CHECK_EQUAL( f_lvm->checkImportedSnapshot(f_foreign_vg_subvolume.vg_name, f_foreign_vg_subvolume.lv_name, false), false );
+
+	BOOST_CHECK_EQUAL( f_lvm->checkImportedSnapshot(f_current_subvolume_vg_name, f_current_subvolume_lv_name, true), false );
+	BOOST_CHECK_EQUAL( f_lvm->checkImportedSnapshot(f_current_subvolume_vg_name, f_current_subvolume_lv_name, false), false );
+
+	BOOST_CHECK_EQUAL( f_lvm->checkImportedSnapshot(f_rw_wrong_fs_uuid_subvolume.vg_name, f_rw_wrong_fs_uuid_subvolume.lv_name, true), false );
+	BOOST_CHECK_EQUAL( f_lvm->checkImportedSnapshot(f_rw_wrong_fs_uuid_subvolume.vg_name, f_rw_wrong_fs_uuid_subvolume.lv_name, false), false );
+
+	BOOST_CHECK_EQUAL( f_lvm->checkImportedSnapshot(f_rw_subvolume.vg_name, f_rw_subvolume.lv_name, true), false );
+	BOOST_CHECK_EQUAL( f_lvm->checkImportedSnapshot(f_rw_subvolume.vg_name, f_rw_subvolume.lv_name, false), true );
+
+	BOOST_CHECK_EQUAL( f_lvm->checkImportedSnapshot(f_ro_wrong_fs_uuid_subvolume.vg_name, f_ro_wrong_fs_uuid_subvolume.lv_name, true), false );
+	BOOST_CHECK_EQUAL( f_lvm->checkImportedSnapshot(f_ro_wrong_fs_uuid_subvolume.vg_name, f_ro_wrong_fs_uuid_subvolume.lv_name, false), false );
+
+	BOOST_CHECK_EQUAL( f_lvm->checkImportedSnapshot(f_ro_subvolume.vg_name, f_ro_subvolume.lv_name, true), true );
+	BOOST_CHECK_EQUAL( f_lvm->checkImportedSnapshot(f_ro_subvolume.vg_name, f_ro_subvolume.lv_name, false), true );
     }
 
-    void FMountSnapshotByDeviceInvalidDevice::test_method()
-    {
-	BOOST_CHECK_THROW ( f_lvm->mountSnapshot(f_num, f_missing_dev_path), snapper::MountSnapshotFailedException );
-    }
-
-    void FCheckImportedSnapshotValid::test_method()
-    {
-	BOOST_CHECK( f_lvm->checkImportedSnapshot(f_vg_name, f_lv_name) );
-    }
-
-    void FCheckImportedSnapshotFsUuidMismatch::test_method()
-    {
-	BOOST_CHECK( !f_lvm->checkImportedSnapshot(f_vg_name, f_lv_name) );
-    }
-
-    void FCheckImportedSnapshotNonThinLv::test_method()
-    {
-	BOOST_CHECK( !f_lvm->checkImportedSnapshot(f_vg_name, f_lv_name) );
-    }
-
-    void FCheckImportedSnapshotWrongVg::test_method()
-    {
-	BOOST_CHECK( !f_lvm->checkImportedSnapshot(f_vg_name, f_lv_name) );
-    }
-
-    void FCheckImportedSnapshotVolumeImport::test_method()
-    {
-	BOOST_CHECK( !f_lvm->checkImportedSnapshot(f_vg_name, f_lv_name) );
-    }
 
     void FDeleteSnapshotByVgLv::test_method()
     {
-	BOOST_REQUIRE_NO_THROW( f_lvm->deleteSnapshot(f_vg_name, f_lv_name) );
+	BOOST_CHECK_THROW( f_lvm->deleteSnapshot(f_missing_vg_vg, f_missing_vg_lv), snapper::DeleteSnapshotFailedException );
+	BOOST_CHECK_THROW( f_lvm->deleteSnapshot(f_missing_lv_vg, f_missing_lv_lv), snapper::DeleteSnapshotFailedException );
 
-	BOOST_CHECK( !check_lv_exists(f_vg_name, f_lv_name) );
-    }
-
-    void FDeleteSnapshotByVgLvMissing::test_method()
-    {
-	BOOST_CHECK_THROW( f_lvm->deleteSnapshot(f_vg_name, f_lv_name), snapper::DeleteSnapshotFailedException );
+	BOOST_REQUIRE_NO_THROW( f_lvm->deleteSnapshot(f_subvolume.vg_name, f_subvolume.lv_name) );
+	BOOST_CHECK_EQUAL( check_lv_exists(f_subvolume.vg_name, f_subvolume.lv_name), false );
     }
 }}

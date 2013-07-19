@@ -17,113 +17,155 @@ namespace testsuiteimport { namespace lvm
 {
     using std::make_pair;
 
-    CreateRawLvmImportMetata::CreateRawLvmImportMetata(const string &vg_name, const string& lv_name)
+
+    GeneralSnapshotCtorFixture
+    LvmSnapshotFixtures::ctor_fixture() const
     {
-	f_raw_data.insert(make_pair("vg_name", vg_name));
-	f_raw_data.insert(make_pair("lv_name", lv_name));
+	struct GeneralSnapshotCtorFixture gfix(snapper);
+
+	gfix.clone_data = new ::snapper::LvmImportMetadata("dummy_vg", "dummy_lv", ::snapper::ImportPolicy::CLONE, snapper->getFilesystem());
+	gfix.adopt_data = new ::snapper::LvmImportMetadata("dummy_vg", "dummy_lv", ::snapper::ImportPolicy::ADOPT, snapper->getFilesystem());
+	gfix.ack_data = new ::snapper::LvmImportMetadata("dummy_vg", "dummy_lv", ::snapper::ImportPolicy::ACKNOWLEDGE, snapper->getFilesystem());
+
+	return gfix;
     }
 
-    SimpleConstructorValid::SimpleConstructorValid()
+
+    GeneralGetImportPolicyFixture
+    LvmSnapshotFixtures::get_import_policy_fixture() const
+    {
+	struct GeneralGetImportPolicyFixture gfix(snapper);
+
+	gfix.clone_data = new ::snapper::LvmImportMetadata("dummy_vg", "dummy_lv", ::snapper::ImportPolicy::CLONE, snapper->getFilesystem());
+	gfix.adopt_data = new ::snapper::LvmImportMetadata("dummy_vg", "dummy_lv", ::snapper::ImportPolicy::ADOPT, snapper->getFilesystem());
+	gfix.ack_data = new ::snapper::LvmImportMetadata("dummy_vg", "dummy_lv", ::snapper::ImportPolicy::ACKNOWLEDGE, snapper->getFilesystem());
+
+	return gfix;
+    }
+
+
+    GeneralGetSnapshotDirFixture
+    LvmSnapshotFixtures::get_snapshot_dir_fixture() const
+    {
+	struct GeneralGetSnapshotDirFixture gfix(snapper);
+
+	gfix.clone_data = new ::snapper::LvmImportMetadata("dummy_vg", "dummy_lv", ::snapper::ImportPolicy::CLONE, snapper->getFilesystem());
+	gfix.adopt_data = new ::snapper::LvmImportMetadata("dummy_vg", "dummy_lv", ::snapper::ImportPolicy::ADOPT, snapper->getFilesystem());
+	gfix.ack_data = new ::snapper::LvmImportMetadata("dummy_vg", "dummy_lv", ::snapper::ImportPolicy::ACKNOWLEDGE, snapper->getFilesystem());
+
+	gfix.num_none = 1;
+	gfix.num_clone = 2;
+	gfix.num_adopt = 3;
+	gfix.num_ack = 5;
+
+	gfix.expected_none = snapper->getFilesystem()->snapshotDir(gfix.num_none);
+	gfix.expected_clone = snapper->getFilesystem()->snapshotDir(gfix.num_clone);
+	gfix.expected_adopt = snapper->getFilesystem()->snapshotDir(gfix.num_adopt);
+	gfix.expected_ack = snapper->getFilesystem()->snapshotDir(gfix.num_ack);
+    }
+
+
+    SnapshotConstructor::SnapshotConstructor(const GeneralSnapshotFixture& fixture)
 	: f_dummy_snapper(reinterpret_cast<const snapper::Snapper *>(123456789)),
 	f_type(snapper::SnapshotType::PRE), f_num(42), f_date(1234554321)
     {
     }
 
     ImportConstructorValid::ImportConstructorValid()
-	: SimpleConstructorValid(), rm("dummy_vg", "dummy_lv"),
+	: SnapshotConstructor(), rm("dummy_vg", "dummy_lv"),
 	f_import_policy(snapper::ImportPolicy::ADOPT),
 	f_dummy_lvm(reinterpret_cast<const snapper::Lvm *>(123456)),
 	f_dummy_idata(new snapper::LvmImportMetadata(rm.f_raw_data, f_import_policy, f_dummy_lvm))
     {
     }
 
-    DeleteFilesystemSnapshotImportTypeNone::DeleteFilesystemSnapshotImportTypeNone()
-	: InfoDirWithSnapshotDir(1),
-	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1, NULL),
-	f_snapshot_lv_name(f_lvm->snapshotLvName(f_num))
-    {
-	lvcreate_thin_snapshot_wrapper(f_conf_lvm_vg_name, f_conf_lvm_origin_lv_name, f_snapshot_lv_name);
-    }
-
-    DeleteFilesystemSnapshotImportTypeNone::~DeleteFilesystemSnapshotImportTypeNone()
-    {
-	try
-	{
-	    lvremove_wrapper(f_conf_lvm_vg_name, f_lvm->snapshotLvName(f_num) );
-	    std::cerr << "DeleteFilesystemSnapshotImportTypeNone dtor: "
-		      << f_conf_lvm_vg_name << "/" << f_lvm->snapshotLvName(f_num)
-		      << " has not been removed" << std::endl;
-	}
-	catch (const LvmImportTestsuiteException &e) {}
-    }
-
-    DeleteFilesystemSnapshotImportTypeClone::DeleteFilesystemSnapshotImportTypeClone()
-	: InfoDirWithSnapshotDir(1), f_snapshot_lv_name(f_lvm->snapshotLvName(f_num)),
-	rm(f_conf_lvm_vg_name, f_snapshot_lv_name), f_p_idata(new snapper::LvmImportMetadata(rm.f_raw_data, snapper::ImportPolicy::CLONE, f_lvm)),
-	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1, f_p_idata)
-    {
-	lvcreate_thin_snapshot_wrapper(f_conf_lvm_vg_name, f_conf_lvm_origin_lv_name, f_snapshot_lv_name);
-    }
-
-    DeleteFilesystemSnapshotImportTypeClone::~DeleteFilesystemSnapshotImportTypeClone()
-    {
-	try
-	{
-	    lvremove_wrapper(f_conf_lvm_vg_name, f_lvm->snapshotLvName(f_num) );
-	    std::cerr << "DeleteFilesystemSnapshotImportTypeClone dtor: "
-		      << f_conf_lvm_vg_name << "/" << f_lvm->snapshotLvName(f_num)
-		      << " has not been removed" << std::endl;
-	}
-	catch (const LvmImportTestsuiteException &e) {}
-    }
-
-    DeleteFilesystemSnapshotImportTypeAdopt::DeleteFilesystemSnapshotImportTypeAdopt()
-	: InfoDirWithSnapshotDir(1), f_snapshot_lv_name(f_test_snapshot_01),
-	rm(f_conf_lvm_vg_name, f_snapshot_lv_name), f_p_idata(new snapper::LvmImportMetadata(rm.f_raw_data, snapper::ImportPolicy::ADOPT, f_lvm)),
-	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1, f_p_idata)
-    {
-	lvcreate_thin_snapshot_wrapper(f_conf_lvm_vg_name, f_conf_lvm_origin_lv_name, f_snapshot_lv_name);
-    }
-
-    DeleteFilesystemSnapshotImportTypeAdopt::~DeleteFilesystemSnapshotImportTypeAdopt()
-    {
-	try
-	{
-	    lvremove_wrapper(f_conf_lvm_vg_name, f_snapshot_lv_name);
-	    std::cerr << "DeleteFilesystemSnapshotImportTypeAdopt dtor: "
-		      << f_conf_lvm_vg_name << "/" << f_lvm->snapshotLvName(f_num)
-		      << " has not been removed" << std::endl;
-	}
-	catch (const LvmImportTestsuiteException &e) {}
-    }
-
-    DeleteFilesystemSnapshotImportTypeAcknowledge::DeleteFilesystemSnapshotImportTypeAcknowledge()
-	: InfoDirWithSnapshotDir(1), f_snapshot_lv_name(f_test_snapshot_01),
-	rm(f_conf_lvm_vg_name, f_snapshot_lv_name), f_p_idata(new snapper::LvmImportMetadata(rm.f_raw_data, snapper::ImportPolicy::ACKNOWLEDGE, f_lvm)),
-	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1, f_p_idata)
-    {
-	lvcreate_thin_snapshot_wrapper(f_conf_lvm_vg_name, f_conf_lvm_origin_lv_name, f_snapshot_lv_name);
-    }
-
-    DeleteFilesystemSnapshotImportTypeAcknowledge::~DeleteFilesystemSnapshotImportTypeAcknowledge()
-    {
-	try
-	{
-	    lvremove_wrapper(f_conf_lvm_vg_name, f_snapshot_lv_name);
-	}
-	catch (const LvmImportTestsuiteException &e)
-	{
-	    std::cerr << "DeleteFilesystemSnapshotImportTypeAcknowledge dtor: "
-		      << f_conf_lvm_vg_name << "/" << f_lvm->snapshotLvName(f_num)
-		      << " has been removed!" << std::endl;
-	}
-    }
-
-    DeleteFileSystemSnapshotOrigin::DeleteFileSystemSnapshotOrigin()
-	: LvmGeneralFixture(),
-	f_sh(f_snapper, snapper::SnapshotType::SINGLE, 0, (time_t) -1, NULL)
-    {
-    }
+//     DeleteFilesystemSnapshotImportTypeNone::DeleteFilesystemSnapshotImportTypeNone()
+// 	: InfoDirWithSnapshotDir(1),
+// 	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1, NULL),
+// 	f_snapshot_lv_name(f_lvm->snapshotLvName(f_num))
+//     {
+// 	lvcreate_thin_snapshot_wrapper(f_conf_lvm_vg_name, f_conf_lvm_origin_lv_name, f_snapshot_lv_name);
+//     }
+// 
+//     DeleteFilesystemSnapshotImportTypeNone::~DeleteFilesystemSnapshotImportTypeNone()
+//     {
+// 	try
+// 	{
+// 	    lvremove_wrapper(f_conf_lvm_vg_name, f_lvm->snapshotLvName(f_num) );
+// 	    std::cerr << "DeleteFilesystemSnapshotImportTypeNone dtor: "
+// 		      << f_conf_lvm_vg_name << "/" << f_lvm->snapshotLvName(f_num)
+// 		      << " has not been removed" << std::endl;
+// 	}
+// 	catch (const LvmImportTestsuiteException &e) {}
+//     }
+// 
+//     DeleteFilesystemSnapshotImportTypeClone::DeleteFilesystemSnapshotImportTypeClone()
+// 	: InfoDirWithSnapshotDir(1), f_snapshot_lv_name(f_lvm->snapshotLvName(f_num)),
+// 	rm(f_conf_lvm_vg_name, f_snapshot_lv_name), f_p_idata(new snapper::LvmImportMetadata(rm.f_raw_data, snapper::ImportPolicy::CLONE, f_lvm)),
+// 	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1, f_p_idata)
+//     {
+// 	lvcreate_thin_snapshot_wrapper(f_conf_lvm_vg_name, f_conf_lvm_origin_lv_name, f_snapshot_lv_name);
+//     }
+// 
+//     DeleteFilesystemSnapshotImportTypeClone::~DeleteFilesystemSnapshotImportTypeClone()
+//     {
+// 	try
+// 	{
+// 	    lvremove_wrapper(f_conf_lvm_vg_name, f_lvm->snapshotLvName(f_num) );
+// 	    std::cerr << "DeleteFilesystemSnapshotImportTypeClone dtor: "
+// 		      << f_conf_lvm_vg_name << "/" << f_lvm->snapshotLvName(f_num)
+// 		      << " has not been removed" << std::endl;
+// 	}
+// 	catch (const LvmImportTestsuiteException &e) {}
+//     }
+// 
+//     DeleteFilesystemSnapshotImportTypeAdopt::DeleteFilesystemSnapshotImportTypeAdopt()
+// 	: InfoDirWithSnapshotDir(1), f_snapshot_lv_name(f_test_snapshot_01),
+// 	rm(f_conf_lvm_vg_name, f_snapshot_lv_name), f_p_idata(new snapper::LvmImportMetadata(rm.f_raw_data, snapper::ImportPolicy::ADOPT, f_lvm)),
+// 	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1, f_p_idata)
+//     {
+// 	lvcreate_thin_snapshot_wrapper(f_conf_lvm_vg_name, f_conf_lvm_origin_lv_name, f_snapshot_lv_name);
+//     }
+// 
+//     DeleteFilesystemSnapshotImportTypeAdopt::~DeleteFilesystemSnapshotImportTypeAdopt()
+//     {
+// 	try
+// 	{
+// 	    lvremove_wrapper(f_conf_lvm_vg_name, f_snapshot_lv_name);
+// 	    std::cerr << "DeleteFilesystemSnapshotImportTypeAdopt dtor: "
+// 		      << f_conf_lvm_vg_name << "/" << f_lvm->snapshotLvName(f_num)
+// 		      << " has not been removed" << std::endl;
+// 	}
+// 	catch (const LvmImportTestsuiteException &e) {}
+//     }
+// 
+//     DeleteFilesystemSnapshotImportTypeAcknowledge::DeleteFilesystemSnapshotImportTypeAcknowledge()
+// 	: InfoDirWithSnapshotDir(1), f_snapshot_lv_name(f_test_snapshot_01),
+// 	rm(f_conf_lvm_vg_name, f_snapshot_lv_name), f_p_idata(new snapper::LvmImportMetadata(rm.f_raw_data, snapper::ImportPolicy::ACKNOWLEDGE, f_lvm)),
+// 	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1, f_p_idata)
+//     {
+// 	lvcreate_thin_snapshot_wrapper(f_conf_lvm_vg_name, f_conf_lvm_origin_lv_name, f_snapshot_lv_name);
+//     }
+// 
+//     DeleteFilesystemSnapshotImportTypeAcknowledge::~DeleteFilesystemSnapshotImportTypeAcknowledge()
+//     {
+// 	try
+// 	{
+// 	    lvremove_wrapper(f_conf_lvm_vg_name, f_snapshot_lv_name);
+// 	}
+// 	catch (const LvmImportTestsuiteException &e)
+// 	{
+// 	    std::cerr << "DeleteFilesystemSnapshotImportTypeAcknowledge dtor: "
+// 		      << f_conf_lvm_vg_name << "/" << f_lvm->snapshotLvName(f_num)
+// 		      << " has been removed!" << std::endl;
+// 	}
+//     }
+// 
+//     DeleteFileSystemSnapshotOrigin::DeleteFileSystemSnapshotOrigin()
+// 	: LvmGeneralFixture(),
+// 	f_sh(f_snapper, snapper::SnapshotType::SINGLE, 0, (time_t) -1, NULL)
+//     {
+//     }
 
     MountFileSystemSnapshotSimpleBase::MountFileSystemSnapshotSimpleBase()
 	: InfoDirWithSnapshotDir(1),
@@ -154,7 +196,7 @@ namespace testsuiteimport { namespace lvm
 
     MountFileSystemSnapshotImportNone::MountFileSystemSnapshotImportNone()
 	: MountFileSystemSnapshotSimpleBase(),
-	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) - 1, NULL)
+	f_sh(f_snapper, snapper::SnapshotType::SINGLE, f_num, (time_t) -1, NULL)
     {
 	std::cout << "MountFileSystemSnapshotImportNone ctor" << std::endl
 		  << "vg/lv: " << f_conf_lvm_vg_name << "/" << f_snapshot_lv_name << std::endl;

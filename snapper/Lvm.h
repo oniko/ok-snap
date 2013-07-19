@@ -113,7 +113,6 @@ namespace snapper
 
 	string getVgName() const { return vg_name; }
 	string getLvName() const { return lv_name; }
-	string getFsUuid() const { return fs_uuid; }
     private:
 
 	const string mount_type;

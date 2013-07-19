@@ -1,171 +1,199 @@
 #ifndef SNAPSHOT_TEST_H
 #define SNAPSHOT_TEST_H
 
-#include "testsuite-import/general-test.h"
-#include "testsuite-import/snapshot-fixtures.h"
+#include "snapper/Snapper.h"
+#include "snapper/ImportMetadata.h"
 
-namespace testsuiteimport { namespace lvm
-{
+#include "testsuite-import/general-test.h"
+#include "testsuite-import/general-fixtures.h"
+//#include "testsuite-import/snapshot-fixtures.h"
+
+
+namespace testsuiteimport
+{    
+    struct GeneralSnapshotCtorFixture
+    {
+	GeneralSnapshotCtorFixture(const ::snapper::Snapper* snapper) : snapper(snapper) {}
+
+	const ::snapper::Snapper* snapper;
+
+	::snapper::ImportMetadata* clone_data;
+	::snapper::ImportMetadata* adopt_data;
+	::snapper::ImportMetadata* ack_data;
+    };
+
+
+    struct GeneralGetImportPolicyFixture : public GeneralSnapshotCtorFixture
+    {
+	GeneralGetImportPolicyFixture(const ::snapper::Snapper* snapper)
+	    : GeneralSnapshotCtorFixture(snapper) {}
+    };
+
+
+    struct GeneralGetSnapshotDirFixture : public GeneralSnapshotCtorFixture
+    {
+	GeneralGetSnapshotDirFixture(const ::snapper::Snapper* snapper)
+	    : GeneralSnapshotCtorFixture(snapper) {}
+
+	unsigned int num_none;
+	unsigned int num_clone;
+	unsigned int num_adopt;
+	unsigned int num_ack;
+
+	string expected_none;
+	string expected_clone;
+	string expected_adopt;
+	string expected_ack;
+    };
+
+
+    struct GeneralMountFilesystemFixture
+    {
+	GeneralMountFilesystemFixture(const ::snapper::Snapper* snapper)
+	    : snapper(snapper) {}
+
+	const ::snapper::Snapper* snapper;
+	string infos_dir;
+
+	SubvolumeWrapper* subvol_none;
+	SubvolumeWrapper* subvol_none_user;
+
+	SubvolumeWrapper* subvol_clone_orig;
+	SubvolumeWrapper* subvol_clone;
+	SubvolumeWrapper* subvol_clone_orig_user;
+	SubvolumeWrapper* subvol_clone_user;
+
+	SubvolumeWrapper* subvol_adopt;
+	SubvolumeWrapper* subvol_adopt_user;
+
+	SubvolumeWrapper* subvol_ack;
+	SubvolumeWrapper* subvol_ack_user;
+
+	/*
+	 * NOTE: following memory will be freed by Snapshot dtor.
+	 * 	 Do not pass pter to more than one Snapshot ctor!
+	 */
+	::snapper::ImportMetadata* im_clone;
+	::snapper::ImportMetadata* im_clone_user;
+
+	::snapper::ImportMetadata* im_adopt;
+	::snapper::ImportMetadata* im_adopt_user;
+
+	::snapper::ImportMetadata* im_ack;
+	::snapper::ImportMetadata* im_ack_user;
+    };
+
+
+    class GeneralSnapshotFixtures
+    {
+    public:
+	GeneralSnapshotFixtures(const snapper::Snapper* snapper) : snapper(snapper) {}
+	virtual ~GeneralSnapshotFixtures() {}
+
+	virtual GeneralSnapshotCtorFixture ctor_fixture() const = 0;
+	virtual GeneralGetImportPolicyFixture get_import_policy_fixture() const = 0;
+	virtual GeneralGetSnapshotDirFixture get_snapshot_dir_fixture() const = 0;
+	virtual GeneralMountFilesystemFixture mount_filesystem_fixture() const = 0;
+
+	const ::snapper::Snapper* snapper;
+    };
+
+
     class SnapshotTestClass
     {
     public:
-	void tc_snapshot_simple_ctor();
-	void tc_snapshot_import_ctor();
-	void tc_delete_filesystem_snapshot_import_type_none();
-	void tc_delete_filesystem_snapshot_import_type_clone();
-	void tc_delete_filesystem_snapshot_import_type_adopt();
-	void tc_delete_filesystem_snapshot_import_type_ack();
-	void tc_delete_filesystem_snapshot_origin();
-	void tc_mount_filesystem_snapshot_import_none_non_user_request();
-	void tc_mount_filesystem_snapshot_import_none_user_request();
-	void tc_mount_filesystem_snapshot_import_clone_non_user_request();
-	void tc_mount_filesystem_snapshot_import_clone_user_request();
-	void tc_mount_filesystem_snapshot_import_adopt_non_user_request();
-	void tc_mount_filesystem_snapshot_import_adopt_user_request();
-	void tc_mount_filesystem_snapshot_import_ack_non_user_request();
-	void tc_mount_filesystem_snapshot_import_ack_user_request();
-	void tc_umount_filesystem_snapshot_import_none_non_user_request();
-	void tc_umount_filesystem_snapshot_import_none_user_request();
-	void tc_umount_filesystem_snapshot_import_clone_non_user_request();
-	void tc_umount_filesystem_snapshot_import_clone_user_request();
-	void tc_umount_filesystem_snapshot_import_adopt_non_user_request();
-	void tc_umount_filesystem_snapshot_import_adopt_user_request();
-	void tc_umount_filesystem_snapshot_import_ack_non_user_request();
-	void tc_umount_filesystem_snapshot_import_ack_user_request();
-	void tc_umount_filesystem_snapshot_invalid();
-	void tc_handle_umount_filesystem_snapshot_non_user_request();
-	void tc_handle_umount_filesystem_snapshot_user_request();
+	SnapshotTestClass(const GeneralSnapshotFixtures* fixtures) : fixtures(fixtures) {}
+
+	void tc_snapshot_ctor();
+	void tc_snapshot_get_import_policy();
+	void tc_snapshot_get_snapshot_dir();
+	void tc_snapshot_mount_filesystem();
+
+    private:
+	const GeneralSnapshotFixtures* fixtures;
     };
 
-    struct FSimpleConstructorValid : public GeneralFixture, SimpleConstructorValid
+
+    struct FSnapshotCtor : public GeneralFixture
     {
+	FSnapshotCtor(const GeneralSnapshotCtorFixture& gfix);
+	~FSnapshotCtor();
+
+	const GeneralSnapshotCtorFixture f;
+
+	const snapper::SnapshotType f_type;
+	const unsigned int f_num;
+	const time_t f_date;
+
+	bool f_ctor_clone_passed;
+	bool f_ctor_adopt_passed;
+	bool f_ctor_ack_passed;
+
 	virtual void test_method();
     };
 
-    struct FImportConstructorValid : public GeneralFixture, ImportConstructorValid
+
+    struct FSnapshotGetImportPolicy : public GeneralFixture
     {
+	FSnapshotGetImportPolicy(const GeneralGetImportPolicyFixture& gfix);
+	const GeneralGetImportPolicyFixture f;
+
+	const ::snapper::Snapshot f_sh_none;
+	const ::snapper::Snapshot f_sh_clone;
+	const ::snapper::Snapshot f_sh_adopt;
+	const ::snapper::Snapshot f_sh_ack;
+
 	virtual void test_method();
     };
 
-    struct FDeleteFilesystemSnapshotImportTypeNone : public GeneralFixture, DeleteFilesystemSnapshotImportTypeNone
+
+    struct FSnapshotGetSnapshotDir : public GeneralFixture
     {
+	FSnapshotGetSnapshotDir(const GeneralGetSnapshotDirFixture& gfix);
+	const GeneralGetSnapshotDirFixture f;
+
+	const ::snapper::Snapshot f_sh_none;
+	const ::snapper::Snapshot f_sh_clone;
+	const ::snapper::Snapshot f_sh_adopt;
+	const ::snapper::Snapshot f_sh_ack;
+
 	virtual void test_method();
     };
 
-    struct FDeleteFilesystemSnapshotImportTypeClone : public GeneralFixture, DeleteFilesystemSnapshotImportTypeClone
+
+    struct FSnapshotMountFilesystem : public GeneralFixture
     {
+	FSnapshotMountFilesystem(const GeneralMountFilesystemFixture& gfix);
+	~FSnapshotMountFilesystem();
+
 	virtual void test_method();
+
+	const GeneralMountFilesystemFixture f;
+
+	const InfoDirWithSnapshotDir f_info_none;
+	const InfoDirWithSnapshotDir f_info_none_user;
+
+	const InfoDirWithSnapshotDir f_info_clone;
+	const InfoDirWithSnapshotDir f_info_clone_user;
+
+	const InfoDirWithSnapshotDir f_info_adopt;
+	const InfoDirWithSnapshotDir f_info_adopt_user;
+
+	const InfoDirWithSnapshotDir f_info_ack;
+	const InfoDirWithSnapshotDir f_info_ack_user;
+
+	const ::snapper::Snapshot f_sh_none;
+	const ::snapper::Snapshot f_sh_none_user;
+
+	const ::snapper::Snapshot f_sh_clone;
+	const ::snapper::Snapshot f_sh_clone_user;
+
+	const ::snapper::Snapshot f_sh_adopt;
+	const ::snapper::Snapshot f_sh_adopt_user;
+
+	const ::snapper::Snapshot f_sh_ack;
+	const ::snapper::Snapshot f_sh_ack_user;
     };
 
-    struct FDeleteFilesystemSnapshotImportTypeAdopt : public GeneralFixture, DeleteFilesystemSnapshotImportTypeAdopt
-    {
-	virtual void test_method();
-    };
-
-    struct FDeleteFilesystemSnapshotImportTypeAcknowledge : public GeneralFixture, DeleteFilesystemSnapshotImportTypeAcknowledge
-    {
-	virtual void test_method();
-    };
-
-    struct FDeleteFileSystemSnapshotOrigin : public GeneralFixture, DeleteFileSystemSnapshotOrigin
-    {
-	virtual void test_method();
-    };
-
-    struct FMountFileSystemSnapshotImportNone : public GeneralFixture, MountFileSystemSnapshotImportNone
-    {
-	virtual void test_method();
-    };
-
-    struct FMountFileSystemSnapshotImportNoneUserRequest : public GeneralFixture, MountFileSystemSnapshotImportNone
-    {
-	virtual void test_method();
-    };
-
-    struct FMountFileSystemSnapshotImportClone : public GeneralFixture, MountFileSystemSnapshotImportClone
-    {
-	virtual void test_method();
-    };
-
-    struct FMountFileSystemSnapshotImportCloneUserRequest : public GeneralFixture, MountFileSystemSnapshotImportClone
-    {
-	virtual void test_method();
-    };
-
-    struct FMountFileSystemSnapshotImportAdopt : public GeneralFixture, MountFileSystemSnapshotImportAdopt
-    {
-	virtual void test_method();
-    };
-
-    struct FMountFileSystemSnapshotImportAdoptUserRequest : public GeneralFixture, MountFileSystemSnapshotImportAdopt
-    {
-	virtual void test_method();
-    };
-
-    struct FMountFileSystemSnapshotImportAck : public GeneralFixture, MountFileSystemSnapshotImportAck
-    {
-	virtual void test_method();
-    };
-
-    struct FMountFileSystemSnapshotImportAckUserRequest : public GeneralFixture, MountFileSystemSnapshotImportAck
-    {
-	virtual void test_method();
-    };
-
-    struct FUmountFilesystemSnapshotImportNone : public GeneralFixture, UmountFilesystemSnapshotImportNone
-    {
-	virtual void test_method();
-    };
-
-    struct FUmountFilesystemSnapshotImportNoneUserRequest : public GeneralFixture, UmountFilesystemSnapshotImportNone
-    {
-	virtual void test_method();
-    };
-
-    struct FUmountFilesystemSnapshotImportClone : public GeneralFixture, UmountFilesystemSnapshotImportClone
-    {
-	virtual void test_method();
-    };
-
-    struct FUmountFilesystemSnapshotImportCloneUserRequest : public GeneralFixture, UmountFilesystemSnapshotImportClone
-    {
-	virtual void test_method();
-    };
-
-    struct FUmountFilesystemSnapshotImportAdopt : public GeneralFixture, UmountFilesystemSnapshotImportAdopt
-    {
-	virtual void test_method();
-    };
-
-    struct FUmountFilesystemSnapshotImportAdoptUserRequest : public GeneralFixture, UmountFilesystemSnapshotImportAdopt
-    {
-	virtual void test_method();
-    };
-
-    struct FUmountFilesystemSnapshotImportAck : public GeneralFixture, UmountFilesystemSnapshotImportAck
-    {
-	virtual void test_method();
-    };
-
-    struct FUmountFilesystemSnapshotImportAckUserRequest : public GeneralFixture, UmountFilesystemSnapshotImportAck
-    {
-	virtual void test_method();
-    };
-
-    struct FUmountFilesystemInvalid : public GeneralFixture, DeleteFileSystemSnapshotOrigin
-    {
-	virtual void test_method();
-    };
-
-    struct FHandleUmountFilesystemSnapshot : public GeneralFixture, UmountFilesystemSnapshotImportNone
-    {
-	virtual void test_method();
-    };
-
-    struct FHandleUmountFilesystemSnapshotUserRequest : public GeneralFixture, UmountFilesystemSnapshotImportNone
-    {
-	virtual void test_method();
-    };
-
-}}
+}
 #endif // SNAPSHOT_TEST_H

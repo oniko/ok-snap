@@ -70,14 +70,6 @@ namespace snapper
 	return s;
     }
 
-/*
-    Snapshot::Snapshot(const Snapper* snapper, SnapshotType type, unsigned int num, time_t date)
-	: snapper(snapper), type(type), num(num), date(date), uid(0), pre_num(0),
-	  info_modified(false), mount_checked(false), mount_user_request(false),
-	  mount_use_count(0), import_policy(NONE), p_idata(NULL)
-    {
-    }
-*/
 
     Snapshot::Snapshot(const Snapper* snapper, SnapshotType type, unsigned int num, time_t date,
 		       const ImportMetadata* p_imdata)

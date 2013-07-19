@@ -4,6 +4,8 @@
 #include <string>
 #include <map>
 
+#include <boost/noncopyable.hpp>
+
 #include "testsuite-import/general-fixtures.h"
 
 namespace testsuiteimport { namespace lvm
@@ -12,58 +14,49 @@ namespace testsuiteimport { namespace lvm
     using std::string;
 
     // TODO: move me somewhere else lvm-fixtures.h?
-    struct LvmSubvolumeWrapper
+    // NOTE: do not use vg/lv names with dash in names yet!
+    struct LvmSubvolumeWrapper : public SubvolumeWrapper
     {
 	LvmSubvolumeWrapper(const string& vg_name, const string& lv_orig_name, const string& lv_name, bool ro = true);
 	LvmSubvolumeWrapper(const string& vg_name, const string& lv_name);
 	~LvmSubvolumeWrapper();
 
 	string subvolume() const { return vg_name + "/" + lv_name; }
+	string devicepath() const { return "/dev/mapper/" + vg_name + "-" + lv_name; }
 
 	const string vg_name;
 	const string lv_name;
 	const string lv_orig_name;
-    };
 
+	virtual bool exists() const;
+	virtual bool is_mounted() const;
 
-    struct InfoDirectory : public LvmGeneralFixture {
-	InfoDirectory();
-	InfoDirectory(unsigned int num);
-	~InfoDirectory();
-
-	string f_info_dir;
-
-	unsigned int f_num;
-
-	unsigned int get_dirfd() const { return f_dirfd; }
-    protected:
-	int f_dirfd;
+	virtual string fstype() const { return LvmSubvolumeWrapper::lvm_fs_type; }
+	virtual string infos_dir() const { return LvmGeneralFixture::f_conf_lvm_snapshots_prefix; }
     private:
-	void infodir_init();
+	static const string lvm_fs_type;
     };
 
 
-    struct InfoDirWithSnapshotDir : public InfoDirectory {
-	InfoDirWithSnapshotDir();
-	InfoDirWithSnapshotDir(unsigned int num);
-    private:
-	void init();
-    };
-
-
-    struct InfoDirWithInvalidSnapshotDir : public InfoDirectory {
-	InfoDirWithInvalidSnapshotDir();
-	InfoDirWithInvalidSnapshotDir(unsigned int num);
-    private:
-	void init();
-    };
-
-
-    struct CreateSnapshotEnvironment
+    struct CreateSnapshotEnvironment : public LvmGeneralFixture
     {
 	const InfoDirectory f_valid_info_dir;
 	const InfoDirWithSnapshotDir f_info_snapshot_dir_exists;
 	const InfoDirWithInvalidSnapshotDir f_invalid_snapshot_dir;
+    };
+
+
+    struct CreateSnapshotFailOnEnvironment : public LvmGeneralFixture
+    {
+	~CreateSnapshotFailOnEnvironment();
+
+	const InfoDirWithInvalidSnapshotDir f_invalid_snap_dir;
+    };
+
+
+    struct RemoveSnapshotEnvironment : public LvmGeneralFixture
+    {
+	const InfoDirWithSnapshotDir f_snapshot_dir;
     };
 
 
@@ -82,88 +75,66 @@ namespace testsuiteimport { namespace lvm
     };
 
 
-    struct MountSnapshotByDeviceValid : public InfoDirWithSnapshotDir
+    struct LvmMountSnapshotBySubvolume : LvmGeneralFixture
     {
-	MountSnapshotByDeviceValid();
-	~MountSnapshotByDeviceValid();
+	LvmMountSnapshotBySubvolume();
 
-	const string f_vg_name;
-	const string f_lv_name;
-	const string f_origin_name;
+	const InfoDirWithSnapshotDir f_snapshot_dir_1;
+	const InfoDirWithSnapshotDir f_snapshot_dir_2;
 
-	string f_dev_path;
-	string f_mountpoint;
+	const LvmSubvolumeWrapper f_mount_volume;
+
+	const string f_missing_dev_path;
     };
 
-    struct MountSnapshotByDeviceAlreadyMounted : public MountSnapshotByDeviceValid
+
+    struct LvmCheckImportedSnapshot : public LvmGeneralFixture
     {
-	MountSnapshotByDeviceAlreadyMounted();
+	LvmCheckImportedSnapshot();
+
+	// missing vg test
+	const string f_missing_vg_vg;
+	const string f_missing_vg_lv;
+
+	// missing lv test
+	const string f_missing_lv_vg;
+	const string f_missing_lv_lv;
+
+	// not a thin volume
+	const LvmSubvolumeWrapper f_nonthin_subvolume;
+
+	// about to be removed. condition is useless
+	// foreign vg test case
+	const LvmSubvolumeWrapper f_foreign_vg_subvolume;
+
+	// current subvolume test case (aka exercise importing snapshot 0)
+	const string f_current_subvolume_vg_name;
+	const string f_current_subvolume_lv_name;
+
+	// test for rw enabled snapshots
+	const LvmSubvolumeWrapper f_rw_wrong_fs_uuid_subvolume;
+
+	const LvmSubvolumeWrapper f_rw_subvolume;
+
+	// test for ro snapshots
+	const LvmSubvolumeWrapper f_ro_wrong_fs_uuid_subvolume;
+
+	const LvmSubvolumeWrapper f_ro_subvolume;
     };
 
-    struct MountSnapshotByDeviceInvalidDevice : public InfoDirWithSnapshotDir
-    {
-	MountSnapshotByDeviceInvalidDevice();
-	~MountSnapshotByDeviceInvalidDevice() {}
-
-	string f_missing_dev_path;
-    };
-
-    struct CheckImportedSnapshotValid : public LvmGeneralFixture
-    {
-	CheckImportedSnapshotValid();
-	~CheckImportedSnapshotValid();
-
-	const string f_vg_name;
-	const string f_lv_name;
-	const string f_origin_name;
-    };
-
-    struct CheckImportedSnapshotWrongVg : public LvmGeneralFixture
-    {
-	CheckImportedSnapshotWrongVg();
-	~CheckImportedSnapshotWrongVg() {}
-
-	const string f_vg_name;
-	const string f_lv_name;
-	const string f_origin_name;
-    };
-
-    struct CheckImportedSnapshotVolumeImport : public LvmGeneralFixture
-    {
-	CheckImportedSnapshotVolumeImport();
-	~CheckImportedSnapshotVolumeImport() {}
-
-	const string f_vg_name;
-	const string f_lv_name;
-    };
-
-    struct CheckImportedSnapshotFsUuidMismatch : public LvmGeneralFixture
-    {
-	CheckImportedSnapshotFsUuidMismatch();
-	~CheckImportedSnapshotFsUuidMismatch();
-
-	const string f_vg_name;
-	const string f_lv_name;
-	const string f_origin_name;
-    };
-
-    struct CheckImportedSnapshotNonThinLv : public LvmGeneralFixture
-    {
-	CheckImportedSnapshotNonThinLv();
-	~CheckImportedSnapshotNonThinLv();
-
-	const string f_vg_name;
-	const string f_lv_name;
-    };
 
     struct DeleteSnapshotByVgLv : public LvmGeneralFixture
     {
 	DeleteSnapshotByVgLv();
 	~DeleteSnapshotByVgLv();
 
-	const string f_vg_name;
-	const string f_lv_name;
-	const string f_origin_name;
+	const LvmSubvolumeWrapper f_subvolume;
+
+	const string f_missing_vg_vg;
+	const string f_missing_vg_lv;
+
+	const string f_missing_lv_vg;
+	const string f_missing_lv_lv;
     };
 
     struct DeleteSnapshotByVgLvMissing : public LvmGeneralFixture

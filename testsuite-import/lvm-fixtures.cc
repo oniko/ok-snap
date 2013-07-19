@@ -20,16 +20,18 @@ namespace testsuiteimport { namespace lvm
 {
     using std::cout;
     using std::cerr;
-    
-    
+
+    const string LvmSubvolumeWrapper::lvm_fs_type = "LVM2";
+
     LvmSubvolumeWrapper::LvmSubvolumeWrapper(const string& vg_name, const string& lv_orig_name, const string& lv_name, bool ro)
-	: vg_name(vg_name), lv_name(lv_name), lv_orig_name(lv_orig_name)
+	:  SubvolumeWrapper(), vg_name(vg_name), lv_name(lv_name), lv_orig_name(lv_orig_name)
     {
 	lvcreate_thin_snapshot_wrapper(vg_name, lv_orig_name, lv_name, ro);	    
     }
 
 
     LvmSubvolumeWrapper::LvmSubvolumeWrapper(const string& vg_name, const string& lv_name)
+	: SubvolumeWrapper()
     {
 	lvcreate_non_thin_lv_wrapper(vg_name, lv_name);
     }
@@ -37,6 +39,8 @@ namespace testsuiteimport { namespace lvm
 
     LvmSubvolumeWrapper::~LvmSubvolumeWrapper()
     {
+	if (umount2(devicepath().c_str(), MNT_DETACH))
+	    std::cerr << "umount2( \"" << devicepath() << "\", MNT_DETACH) failed!" << std::endl;
 	try
 	{
 	    lvremove_wrapper(vg_name, lv_name);
@@ -44,13 +48,26 @@ namespace testsuiteimport { namespace lvm
 	catch (const ImportTestsuiteException &e) {}
     }
 
+
+    bool LvmSubvolumeWrapper::exists() const
+    {
+	return check_lv_exists(vg_name, lv_name);
+    }
+
+
+    bool LvmSubvolumeWrapper::is_mounted() const
+    {
+	return check_is_mounted(vg_name, lv_name);
+    }
+
+
     void InfoDirectory::infodir_init()
     {
 	std::cout << "CreateSnapshotEnvironment ctor" << std::endl;
 
-	int dirfd = open(f_conf_lvm_snapshots_prefix, O_RDONLY | O_NOATIME | O_CLOEXEC | O_NOFOLLOW);
+	int dirfd = open(infos_dir.c_str(), O_RDONLY | O_NOATIME | O_CLOEXEC | O_NOFOLLOW);
 	if (dirfd < 0)
-	    BOOST_FAIL( "Couldn't open " << f_conf_lvm_snapshots_prefix << " directory" );
+	    BOOST_FAIL( "Couldn't open " << infos_dir << " directory" );
 
 	std::ostringstream oss(std::ios_base::ate);
 	oss << f_num;
@@ -59,8 +76,9 @@ namespace testsuiteimport { namespace lvm
 	{
 	    f_num++;
 
-	    oss.str(f_num);
+	    oss.str();
 	    oss.clear();
+	    oss << f_num;
 
 	    if (errno == EEXIST)
 		continue;
@@ -71,7 +89,7 @@ namespace testsuiteimport { namespace lvm
 	if (f_num >= 100)
 	    BOOST_FAIL( "Something went terribly wrong" );
 
-	f_info_dir = f_conf_lvm_snapshots_prefix + "/" + oss.str();
+	f_info_dir = infos_dir + "/" + oss.str();
 
 	f_dirfd = openat(dirfd, oss.str().c_str(), O_RDONLY | O_NOATIME | O_CLOEXEC | O_NOFOLLOW);
 
@@ -83,18 +101,18 @@ namespace testsuiteimport { namespace lvm
 	if (fstat(f_dirfd, &buff) || !S_ISDIR(buff.st_mode))
 	{
 	    close(f_dirfd);
-	    BOOST_FAIL( "Can't stat dir: /testsuite-import/.snapshots/" << f_num << " or the d-entry is not a directory" );
+	    BOOST_FAIL( "Can't stat dir: " << f_info_dir << " or the d-entry is not a directory" );
 	}
     }
 
-    InfoDirectory::InfoDirectory()
-	: LvmGeneralFixture(), f_num(0)
+    InfoDirectory::InfoDirectory(const string& infos_dir_loc)
+	: f_num(0), f_info_dir(infos_dir_loc)
     {
 	infodir_init();
     }
 
-    InfoDirectory::InfoDirectory(unsigned int num)
-	: LvmGeneralFixture(), f_num(num)
+    InfoDirectory::InfoDirectory(const string& infos_dir_loc, unsigned int num)
+	: f_num(num), f_info_dir(infos_dir_loc)
     {
 	infodir_init();
     }
@@ -158,6 +176,16 @@ namespace testsuiteimport { namespace lvm
     }
 
 
+    CreateSnapshotFailOnEnvironment::~CreateSnapshotFailOnEnvironment()
+    {
+	try
+	{
+	    lvremove_wrapper(LvmGeneralFixture::f_conf_lvm_vg_name, f_lvm->snapshotLvName(f_invalid_snap_dir.f_num));
+	}
+	catch (const LvmImportTestsuiteException &e) {}
+    }
+
+
     LvmCloneSnapshot::LvmCloneSnapshot()
 	: f_valid_subvolume(LvmGeneralFixture::f_conf_lvm_vg_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name, "tc_clone_snapshot_01", false),
 	f_missing_lv_vg(LvmGeneralFixture::f_conf_lvm_vg_name),
@@ -170,208 +198,66 @@ namespace testsuiteimport { namespace lvm
     {
 	try
 	{
-	    // we expect Lvm clone LvmSubvolume into snapshot #f_num
+	    // we expect Lvm will clone f_valid_subvolume into snapshot #f_num
 	    lvremove_wrapper(f_valid_subvolume.vg_name, f_lvm->snapshotLvName(f_info_dir_1.f_num) );
 	}
 	catch (const ImportTestsuiteException &e)
 	{
-	    BOOST_FAIL("");
+	    std::cerr << "there is no cloned snapshot "
+		      << f_valid_subvolume.vg_name << "/"
+		      << f_lvm->snapshotLvName(f_info_dir_1.f_num) << std::endl;
 	}
     }
 
 
-    CloneSnapshotValid::CloneSnapshotValid()
-	: InfoDirectory(),
-	f_vg_name(LvmGeneralFixture::f_conf_lvm_vg_name),
-	f_lv_name("lv_test_snapshot_01"),
-	f_origin_name("lv_test_thin_1")  
+    LvmMountSnapshotBySubvolume::LvmMountSnapshotBySubvolume()
+	: f_snapshot_dir_1(1), f_snapshot_dir_2(1),
+	f_mount_volume(LvmGeneralFixture::f_conf_lvm_vg_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name, "tc_mount_snapshot_by_device_01"),
+	f_missing_dev_path("/dev/mapper/missing_vg-missing_lv")
     {
-	std::cout << "CloneSnapshotValid ctor" << std::endl;
-
-	// let boost handle the exception
-	lvcreate_thin_snapshot_wrapper( f_vg_name, f_origin_name, f_lv_name );
     }
 
-// TEST_VG_NAME=vg_test
-// TEST_POOL_NAME=lv_test_pool
-// TEST_THIN_LV_NAME=lv_test_thin
-// TEST_VOLUME=/testsuite-import
-// TEST_SNAP_01=lv_test_snapshot_01
 
-    CloneSnapshotValid::~CloneSnapshotValid()
+    LvmCheckImportedSnapshot::LvmCheckImportedSnapshot()
+	: LvmGeneralFixture(), f_missing_vg_vg("ThiSiSMisSingVg"),
+	f_missing_vg_lv(LvmGeneralFixture::f_conf_lvm_origin_lv_name),
+	f_missing_lv_vg(LvmGeneralFixture::f_conf_lvm_vg_name),
+	f_missing_lv_lv("ThisIsMissingLogVol"),
+	f_nonthin_subvolume(LvmGeneralFixture::f_conf_lvm_vg_name, "test_non_thin_volume_01"),
+	f_foreign_vg_subvolume(LvmGeneralFixture::f_conf_lvm_foreign_vg_name, "test_lv_volume_01"),
+	f_current_subvolume_vg_name(LvmGeneralFixture::f_conf_lvm_vg_name),
+	f_current_subvolume_lv_name(LvmGeneralFixture::f_conf_lvm_origin_lv_name),
+	f_rw_wrong_fs_uuid_subvolume(LvmGeneralFixture::f_conf_lvm_vg_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name, "test_rw_snap_wrong_fs_uuid_01", false),
+	f_rw_subvolume(LvmGeneralFixture::f_conf_lvm_vg_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name, "test_rw_snap_01", false),
+	f_ro_wrong_fs_uuid_subvolume(LvmGeneralFixture::f_conf_lvm_vg_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name, "test_ro_snap_wrong_uuid_01"),
+	f_ro_subvolume(LvmGeneralFixture::f_conf_lvm_vg_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name, "test_ro_snap_01")
     {
-	try {
-	    lvremove_wrapper(f_vg_name, f_lv_name );
-	}
-	catch (const LvmImportTestsuiteException &e)
-	{
-	    std::cerr << "lvremove_wrapper( " << f_vg_name << ", " << f_lv_name << " ) failed" << std::endl;
-	}
-
-	try {
-	    lvremove_wrapper(f_vg_name, f_lvm->snapshotLvName(f_num));
-	}
-	catch (const LvmImportTestsuiteException &e)
-	{
-	    std::cerr << "lvremove_wrapper( " << f_vg_name << ", " << f_lvm->snapshotLvName(f_num) << " ) failed" << std::endl;
-	}
-    }
-
-    
-
-    CloneSnapshotMissingOrigin::CloneSnapshotMissingOrigin()
-	: f_vg_name("vg_test"), f_lv_name("lv_missing_snapshot_name")
-    {
-	std::cout << "CloneSnapshotMissingOrigin ctor" << std::endl;
-    }
-
-   
-
-    MountSnapshotByDeviceValid::MountSnapshotByDeviceValid()
-	: InfoDirWithSnapshotDir(), f_vg_name("vg_test"),
-	  f_lv_name("lv_test_snapshot_01"), f_origin_name("lv_test_thin_1")
-    {
-	std::cout << "MountSnapshotByDeviceValid ctor" << std::endl;
-
-	// let boost handle the exception
-	lvcreate_thin_snapshot_wrapper( f_vg_name, f_origin_name, f_lv_name );
-
-	std::ostringstream oss;
-	oss << "/testsuite-import/.snapshots/" << f_num << "/snapshot";
-
-	f_dev_path = "/dev/mapper/" + f_vg_name + "-" + f_lv_name;
-	f_mountpoint = oss.str();
-    }
-
-    MountSnapshotByDeviceValid::~MountSnapshotByDeviceValid()
-    {
-	if (umount2(f_mountpoint.c_str(), MNT_DETACH))
-	    std::cerr << "umount2( \"" << f_mountpoint << "\", MNT_DETACH) failed!" << std::endl;
-
-	try
-	{
-	    lvremove_wrapper(f_vg_name, f_lv_name );
-	}
-	catch (const LvmImportTestsuiteException &e)
-	{
-	    std::cerr << "lvremove_wrapper( " << f_vg_name << ", " << f_lv_name << " ) failed" << std::endl;
-	}
-    }
-
-    MountSnapshotByDeviceAlreadyMounted::MountSnapshotByDeviceAlreadyMounted()
-	: MountSnapshotByDeviceValid()
-    {
-	std::cout << "MountSnapshotByDeviceAlreadyMounted ctor" << std::endl;
-	
 	string::size_type open = f_lvm->fstype().find("(");
 	string::size_type close = f_lvm->fstype().find(")");
 	string fstype = f_lvm->fstype().substr(open + 1, close - open - 1);
 
-	int ret = mount(f_dev_path.c_str(), f_mountpoint.c_str(),
-			fstype.c_str(),
-			MS_NOATIME | MS_NODEV | MS_NOEXEC | MS_RDONLY,
-			NULL);
-
-	if (ret)
-	{
-	    perror("mount");
-	    BOOST_FAIL( "Can't mount filesystem for testing purposes: \"" <<
-			f_dev_path << "\" -> \"" << f_mountpoint << "\"");
-	}
+	modify_fs_uuid(f_rw_wrong_fs_uuid_subvolume.vg_name, f_rw_wrong_fs_uuid_subvolume.lv_name, fstype);
+	modify_fs_uuid(f_ro_wrong_fs_uuid_subvolume.vg_name, f_ro_wrong_fs_uuid_subvolume.lv_name, fstype);
     }
 
-    MountSnapshotByDeviceInvalidDevice::MountSnapshotByDeviceInvalidDevice()
-	: InfoDirWithSnapshotDir()
-    {
-	std::cout << "MountSnapshotByDeviceInvalidDevice ctor" << std::endl;
-
-	f_missing_dev_path = "/dev/mapper/this_device_do_not_exists";
-    }
-
-    CheckImportedSnapshotValid::CheckImportedSnapshotValid()
-	: LvmGeneralFixture(), f_vg_name("vg_test"), f_lv_name("lv_test_snapshot_01"),
-	  f_origin_name("lv_test_thin_1")
-    {
-	std::cout << "CheckImportedSnapshotValid ctor" << std::endl;
-
-	// let boost handle the exception
-	lvcreate_thin_snapshot_wrapper( f_vg_name, f_origin_name, f_lv_name );
-    }
-
-    CheckImportedSnapshotValid::~CheckImportedSnapshotValid()
-    {
-	try {
-	    lvremove_wrapper(f_vg_name, f_lv_name );
-	}
-	catch (const LvmImportTestsuiteException &e)
-	{
-	    std::cerr << "lvremove_wrapper( " << f_vg_name << ", " << f_lv_name << " ) failed" << std::endl;
-	}
-    }
-
-    CheckImportedSnapshotWrongVg::CheckImportedSnapshotWrongVg()
-	: LvmGeneralFixture(), f_vg_name("vg_test_2"), f_lv_name("lv_test_thin_2")
-    {
-	std::cout << "CheckImportedSnapshotWrongVg ctor" << std::endl;
-    }
-
-    CheckImportedSnapshotVolumeImport::CheckImportedSnapshotVolumeImport()
-	: LvmGeneralFixture(), f_vg_name(f_lvm->getVgName()), f_lv_name(f_lvm->getLvName())
-    {
-	std::cout << "CheckImportedSnapshotVolumeImport ctor" << std::endl;
-    }
-
-    CheckImportedSnapshotFsUuidMismatch::CheckImportedSnapshotFsUuidMismatch()
-	: LvmGeneralFixture(), f_vg_name("vg_test"), f_lv_name("lv_test_snapshot_01"),
-	  f_origin_name("lv_test_thin_1")
-    {
-	std::cout << "CheckImportedSnapshotFsUuidMismatch ctor" << std::endl;
-
-	lvcreate_thin_snapshot_wrapper( f_vg_name, f_origin_name, f_lv_name, false);
-
-	string::size_type open = f_lvm->fstype().find("(");
-	string::size_type close = f_lvm->fstype().find(")");
-	string fstype = f_lvm->fstype().substr(open + 1, close - open - 1);
-
-	modify_fs_uuid(f_vg_name, f_lv_name, fstype);
-    }
-
-    CheckImportedSnapshotFsUuidMismatch::~CheckImportedSnapshotFsUuidMismatch()
-    {
-	lvremove_wrapper(f_vg_name, f_lv_name);
-    }
-
-    CheckImportedSnapshotNonThinLv::CheckImportedSnapshotNonThinLv()
-	: LvmGeneralFixture(), f_vg_name("vg_test"), f_lv_name("lv_non_thin")
-    {
-	lvcreate_non_thin_lv_wrapper(f_vg_name, f_lv_name);
-    }
-
-    CheckImportedSnapshotNonThinLv::~CheckImportedSnapshotNonThinLv()
-    {
-	lvremove_wrapper(f_vg_name, f_lv_name);
-    }
 
     DeleteSnapshotByVgLv::DeleteSnapshotByVgLv()
-	: LvmGeneralFixture(), f_vg_name("vg_test"), f_lv_name("lv_test_volume"),
-	f_origin_name("lv_test_thin_1")
+	: LvmGeneralFixture(),
+	f_subvolume(LvmGeneralFixture::f_conf_lvm_vg_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name, "test_delete_subvolume_by_vg_lv"),
+	f_missing_vg_vg("iHavENoBodY"), f_missing_vg_lv(LvmGeneralFixture::f_conf_lvm_origin_lv_name),
+	f_missing_lv_vg(LvmGeneralFixture::f_conf_lvm_vg_name), f_missing_lv_lv("ThiSiSmiSSingLv")
     {
-	lvcreate_thin_snapshot_wrapper(f_vg_name, f_origin_name, f_lv_name);
     }
+
 
     DeleteSnapshotByVgLv::~DeleteSnapshotByVgLv()
     {
 	try
 	{
-	    lvremove_wrapper(f_vg_name, f_lv_name);
+	    lvremove_wrapper(f_subvolume.vg_name, f_subvolume.lv_name);
 	}
-	// in case of failure, remove volume that should be deleted by Lvm class
+	// in case of failure, remove volume that should be deleted by Lvm unit
 	catch (const LvmImportTestsuiteException& e) {}
-    }
-
-    DeleteSnapshotByVgLvMissing::DeleteSnapshotByVgLvMissing()
-	: LvmGeneralFixture(), f_vg_name("vg_blahblah"), f_lv_name("lv_blahblah")
-    {
     }
 
 }}

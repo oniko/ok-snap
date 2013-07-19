@@ -3,104 +3,86 @@
 
 #include <sys/stat.h>
 
-// ouch !!!
-#define private public
-    #include "snapper/Snapshot.h"
-    #include "snapper/Snapper.h"
-    #include "snapper/LvmImportMetadata.h"
-#undef private
+#include "snapper/Snapshot.h"
+#include "snapper/Snapper.h"
+#include "snapper/LvmImportMetadata.h"
 
+#include "testsuite-import/general-test.h"
 #include "testsuite-import/general-fixtures.h"
 #include "testsuite-import/lvm-fixtures.h"
+
+// TODO: REMOVE THIS
+#include "testsuite-import/snapshot-test.h"
 
 namespace testsuiteimport { namespace lvm
 {
     using std::map;
     using std::string;
 
-    struct CreateRawLvmImportMetata
+
+    struct LvmSnapshotFixtures : public GeneralSnapshotFixtures
     {
-	CreateRawLvmImportMetata(const string&, const string&);
-	~CreateRawLvmImportMetata() {}
+	LvmSnapshotFixtures(const snapper::Snapper* snapper) : GeneralSnapshotFixtures(snapper) {}
 
-	map<string, string> f_raw_data;
-    };
-
-    struct SimpleConstructorValid
-    {
-	SimpleConstructorValid();
-	~SimpleConstructorValid() {}
-
-	const snapper::Snapper* f_dummy_snapper;
-	const snapper::SnapshotType f_type;
-	const unsigned int f_num;
-	const time_t f_date;
-    };
-
-    struct ImportConstructorValid : public SimpleConstructorValid
-    {
-	ImportConstructorValid();
-
-	const CreateRawLvmImportMetata rm;
-
-	const snapper::ImportPolicy f_import_policy;
-	const snapper::Lvm* f_dummy_lvm;
-	const snapper::ImportMetadata* f_dummy_idata;
+	virtual GeneralSnapshotCtorFixture ctor_fixture() const;
+	virtual GeneralGetImportPolicyFixture get_import_policy_fixture() const;
+	virtual GeneralGetSnapshotDirFixture get_snapshot_dir_fixture() const;
+	virtual GeneralMountFilesystemFixture mount_filesystem_fixture() const;
     };
 
 
-    struct DeleteFilesystemSnapshotImportTypeNone : public InfoDirWithSnapshotDir
-    {
-	DeleteFilesystemSnapshotImportTypeNone();
-	~DeleteFilesystemSnapshotImportTypeNone();
-
-	const snapper::Snapshot f_sh;
-	const string f_snapshot_lv_name;
-    };
-
-    struct DeleteFilesystemSnapshotImportTypeClone : public InfoDirWithSnapshotDir
-    {
-	DeleteFilesystemSnapshotImportTypeClone();
-	~DeleteFilesystemSnapshotImportTypeClone();
-
-	const string f_snapshot_lv_name;
-	const CreateRawLvmImportMetata rm;
-
-	const snapper::ImportMetadata* f_p_idata;
-	const snapper::Snapshot f_sh;
-    };
-
-    struct DeleteFilesystemSnapshotImportTypeAdopt : public InfoDirWithSnapshotDir
-    {
-	DeleteFilesystemSnapshotImportTypeAdopt();
-	~DeleteFilesystemSnapshotImportTypeAdopt();
-
-	const string f_snapshot_lv_name;
-	const CreateRawLvmImportMetata rm;
-
-	const snapper::ImportMetadata* f_p_idata;
-	const snapper::Snapshot f_sh;
-    };
-
-    struct DeleteFilesystemSnapshotImportTypeAcknowledge : public InfoDirWithSnapshotDir
-    {
-	DeleteFilesystemSnapshotImportTypeAcknowledge();
-	~DeleteFilesystemSnapshotImportTypeAcknowledge();
-
-	const string f_snapshot_lv_name;
-	const CreateRawLvmImportMetata rm;
-
-	const snapper::ImportMetadata* f_p_idata;
-	const snapper::Snapshot f_sh;
-    };
-
-    struct DeleteFileSystemSnapshotOrigin : public LvmGeneralFixture
-    {
-	DeleteFileSystemSnapshotOrigin();
-	~DeleteFileSystemSnapshotOrigin() {}
-
-	const snapper::Snapshot f_sh;
-    };
+//     struct DeleteFilesystemSnapshotImportTypeNone : public InfoDirWithSnapshotDir
+//     {
+// 	DeleteFilesystemSnapshotImportTypeNone();
+// 	~DeleteFilesystemSnapshotImportTypeNone();
+// 
+// 	const snapper::Snapshot f_sh;
+// 	const string f_snapshot_lv_name;
+//     };
+// 
+//     struct DeleteFilesystemSnapshotImportTypeClone : public InfoDirWithSnapshotDir
+//     {
+// 	DeleteFilesystemSnapshotImportTypeClone();
+// 	~DeleteFilesystemSnapshotImportTypeClone();
+// 
+// 	const string f_snapshot_lv_name;
+// 	const CreateRawLvmImportMetata rm;
+// 
+// 	const snapper::ImportMetadata* f_p_idata;
+// 	const snapper::Snapshot f_sh;
+//     };
+// 
+//     struct DeleteFilesystemSnapshotImportTypeAdopt : public InfoDirWithSnapshotDir
+//     {
+// 	DeleteFilesystemSnapshotImportTypeAdopt();
+// 	~DeleteFilesystemSnapshotImportTypeAdopt();
+// 
+// 	const string f_snapshot_lv_name;
+// 	const CreateRawLvmImportMetata rm;
+// 
+// 	const snapper::ImportMetadata* f_p_idata;
+// 	const snapper::Snapshot f_sh;
+//     };
+// 
+//     struct DeleteFilesystemSnapshotImportTypeAcknowledge : public InfoDirWithSnapshotDir
+//     {
+// 	DeleteFilesystemSnapshotImportTypeAcknowledge();
+// 	~DeleteFilesystemSnapshotImportTypeAcknowledge();
+// 
+// 	const string f_snapshot_lv_name;
+// 	const CreateRawLvmImportMetata rm;
+// 
+// 	const snapper::ImportMetadata* f_p_idata;
+// 	const snapper::Snapshot f_sh;
+//     };
+// 
+//     struct DeleteFileSystemSnapshotOrigin : public LvmGeneralFixture
+//     {
+// 	DeleteFileSystemSnapshotOrigin();
+// 	~DeleteFileSystemSnapshotOrigin() {}
+// 
+// 	const snapper::Snapshot f_sh;
+//     };
 
     struct MountFileSystemSnapshotSimpleBase : public InfoDirWithSnapshotDir
     {

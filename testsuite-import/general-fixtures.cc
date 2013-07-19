@@ -8,7 +8,7 @@ namespace testsuiteimport
     {
 
 	const string LvmGeneralFixture::f_conf_lvm_root_volume = "/testsuite-import";
-	const string LvmGeneralFixture::f_conf_lvm_snapshots_prefix = LvmGeneralFixture::f_conf_lvm_root_volume + "/" + ".snapshots/";
+	const string LvmGeneralFixture::f_conf_lvm_snapshots_prefix = LvmGeneralFixture::f_conf_lvm_root_volume + "/" + ".snapshots";
 	const string LvmGeneralFixture::f_conf_lvm_vg_name = "vg_test";
 	const string LvmGeneralFixture::f_conf_lvm_foreign_vg_name = "vg_test_2";
 	const string LvmGeneralFixture::f_conf_lvm_origin_lv_name = "lv_test_thin_1";
