@@ -17,8 +17,13 @@ namespace testsuiteimport { namespace lvm
     // NOTE: do not use vg/lv names with dash in names yet!
     struct LvmSubvolumeWrapper : public SubvolumeWrapper
     {
+	// create thin snapshot from origin
 	LvmSubvolumeWrapper(const string& vg_name, const string& lv_orig_name, const string& lv_name, bool ro = true);
+	// create non-thin volume
 	LvmSubvolumeWrapper(const string& vg_name, const string& lv_name);
+	// create thin snapshot from origin with info dir
+	LvmSubvolumeWrapper(const string& vg_name, const string& lv_orig_name, unsigned int num, bool ro = true);
+	LvmSubvolumeWrapper(const string& vg_name, const string& lv_orig_name, const string& lv_name, unsigned int num, bool ro = true);
 	~LvmSubvolumeWrapper();
 
 	string subvolume() const { return vg_name + "/" + lv_name; }
@@ -35,6 +40,12 @@ namespace testsuiteimport { namespace lvm
 	virtual string infos_dir() const { return LvmGeneralFixture::f_conf_lvm_snapshots_prefix; }
     private:
 	static const string lvm_fs_type;
+    };
+
+
+    struct LvmSubvolumeWrapperWithInfoDir : public LvmSubvolumeWrapper
+    {
+	LvmSubvolumeWrapper(const string& vg_name, const string& lv_orig_name, const string& lv_name, unsigned int num, bool ro = true);
     };
 
 

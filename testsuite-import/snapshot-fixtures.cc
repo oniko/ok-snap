@@ -58,26 +58,139 @@ namespace testsuiteimport { namespace lvm
 	gfix.num_adopt = 3;
 	gfix.num_ack = 5;
 
-	gfix.expected_none = snapper->getFilesystem()->snapshotDir(gfix.num_none);
-	gfix.expected_clone = snapper->getFilesystem()->snapshotDir(gfix.num_clone);
-	gfix.expected_adopt = snapper->getFilesystem()->snapshotDir(gfix.num_adopt);
-	gfix.expected_ack = snapper->getFilesystem()->snapshotDir(gfix.num_ack);
+	std::ostringstream oss(std::ostringstream::ate);
+
+	oss << gfix.num_none;
+	gfix.expected_none = LvmGeneralFixture::f_conf_lvm_snapshots_prefix + oss.str() + "/snapshot";
+
+	oss.clear();
+	oss.str(gfix.num_clone);
+	gfix.expected_clone = LvmGeneralFixture::f_conf_lvm_snapshots_prefix + oss.str() + "/snapshot";
+
+	oss.clear();
+	oss.str(gfix.num_adopt);
+	gfix.expected_adopt = LvmGeneralFixture::f_conf_lvm_snapshots_prefix + oss.str() + "/snapshot";
+
+	oss.clear();
+	oss.str(gfix.num_ack);
+	gfix.expected_ack = LvmGeneralFixture::f_conf_lvm_snapshots_prefix + oss.str() + "/snapshot";
     }
 
-
-    SnapshotConstructor::SnapshotConstructor(const GeneralSnapshotFixture& fixture)
-	: f_dummy_snapper(reinterpret_cast<const snapper::Snapper *>(123456789)),
-	f_type(snapper::SnapshotType::PRE), f_num(42), f_date(1234554321)
+        struct GeneralGetSnapshotDirFixture : public GeneralSnapshotCtorFixture
     {
+	GeneralGetSnapshotDirFixture(const ::snapper::Snapper* snapper)
+	    : GeneralSnapshotCtorFixture(snapper) {}
+
+	unsigned int num_none;
+	unsigned int num_clone;
+	unsigned int num_adopt;
+	unsigned int num_ack;
+
+	string expected_none;
+	string expected_clone;
+	string expected_adopt;
+	string expected_ack;
+    };
+
+
+//     struct GeneralMountFilesystemFixture
+//     {
+// 	GeneralMountFilesystemFixture(const ::snapper::Snapper* snapper)
+// 	    : snapper(snapper) {}
+// 
+// 	const ::snapper::Snapper* snapper;
+// 	string infos_dir;
+// 
+// 	SubvolumeWrapper* subvol_none;
+// 	SubvolumeWrapper* subvol_none_user;
+// 
+// 	SubvolumeWrapper* subvol_clone_orig;
+// 	SubvolumeWrapper* subvol_clone;
+// 	SubvolumeWrapper* subvol_clone_orig_user;
+// 	SubvolumeWrapper* subvol_clone_user;
+// 
+// 	SubvolumeWrapper* subvol_adopt;
+// 	SubvolumeWrapper* subvol_adopt_user;
+// 
+// 	SubvolumeWrapper* subvol_ack;
+// 	SubvolumeWrapper* subvol_ack_user;
+// 
+// 	/*
+// 	 * NOTE: following memory will be freed by Snapshot dtor.
+// 	 * 	 Do not pass pter to more than one Snapshot ctor!
+// 	 */
+// 	::snapper::ImportMetadata* im_clone;
+// 	::snapper::ImportMetadata* im_clone_user;
+// 
+// 	::snapper::ImportMetadata* im_adopt;
+// 	::snapper::ImportMetadata* im_adopt_user;
+// 
+// 	::snapper::ImportMetadata* im_ack;
+// 	::snapper::ImportMetadata* im_ack_user;
+//     };
+
+
+    GeneralMountFilesystemFixture
+    LvmSnapshotFixtures::mount_filesystem_fixture() const
+    {
+	const snapper::Lvm* f_lvm = static_cast<snapper::Lvm *>(snapper->getFilesystem());
+
+	struct GeneralMountFilesystemFixture gfix(snapper);
+
+	gfix.infos_dir = LvmGeneralFixture::f_conf_lvm_snapshots_prefix;
+
+	// import type NONE (w/ default info dir and snapshot)
+	std::auto_ptr<LvmSubvolumeWrapper> sn(new LvmSubvolumeWrapper(LvmGeneralFixture::f_conf_lvm_vg_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name, 1));
+	std::auto_ptr<LvmSubvolumeWrapper> snu(new LvmSubvolumeWrapper(LvmGeneralFixture::f_conf_lvm_vg_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name, 1));
+
+	// import type CLONE
+	std::auto_ptr<LvmSubvolumeWrapper> sco(new LvmSubvolumeWrapper(LvmGeneralFixture::f_conf_lvm_vg_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name, "mount_subvol_clone_orig", false));
+	std::auto_ptr<LvmSubvolumeWrapper> sc(new LvmSubvolumeWrapper(LvmGeneralFixture::f_conf_lvm_vg_name, sco.get()->lv_name, 1));
+
+	std::auto_ptr<LvmSubvolumeWrapper> scou(new LvmSubvolumeWrapper(LvmGeneralFixture::f_conf_lvm_vg_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name, "mount_subvol_clone_orig_user", false));
+	std::auto_ptr<LvmSubvolumeWrapper> scu(new LvmSubvolumeWrapper(LvmGeneralFixture::f_conf_lvm_vg_name, scou.get()->lv_name, 1));
+
+	// import type ADOPT
+	std::auto_ptr<LvmSubvolumeWrapper> sad(new LvmSubvolumeWrapper(LvmGeneralFixture::f_conf_lvm_vg_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name, "mount_subvol_adopt", 1));
+	std::auto_ptr<LvmSubvolumeWrapper> sadu(new LvmSubvolumeWrapper(LvmGeneralFixture::f_conf_lvm_vg_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name, "mount_subvol_adopt_user", 1));
+
+	// import type ACKNOWLEDGE
+	std::auto_ptr<LvmSubvolumeWrapper> sack(new LvmSubvolumeWrapper(LvmGeneralFixture::f_conf_lvm_vg_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name, "mount_subvol_ack", 1));
+	std::auto_ptr<LvmSubvolumeWrapper> sacku(new LvmSubvolumeWrapper(LvmGeneralFixture::f_conf_lvm_vg_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name, "mount_subvol_ack_user", 1));
+
+	std::auto_ptr<snapper::LvmImportMetadata> imc(new snapper::LvmImportMetadata(sc.get()->vg_name, sc.get()->lv_orig_name, f_lvm));
+	std::auto_ptr<snapper::LvmImportMetadata> imcu(new snapper::LvmImportMetadata(scu.get()->vg_name, scu.get()->lv_orig_name, f_lvm));
+
+	std::auto_ptr<snapper::LvmImportMetadata> imad(new snapper::LvmImportMetadata(sad.get()->vg_name, sad.get()->lv_name, f_lvm));
+	std::auto_ptr<snapper::LvmImportMetadata> imadu(new snapper::LvmImportMetadata(sadu.get()->vg_name, sadu.get()->lv_name, f_lvm));
+
+	std::auto_ptr<snapper::LvmImportMetadata> imack(new snapper::LvmImportMetadata(sack.get()->vg_name, sack.get()->lv_name, f_lvm));
+	std::auto_ptr<snapper::LvmImportMetadata> imacku(new snapper::LvmImportMetadata(sacku.get()->vg_name, sacku.get()->lv_name, f_lvm));
+
+	gfix.subvol_none = sn.release();
+	gfix.subvol_none_user = snu.release();
+
+	gfix.subvol_clone = sc.release();
+	gfix.subvol_clone_orig = sco.release();
+	gfix.subvol_clone_user = scu.release();
+	gfix.subvol_clone_orig_user = scou.release();
+
+	gfix.subvol_adopt = sad.release();
+	gfix.subvol_adopt_user = sadu.release();
+
+	gfix.subvol_ack = sack.release();
+	gfix.subvol_ack_user = sacku.release();
+
+	gfix.im_clone = imc.release();
+	gfix.im_clone_user = imcu.release();
+	gfix.im_adopt = imad.release();
+	gfix.im_adopt_user = imadu.release();
+	gfix.im_ack = imack.release();
+	gfix.im_ack_user = imacku.release();
+
+	return gfix;
     }
 
-    ImportConstructorValid::ImportConstructorValid()
-	: SnapshotConstructor(), rm("dummy_vg", "dummy_lv"),
-	f_import_policy(snapper::ImportPolicy::ADOPT),
-	f_dummy_lvm(reinterpret_cast<const snapper::Lvm *>(123456)),
-	f_dummy_idata(new snapper::LvmImportMetadata(rm.f_raw_data, f_import_policy, f_dummy_lvm))
-    {
-    }
 
 //     DeleteFilesystemSnapshotImportTypeNone::DeleteFilesystemSnapshotImportTypeNone()
 // 	: InfoDirWithSnapshotDir(1),

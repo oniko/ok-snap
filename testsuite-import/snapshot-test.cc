@@ -42,45 +42,18 @@ namespace testsuiteimport
     }
 
 
-//     FSnapshotMountFilesystem::FSnapshotMountFilesystem(const GeneralMountFilesystemFixture& gfix)
-//     try
-// 	: f(gfix), f_info_none(f.infos_dir, 1),
-// 	f_info_none_user(f.infos_dir, 1), f_info_clone(f.infos_dir, 1),
-// 	f_info_clone_user(f.infos_dir, 1), f_info_adopt(f.infos_dir, 1),
-// 	f_info_adopt_user(f.infos_dir, 1), f_info_ack(f.infos_dir, 1),
-// 	f_info_ack_user(f.infos_dir, 1),
-// 	f_sh_none(f.snapper, snapper::SnapshotType::PRE, f_info_none.f_num, 1234554321),
-// 	f_sh_none_user(f.snapper, snapper::SnapshotType::PRE, f_info_none_user.f_num, 1234554321),
-// 	f_sh_clone(f.snapper, snapper::SnapshotType::PRE, f_info_clone.f_num, 1234554321),
-// 	f_sh_clone_user(f.snapper, snapper::SnapshotType::PRE, f_info_clone_user.f_num, 1234554321),
-// 	f_sh_adopt(f.snapper, snapper::SnapshotType::PRE, f_info_adopt.f_num, 1234554321),
-// 	f_sh_adopt_user(f.snapper, snapper::SnapshotType::PRE, f_info_adopt_user.f_num, 1234554321),
-// 	f_sh_ack(f.snapper, snapper::SnapshotType::PRE, f_info_ack.f_num, 1234554321),
-// 	f_sh_ack_user(f.snapper, snapper::SnapshotType::PRE, f_info_ack_user.f_num, 1234554321)
-//     {
-//     }
-//     catch (const std::exception& e)
-//     {
-// 	delete f.subvol_none;
-// 	delete f.subvol_none_user;
-// 	delete f.subvol_clone;
-// 	delete f.subvol_clone_user;
-// 	delete f.subvol_clone_orig;
-// 	delete f.subvol_clone_orig_user;
-// 	delete f.subvol_adopt;
-// 	delete f.subvol_adopt_user;
-// 	delete f.subvol_ack;
-// 	delete f.subvol_ack_user;
-// 
-// 	delete f.im_clone;
-// 	delete f.im_clone_user;
-// 
-// 	delete f.im_adopt;
-// 	delete f.im_adopt_user;
-// 
-// 	delete f.im_ack;
-// 	delete f.im_ack_user;
-//     }
+    FSnapshotMountFilesystem::FSnapshotMountFilesystem(const GeneralMountFilesystemFixture& gfix)
+	: f(gfix),
+	f_sh_none(f.snapper, snapper::SnapshotType::PRE, f.subvol_none->get_num(), 1234554321),
+	f_sh_none_user(f.snapper, snapper::SnapshotType::PRE, f.subvol_none_user->get_num(), 1234554321),
+	f_sh_clone(f.snapper, snapper::SnapshotType::PRE, f.subvol_clone->get_num(), 1234554321, f.im_clone),
+	f_sh_clone_user(f.snapper, snapper::SnapshotType::PRE, f.subvol_clone_user->get_num(), 1234554321, f.im_clone_user),
+	f_sh_adopt(f.snapper, snapper::SnapshotType::PRE, f.subvol_adopt->get_num(), 1234554321, f.im_adopt),
+	f_sh_adopt_user(f.snapper, snapper::SnapshotType::PRE, f.subvol_adopt_user->get_num(), 1234554321, f.im_adopt_user),
+	f_sh_ack(f.snapper, snapper::SnapshotType::PRE, f.subvol_ack->get_num(), 1234554321, f.im_ack),
+	f_sh_ack_user(f.snapper, snapper::SnapshotType::PRE, f.subvol_ack_user->get_num(), 1234554321, f.im_ack_user)
+    {
+    }
 
 
     FSnapshotMountFilesystem::~FSnapshotMountFilesystem()

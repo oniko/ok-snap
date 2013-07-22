@@ -24,16 +24,33 @@ namespace testsuiteimport { namespace lvm
     const string LvmSubvolumeWrapper::lvm_fs_type = "LVM2";
 
     LvmSubvolumeWrapper::LvmSubvolumeWrapper(const string& vg_name, const string& lv_orig_name, const string& lv_name, bool ro)
-	:  SubvolumeWrapper(), vg_name(vg_name), lv_name(lv_name), lv_orig_name(lv_orig_name)
+	:  SubvolumeWrapper(NULL), vg_name(vg_name), lv_name(lv_name), lv_orig_name(lv_orig_name)
     {
-	lvcreate_thin_snapshot_wrapper(vg_name, lv_orig_name, lv_name, ro);	    
+	lvcreate_thin_snapshot_wrapper(vg_name, lv_orig_name, lv_name, ro);
     }
 
 
     LvmSubvolumeWrapper::LvmSubvolumeWrapper(const string& vg_name, const string& lv_name)
-	: SubvolumeWrapper()
+	: SubvolumeWrapper(NULL)
     {
 	lvcreate_non_thin_lv_wrapper(vg_name, lv_name);
+    }
+
+
+    LvmSubvolumeWrapper::LvmSubvolumeWrapper(const string& vg_name, const string& lv_orig_name, unsigned int num, bool ro)
+	: SubvolumeWrapper(new InfoDirWithSnapshotDir(LvmGeneralFixture::f_conf_lvm_snapshots_prefix, num))
+    {
+	std::ostringstream oss(std::ostringstream::ate);
+	oss << p_info_dir->f_num;
+
+	lvcreate_thin_snapshot_wrapper(vg_name, lv_orig_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name + "-snapshot" + oss.str(), ro);
+    }
+
+
+    LvmSubvolumeWrapper::LvmSubvolumeWrapper(const string& vg_name, const string& lv_orig_name, const string& lv_name, unsigned int num, bool ro)
+	: SubvolumeWrapper(new InfoDirWithSnapshotDir(LvmGeneralFixture::f_conf_lvm_snapshots_prefix, num))
+    {
+	lvcreate_thin_snapshot_wrapper(vg_name, lv_orig_name, lv_name, ro);
     }
 
 

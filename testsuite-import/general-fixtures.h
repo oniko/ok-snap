@@ -18,17 +18,22 @@ namespace testsuiteimport
     class SubvolumeWrapper : public boost::noncopyable
     {
     public:
-	virtual ~SubvolumeWrapper() {}
+	SubvolumeWrapper(const InfoDirectory* info_dir) : p_info_dir(info_dir) {}
+	virtual ~SubvolumeWrapper() { delete p_info_dir; }
 
 	virtual bool is_mounted() const = 0;
 	virtual bool exists() const = 0;
 
 	virtual string fstype() const = 0;
 	virtual string infos_dir() const = 0;
+
+	unsigned int get_num() const { return p_info_dir ? p_info_dir->f_num : 42; }
+    protected:
+	const InfoDirectory* p_info_dir;
     };
 
 
-    class InfoDirectory {
+    class InfoDirectory : public boost::noncopyable {
     public:
 	InfoDirectory(const string& infos_dir_loc);
 	InfoDirectory(const string& infos_dir_loc, unsigned int num);

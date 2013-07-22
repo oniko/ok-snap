@@ -170,18 +170,6 @@ namespace testsuiteimport
 
 	const GeneralMountFilesystemFixture f;
 
-	const InfoDirWithSnapshotDir f_info_none;
-	const InfoDirWithSnapshotDir f_info_none_user;
-
-	const InfoDirWithSnapshotDir f_info_clone;
-	const InfoDirWithSnapshotDir f_info_clone_user;
-
-	const InfoDirWithSnapshotDir f_info_adopt;
-	const InfoDirWithSnapshotDir f_info_adopt_user;
-
-	const InfoDirWithSnapshotDir f_info_ack;
-	const InfoDirWithSnapshotDir f_info_ack_user;
-
 	const ::snapper::Snapshot f_sh_none;
 	const ::snapper::Snapshot f_sh_none_user;
 
