@@ -7,6 +7,8 @@
 
 #include "snapper/Logger.h"
 
+#include "testsuite-import/lvm-snapshot-fixtures.h"
+
 namespace testsuiteimport { namespace lvm {
     using std::string;
 
@@ -26,8 +28,6 @@ namespace testsuiteimport { namespace lvm {
     {
 	LvmImportTestsuite();
 	~LvmImportTestsuite();
-
-	// Testsuite logger class here
     };
 
 }}

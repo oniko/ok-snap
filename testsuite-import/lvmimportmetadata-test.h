@@ -92,7 +92,7 @@ namespace testsuiteimport { namespace lvm
     };
 
 
-    struct FGetRawData : public GeneralFixture, ValidMetadata
+    struct FGetRawData : public GeneralFixture, GetRawData
     {
 	virtual void test_method();
     };

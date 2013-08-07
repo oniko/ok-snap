@@ -12,8 +12,8 @@ bool init_unit_test()
 {
     try
     {
-	//framework::master_test_suite().add(new LvmImportTestsuite());
-	framework::master_test_suite().add(new BtrfsImportTestsuite());
+	framework::master_test_suite().add(new LvmImportTestsuite());
+	//framework::master_test_suite().add(new BtrfsImportTestsuite());
     }
     catch (...)
     {

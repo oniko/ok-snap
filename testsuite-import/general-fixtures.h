@@ -15,23 +15,6 @@ namespace testsuiteimport
 {
     using std::string;
 
-    class SubvolumeWrapper : public boost::noncopyable
-    {
-    public:
-	SubvolumeWrapper(const InfoDirectory* info_dir) : p_info_dir(info_dir) {}
-	virtual ~SubvolumeWrapper() { delete p_info_dir; }
-
-	virtual bool is_mounted() const = 0;
-	virtual bool exists() const = 0;
-
-	virtual string fstype() const = 0;
-	virtual string infos_dir() const = 0;
-
-	unsigned int get_num() const { return p_info_dir ? p_info_dir->f_num : 42; }
-    protected:
-	const InfoDirectory* p_info_dir;
-    };
-
 
     class InfoDirectory : public boost::noncopyable {
     public:
@@ -39,9 +22,8 @@ namespace testsuiteimport
 	InfoDirectory(const string& infos_dir_loc, unsigned int num);
 	~InfoDirectory();
 
-	string f_info_dir;
-
 	unsigned int f_num;
+	string f_info_dir;
 
 	unsigned int get_dirfd() const { return f_dirfd; }
     protected:
@@ -53,6 +35,7 @@ namespace testsuiteimport
 
 
     class InfoDirWithSnapshotDir : public InfoDirectory {
+    public:
 	InfoDirWithSnapshotDir(const string& infos_dir_loc);
 	InfoDirWithSnapshotDir(const string& infos_dir_loc, unsigned int num);
     private:
@@ -61,10 +44,30 @@ namespace testsuiteimport
 
 
     class InfoDirWithInvalidSnapshotDir : public InfoDirectory {
+    public:
 	InfoDirWithInvalidSnapshotDir(const string& infos_dir_loc);
 	InfoDirWithInvalidSnapshotDir(const string& infos_dir_loc, unsigned int num);
     private:
 	void init();
+    };
+
+
+    class SubvolumeWrapper : public boost::noncopyable
+    {
+    public:
+	SubvolumeWrapper(const InfoDirectory* info_dir) : p_info_dir(info_dir) {}
+	virtual ~SubvolumeWrapper() { delete p_info_dir; }
+
+	virtual bool is_mounted() const = 0;
+	virtual bool exists() const = 0;
+
+	virtual string fstype() const = 0;
+	virtual string infos_dir() const = 0;
+	virtual void umount() const = 0;
+
+	unsigned int get_num() const { return p_info_dir ? p_info_dir->f_num : 42; }
+    protected:
+	const InfoDirectory* p_info_dir;
     };
 
 

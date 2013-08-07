@@ -9,8 +9,9 @@ namespace testsuiteimport { namespace lvm
     class LvmTestClass
     {
     public:
+	// TODO: add test case for is_subvolume_ro(), createImportMetadata()
 	void tc_create_snapshot_environment();
- 	void tc_create_snapshot_fail_on_environment();
+ 	void tc_create_snapshot_fail_on_environment(); // not import related, but known issue
 	void tc_remove_snapshot_environment();
 	void tc_clone_snapshot();
 	void tc_mount_snapshot_by_subvolume();

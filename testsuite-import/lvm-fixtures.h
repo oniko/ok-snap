@@ -5,6 +5,7 @@
 #include <map>
 
 #include <boost/noncopyable.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include "testsuite-import/general-fixtures.h"
 
@@ -22,12 +23,12 @@ namespace testsuiteimport { namespace lvm
 	// create non-thin volume
 	LvmSubvolumeWrapper(const string& vg_name, const string& lv_name);
 	// create thin snapshot from origin with info dir
-	LvmSubvolumeWrapper(const string& vg_name, const string& lv_orig_name, unsigned int num, bool ro = true);
-	LvmSubvolumeWrapper(const string& vg_name, const string& lv_orig_name, const string& lv_name, unsigned int num, bool ro = true);
+	LvmSubvolumeWrapper(const string& vg_name, const string& lv_orig_name, unsigned int num, bool ro);
+	LvmSubvolumeWrapper(const string& vg_name, const string& lv_orig_name, const string& lv_name, unsigned int num, bool ro);
 	~LvmSubvolumeWrapper();
 
 	string subvolume() const { return vg_name + "/" + lv_name; }
-	string devicepath() const { return "/dev/mapper/" + vg_name + "-" + lv_name; }
+	string devicepath() const { return "/dev/mapper/" + boost::replace_all_copy(vg_name, "-", "--") + "-" + boost::replace_all_copy(lv_name, "-", "--"); }
 
 	const string vg_name;
 	const string lv_name;
@@ -38,19 +39,18 @@ namespace testsuiteimport { namespace lvm
 
 	virtual string fstype() const { return LvmSubvolumeWrapper::lvm_fs_type; }
 	virtual string infos_dir() const { return LvmGeneralFixture::f_conf_lvm_snapshots_prefix; }
+
+	virtual void umount() const;
     private:
 	static const string lvm_fs_type;
-    };
-
-
-    struct LvmSubvolumeWrapperWithInfoDir : public LvmSubvolumeWrapper
-    {
-	LvmSubvolumeWrapper(const string& vg_name, const string& lv_orig_name, const string& lv_name, unsigned int num, bool ro = true);
+	static string get_lv_snapshot_suffix(unsigned int num);
     };
 
 
     struct CreateSnapshotEnvironment : public LvmGeneralFixture
     {
+	CreateSnapshotEnvironment();
+
 	const InfoDirectory f_valid_info_dir;
 	const InfoDirWithSnapshotDir f_info_snapshot_dir_exists;
 	const InfoDirWithInvalidSnapshotDir f_invalid_snapshot_dir;
@@ -59,6 +59,7 @@ namespace testsuiteimport { namespace lvm
 
     struct CreateSnapshotFailOnEnvironment : public LvmGeneralFixture
     {
+	CreateSnapshotFailOnEnvironment();
 	~CreateSnapshotFailOnEnvironment();
 
 	const InfoDirWithInvalidSnapshotDir f_invalid_snap_dir;
@@ -67,6 +68,8 @@ namespace testsuiteimport { namespace lvm
 
     struct RemoveSnapshotEnvironment : public LvmGeneralFixture
     {
+	RemoveSnapshotEnvironment();
+
 	const InfoDirWithSnapshotDir f_snapshot_dir;
     };
 

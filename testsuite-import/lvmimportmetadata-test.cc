@@ -7,6 +7,9 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/scoped_ptr.hpp>
 
+#include "snapper/Exception.h"
+#include "snapper/Snapshot.h"
+
 namespace snapper
 {
     // NOTE: this is requirement for BOOST_..._EQUAL tests
@@ -81,8 +84,8 @@ namespace testsuiteimport { namespace lvm
     {
 	boost::scoped_ptr<snapper::LvmImportMetadata> p_imdata;
 
-	BOOST_CHECK_THROW( p_imdata.reset(new snapper::LvmImportMetadata(f_raw_data_missing_vg, snapper::ImportPolicy::NONE, f_dummy_lvm)), snapper::InvalidImportMetadataException );
-	BOOST_CHECK_THROW( p_imdata.reset(new snapper::LvmImportMetadata(f_raw_data_missing_lv, snapper::ImportPolicy::NONE, f_dummy_lvm)), snapper::InvalidImportMetadataException );
+	BOOST_CHECK_THROW( p_imdata.reset(new snapper::LvmImportMetadata(f_raw_data_missing_vg, snapper::ImportPolicy::ADOPT, f_dummy_lvm)), snapper::InvalidImportMetadataException );
+	BOOST_CHECK_THROW( p_imdata.reset(new snapper::LvmImportMetadata(f_raw_data_missing_lv, snapper::ImportPolicy::ACKNOWLEDGE, f_dummy_lvm)), snapper::InvalidImportMetadataException );
 
 	BOOST_CHECK_NO_THROW( p_imdata.reset(new snapper::LvmImportMetadata(f_raw_data, snapper::ImportPolicy::CLONE, f_dummy_lvm)) );
 	BOOST_CHECK_THROW( p_imdata.reset(new snapper::LvmImportMetadata(f_raw_data, snapper::ImportPolicy::NONE, f_dummy_lvm)), snapper::InvalidImportMetadataException );
@@ -92,6 +95,7 @@ namespace testsuiteimport { namespace lvm
     void
     FLvmCompareCheck::test_method()
     {
+	BOOST_CHECK_EQUAL( f_lvm_import_metadata, f_lvm_import_metadata );
 	BOOST_CHECK_EQUAL( f_lvm_import_metadata, f_lvm_import_metadata_identical );
 	BOOST_CHECK_NE( f_lvm_import_metadata, f_lvm_import_metadata_diff_in_lv );
 	BOOST_CHECK_NE( f_lvm_import_metadata, f_lvm_import_metadata_diff_in_vg );
@@ -103,34 +107,35 @@ namespace testsuiteimport { namespace lvm
     FLvmIMDataCheckImportedSnapshot::test_method()
     {
 	// check CLONE import type
-	BOOST_CHECK_EQUAL( f_clone_import_data_valid_ro, true );
-	BOOST_CHECK_EQUAL( f_clone_import_data_valid_rw, true );
-	BOOST_CHECK_EQUAL( f_clone_import_missing_lv, false );
-	BOOST_CHECK_EQUAL( f_clone_import_nonthin_lv, false );
-	BOOST_CHECK_EQUAL( f_clone_import_foreign_vg, false ); // expected failure
-	BOOST_CHECK_EQUAL( f_clone_import_current_subvolume, false );
+	BOOST_CHECK_EQUAL( f_clone_import_data_valid_ro.checkImportedSnapshot(), true );
+	BOOST_CHECK_EQUAL( f_clone_import_data_valid_rw.checkImportedSnapshot(), true );
+	BOOST_CHECK_EQUAL( f_clone_import_missing_lv.checkImportedSnapshot(), false );
+	BOOST_CHECK_EQUAL( f_clone_import_nonthin_lv.checkImportedSnapshot(), false );
+	BOOST_CHECK_EQUAL( f_clone_import_foreign_vg.checkImportedSnapshot(), false ); // expected failure
+	BOOST_CHECK_EQUAL( f_clone_import_current_subvolume.checkImportedSnapshot(), false );
 
 	// check ADOPT import type
-	BOOST_CHECK_EQUAL( f_adopt_import_data_valid_ro, true );
-	BOOST_CHECK_EQUAL( f_adopt_import_data_rw, false );
-	BOOST_CHECK_EQUAL( f_adopt_import_missing_lv, false );
-	BOOST_CHECK_EQUAL( f_adopt_import_nonthin_lv, false );
-	BOOST_CHECK_EQUAL( f_adopt_import_foreign_vg, false ); // expected failure
-	BOOST_CHECK_EQUAL( f_adopt_import_current_subvolume, false );
+	BOOST_CHECK_EQUAL( f_adopt_import_data_valid_ro.checkImportedSnapshot(), true );
+	BOOST_CHECK_EQUAL( f_adopt_import_data_rw.checkImportedSnapshot(), false );
+	BOOST_CHECK_EQUAL( f_adopt_import_missing_lv.checkImportedSnapshot(), false );
+	BOOST_CHECK_EQUAL( f_adopt_import_nonthin_lv.checkImportedSnapshot(), false );
+	BOOST_CHECK_EQUAL( f_adopt_import_foreign_vg.checkImportedSnapshot(), false ); // expected failure
+	BOOST_CHECK_EQUAL( f_adopt_import_current_subvolume.checkImportedSnapshot(), false );
 
 	// check ACKNOWLEDGE import type
-	BOOST_CHECK_EQUAL( f_ack_import_data_valid_ro, true );
-	BOOST_CHECK_EQUAL( f_ack_import_data_rw, false );
-	BOOST_CHECK_EQUAL( f_ack_import_missing_lv, false );
-	BOOST_CHECK_EQUAL( f_ack_import_nonthin_lv, false );
-	BOOST_CHECK_EQUAL( f_ack_import_foreign_vg, false ); // expected failure
-	BOOST_CHECK_EQUAL( f_ack_import_current_subvolume, false );
+	BOOST_CHECK_EQUAL( f_ack_import_data_valid_ro.checkImportedSnapshot(), true );
+	BOOST_CHECK_EQUAL( f_ack_import_data_rw.checkImportedSnapshot(), false );
+	BOOST_CHECK_EQUAL( f_ack_import_missing_lv.checkImportedSnapshot(), false );
+	BOOST_CHECK_EQUAL( f_ack_import_nonthin_lv.checkImportedSnapshot(), false );
+	BOOST_CHECK_EQUAL( f_ack_import_foreign_vg.checkImportedSnapshot(), false ); // expected failure
+	BOOST_CHECK_EQUAL( f_ack_import_current_subvolume.checkImportedSnapshot(), false );
     }
 
 
     void
     FCloneImportedSnapshot::test_method()
     {
+	//f_clone_valid_metadata.cloneImportedSnapshot(f_env.f_num);
 	BOOST_REQUIRE_NO_THROW( f_clone_valid_metadata.cloneImportedSnapshot(f_env.f_num) );
 	BOOST_CHECK_EQUAL( check_lv_exists(f_origin_volume.vg_name, f_lvm->snapshotLvName(f_env.f_num)), true );
     }

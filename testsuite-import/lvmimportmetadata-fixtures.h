@@ -22,8 +22,6 @@ namespace testsuiteimport { namespace lvm
 
 	const snapper::Lvm* f_dummy_lvm;
 	const string f_raw_data;
-
-	const snapper::LvmImportMetadata f_lvm_import_metadata;
     };
 
 
@@ -45,6 +43,7 @@ namespace testsuiteimport { namespace lvm
     {
 	LvmCompareImportMetadata();
 
+	const snapper::LvmImportMetadata f_lvm_import_metadata;
 	const snapper::LvmImportMetadata f_lvm_import_metadata_identical;
 
 	const snapper::LvmImportMetadata f_lvm_import_metadata_diff_in_vg;
@@ -94,6 +93,7 @@ namespace testsuiteimport { namespace lvm
     struct CloneSnapshot : public LvmGeneralFixture
     {
 	CloneSnapshot();
+	~CloneSnapshot();
 
 	const InfoDirectory f_env;
 	const LvmSubvolumeWrapper f_origin_volume;
@@ -101,8 +101,19 @@ namespace testsuiteimport { namespace lvm
     };
 
 
+    struct GetRawData : public ValidMetadata
+    {
+	GetRawData();
+
+	const snapper::LvmImportMetadata f_lvm_import_metadata;
+    };
+
+
     struct GetSnapshotDir : public ValidMetadata, LvmGeneralFixture
     {
+	GetSnapshotDir();
+
+	const snapper::LvmImportMetadata f_lvm_import_metadata;
     };
 
 }}

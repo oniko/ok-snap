@@ -1,35 +1,99 @@
 #ifndef SNAPSHOT_FIXTURES_H
 #define SNAPSHOT_FIXTURES_H
 
-#include <sys/stat.h>
+#include "snapper/ImportMetadata.h"
 
-#include "snapper/Snapshot.h"
-#include "snapper/Snapper.h"
-#include "snapper/LvmImportMetadata.h"
-
-#include "testsuite-import/general-test.h"
 #include "testsuite-import/general-fixtures.h"
-#include "testsuite-import/lvm-fixtures.h"
 
-// TODO: REMOVE THIS
-#include "testsuite-import/snapshot-test.h"
-
-namespace testsuiteimport { namespace lvm
+namespace testsuiteimport
 {
-    using std::map;
     using std::string;
 
-
-    struct LvmSnapshotFixtures : public GeneralSnapshotFixtures
+    struct GeneralSnapshotCtorFixture
     {
-	LvmSnapshotFixtures(const snapper::Snapper* snapper) : GeneralSnapshotFixtures(snapper) {}
+	GeneralSnapshotCtorFixture(const ::snapper::Snapper* snapper) : snapper(snapper) {}
 
-	virtual GeneralSnapshotCtorFixture ctor_fixture() const;
-	virtual GeneralGetImportPolicyFixture get_import_policy_fixture() const;
-	virtual GeneralGetSnapshotDirFixture get_snapshot_dir_fixture() const;
-	virtual GeneralMountFilesystemFixture mount_filesystem_fixture() const;
+	const ::snapper::Snapper* snapper;
+
+	::snapper::ImportMetadata* clone_data;
+	::snapper::ImportMetadata* adopt_data;
+	::snapper::ImportMetadata* ack_data;
     };
 
+
+    struct GeneralGetImportPolicyFixture : public GeneralSnapshotCtorFixture
+    {
+	GeneralGetImportPolicyFixture(const ::snapper::Snapper* snapper)
+	    : GeneralSnapshotCtorFixture(snapper) {}
+    };
+    
+    struct GeneralGetSnapshotDirFixture : public GeneralSnapshotCtorFixture
+    {
+	GeneralGetSnapshotDirFixture(const ::snapper::Snapper* snapper)
+	    : GeneralSnapshotCtorFixture(snapper) {}
+
+	unsigned int num_none;
+	unsigned int num_clone;
+	unsigned int num_adopt;
+	unsigned int num_ack;
+
+	string expected_none;
+	string expected_clone;
+	string expected_adopt;
+	string expected_ack;
+    };
+    
+    
+    struct GeneralMountFilesystemFixture
+    {
+	GeneralMountFilesystemFixture(const ::snapper::Snapper* snapper)
+	    : snapper(snapper) {}
+
+	const ::snapper::Snapper* snapper;
+
+	SubvolumeWrapper* subvol_none;
+	SubvolumeWrapper* subvol_none_user;
+
+	SubvolumeWrapper* subvol_clone_orig;
+	SubvolumeWrapper* subvol_clone;
+	SubvolumeWrapper* subvol_clone_orig_user;
+	SubvolumeWrapper* subvol_clone_user;
+
+	SubvolumeWrapper* subvol_adopt;
+	SubvolumeWrapper* subvol_adopt_user;
+
+	SubvolumeWrapper* subvol_ack;
+	SubvolumeWrapper* subvol_ack_user;
+
+	/*
+	 * NOTE: following memory will be freed by Snapshot dtor.
+	 * 	 Do not pass pter to more than one Snapshot ctor!
+	 */
+	::snapper::ImportMetadata* im_clone;
+	::snapper::ImportMetadata* im_clone_user;
+
+	::snapper::ImportMetadata* im_adopt;
+	::snapper::ImportMetadata* im_adopt_user;
+
+	::snapper::ImportMetadata* im_ack;
+	::snapper::ImportMetadata* im_ack_user;
+    };
+
+
+    class GeneralSnapshotFixtures
+    {
+    public:
+	GeneralSnapshotFixtures(const snapper::Snapper* snapper) : snapper(snapper) {}
+	virtual ~GeneralSnapshotFixtures() {}
+
+	virtual GeneralSnapshotCtorFixture ctor_fixture() const = 0;
+	virtual GeneralGetImportPolicyFixture get_import_policy_fixture() const = 0;
+	virtual GeneralGetSnapshotDirFixture get_snapshot_dir_fixture() const = 0;
+	virtual GeneralMountFilesystemFixture mount_filesystem_fixture() const = 0;
+
+    protected:
+	const ::snapper::Snapper* snapper;
+    };
 
 //     struct DeleteFilesystemSnapshotImportTypeNone : public InfoDirWithSnapshotDir
 //     {
@@ -83,96 +147,5 @@ namespace testsuiteimport { namespace lvm
 // 
 // 	const snapper::Snapshot f_sh;
 //     };
-
-    struct MountFileSystemSnapshotSimpleBase : public InfoDirWithSnapshotDir
-    {
-	MountFileSystemSnapshotSimpleBase();
-	~MountFileSystemSnapshotSimpleBase();
-
-	const string f_snapshot_lv_name;
-
-	string f_mountpoint;
-    };
-
-    struct MountFileSystemSnapshotImportNone : public MountFileSystemSnapshotSimpleBase
-    {
-	MountFileSystemSnapshotImportNone();
-
-	const snapper::Snapshot f_sh;
-    };
-
-    struct MountFileSystemSnapshotImportClone : public MountFileSystemSnapshotSimpleBase
-    {
-	MountFileSystemSnapshotImportClone();
-	~MountFileSystemSnapshotImportClone();
-
-	const string f_clone_origin_name;
-	const CreateRawLvmImportMetata rm;
-
-	const snapper::ImportMetadata* f_p_idata;
-	const snapper::Snapshot f_sh;
-    };
-
-    struct MountFileSystemSnapshotImportBase : public InfoDirWithSnapshotDir
-    {
-	MountFileSystemSnapshotImportBase();
-	virtual ~MountFileSystemSnapshotImportBase();
-
-	const string f_snapshot_lv_name;
-
-	string f_mountpoint;
-    };
-
-    struct MountFileSystemSnapshotImportAdopt : public MountFileSystemSnapshotImportBase
-    {
-	MountFileSystemSnapshotImportAdopt();
-
-	const CreateRawLvmImportMetata rm;
-
-	const snapper::ImportMetadata* f_p_idata;
-	const snapper::Snapshot f_sh;
-    };
-
-    struct MountFileSystemSnapshotImportAck : public MountFileSystemSnapshotImportBase
-    {
-	MountFileSystemSnapshotImportAck();
-
-	const CreateRawLvmImportMetata rm;
-
-	const snapper::ImportMetadata* f_p_idata;
-	const snapper::Snapshot f_sh;
-    };
-
-    struct UmountFilesystemSnapshotBase
-    {
-	UmountFilesystemSnapshotBase(const string& dev, const string& mount_point, const string& mount_type);
-
-	const string f_dev_path;
-    };
-
-    struct UmountFilesystemSnapshotImportNone : public MountFileSystemSnapshotImportNone, UmountFilesystemSnapshotBase
-    {
-	UmountFilesystemSnapshotImportNone();
-    };
-
-    struct UmountFilesystemSnapshotImportClone : public MountFileSystemSnapshotImportClone, UmountFilesystemSnapshotBase
-    {
-	UmountFilesystemSnapshotImportClone();
-	~UmountFilesystemSnapshotImportClone();
-
-	const string f_dev_origin_path;
-	const string f_origin_mount_point;
-    };
-
-    struct UmountFilesystemSnapshotImportAdopt : public MountFileSystemSnapshotImportAdopt, UmountFilesystemSnapshotBase
-    {
-	UmountFilesystemSnapshotImportAdopt();
-    };
-
-    struct UmountFilesystemSnapshotImportAck : public MountFileSystemSnapshotImportAck, UmountFilesystemSnapshotBase
-    {
-	UmountFilesystemSnapshotImportAck();
-    };
-
-}}
+}
 #endif //SNAPSHOT_FIXTURES_H

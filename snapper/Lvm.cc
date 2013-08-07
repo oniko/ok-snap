@@ -303,9 +303,11 @@ namespace snapper
     }
 
 
-    void Lvm::cloneSnapshot(unsigned int num, const string &vg_name, const string &lv_name) const
+    void
+    Lvm::cloneSnapshot(unsigned int num, const string &vg_name, const string &lv_name) const
     {
-	try {
+	try
+	{
 	    createSnapshotEnvironment(num);
 	}
 	catch(const CreateSnapshotFailedException &e)
@@ -332,13 +334,15 @@ namespace snapper
     }
 
 
-    ImportMetadata* Lvm::createImportMetadata(const string &raw_data, ImportPolicy ipolicy) const
+    ImportMetadata*
+    Lvm::createImportMetadata(const string &raw_data, ImportPolicy ipolicy) const
     {
 	return new LvmImportMetadata(raw_data, ipolicy, this);
     }
 
 
-    void Lvm::createSnapshotEnvironment(unsigned int num) const
+    void
+    Lvm::createSnapshotEnvironment(unsigned int num) const
     {
 	SDir info_dir = openInfoDir(num);
 
@@ -369,7 +373,8 @@ namespace snapper
     }
 
 
-    void Lvm::removeSnapshotEnvironment(unsigned int num) const
+    void
+    Lvm::removeSnapshotEnvironment(unsigned int num) const
     {
 	SDir info_dir = openInfoDir(num);
 	info_dir.unlink("snapshot", AT_REMOVEDIR);
@@ -532,7 +537,8 @@ namespace snapper
     }
 
 
-    bool Lvm::is_subvolume_ro(const string& vg_name, const string& lv_name)
+    bool
+    Lvm::is_subvolume_ro(const string& vg_name, const string& lv_name)
     {
 	SystemCmd cmd(LVSBIN " -o lv_attr --noheadings " + quote(vg_name + "/" + lv_name));
 

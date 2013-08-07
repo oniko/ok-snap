@@ -6,33 +6,9 @@
 namespace testsuiteimport { namespace lvm
 {
 
-    LvmSubvolumeWrapper::LvmSubvolumeWrapper(const string& vg_name, const string& lv_orig_name, const string& lv_name, bool ro)
-	: vg_name(vg_name), lv_name(lv_name), lv_orig_name(lv_orig_name)
-    {
-	lvcreate_thin_snapshot_wrapper(vg_name, lv_orig_name, lv_name, ro);	    
-    }
-
-
-    LvmSubvolumeWrapper::LvmSubvolumeWrapper(const string& vg_name, const string& lv_name)
-    {
-	lvcreate_non_thin_lv_wrapper(vg_name, lv_name);
-    }
-
-
-    LvmSubvolumeWrapper::~LvmSubvolumeWrapper()
-    {
-	try
-	{
-	    lvremove_wrapper(vg_name, lv_name);
-	}
-	catch (const ImportTestsuiteException &e) {}
-    }
-
-
     ValidMetadata::ValidMetadata()
 	: f_dummy_lvm(reinterpret_cast<const snapper::Lvm *>(123456789)),
-	f_raw_data("some_vg/some_lv"),
-	f_lvm_import_metadata(f_raw_data, snapper::ImportPolicy::ADOPT, f_dummy_lvm)
+	f_raw_data("some_vg/some_lv")
     {
     }
 
@@ -51,6 +27,7 @@ namespace testsuiteimport { namespace lvm
 
     LvmCompareImportMetadata::LvmCompareImportMetadata()
 	: ValidMetadata(),
+	f_lvm_import_metadata(f_raw_data, snapper::ImportPolicy::CLONE, f_dummy_lvm),
 	f_lvm_import_metadata_identical(f_raw_data, snapper::ImportPolicy::CLONE, f_dummy_lvm),
 	f_lvm_import_metadata_diff_in_vg("another_vg/" + f_raw_data.substr(f_raw_data.find("/") + 1), snapper::ImportPolicy::ADOPT, f_dummy_lvm),
 	f_lvm_import_metadata_diff_in_lv(f_raw_data.substr(0, f_raw_data.find("/")) + "/" + "another_lv", snapper::ImportPolicy::ADOPT, f_dummy_lvm),
@@ -90,9 +67,38 @@ namespace testsuiteimport { namespace lvm
 
 
     CloneSnapshot::CloneSnapshot()
-	: f_env(0),
+	: f_env(LvmGeneralFixture::f_conf_lvm_snapshots_prefix, 1),
 	f_origin_volume(LvmGeneralFixture::f_conf_lvm_vg_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name, "test_clone_snapshot_01"),
 	f_clone_valid_metadata(f_origin_volume.subvolume(), snapper::ImportPolicy::CLONE, f_lvm)
+    {
+    }
+
+
+    CloneSnapshot::~CloneSnapshot()
+    {
+	try
+	{
+	    lvremove_wrapper(LvmGeneralFixture::f_conf_lvm_vg_name, f_lvm->snapshotLvName(f_env.f_num));
+	}
+	catch (const ImportTestsuiteException &e)
+	{
+	    std::cerr << "!!! there is no cloned snapshot "
+		      << f_origin_volume.vg_name << "/"
+		      << f_lvm->snapshotLvName(f_env.f_num) << std::endl;
+	}
+    }
+
+
+    GetRawData::GetRawData()
+	: ValidMetadata(),
+	f_lvm_import_metadata(f_raw_data, snapper::ImportPolicy::CLONE, f_dummy_lvm)
+    {
+    }
+
+
+    GetSnapshotDir::GetSnapshotDir()
+	: ValidMetadata(), LvmGeneralFixture(),
+	f_lvm_import_metadata(f_raw_data, snapper::ImportPolicy::ADOPT, f_lvm)
     {
     }
 

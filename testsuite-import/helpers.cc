@@ -151,6 +151,9 @@ namespace testsuiteimport
 	    vector<string> args;
 	    boost::split(args, tmp, boost::is_any_of(" \t\n"), boost::token_compress_on);
 
+	    for (vector<string>::const_iterator cit = args.cbegin(); cit != args.cend(); cit++)
+		std::cout << "arg: " << *cit << std::endl;
+
 	    try
 	    {
 		SimpleSystemCmd cmd("/usr/sbin/lvcreate", args);
@@ -256,6 +259,36 @@ namespace testsuiteimport
 		throw;
 	    }
 	}
+
+
+	void
+	change_permission(const string& vg_name, const string& lv_name, bool ro)
+	{
+	    string tmp = "-ay --permission r" + (ro ? string() : string("w")) + " " + vg_name + "/" + lv_name;
+
+	    vector<string> args;
+	    boost::split(args, tmp, boost::is_any_of(" \t\n"), boost::token_compress_on);
+
+	    try
+	    {
+		SimpleSystemCmd cmd("/usr/sbin/lvchange", args);
+
+		if (cmd.retcode())
+		{
+		    std::cerr << "/usr/sbin/lvchange failed with ret_code: " << cmd.retcode() << std::endl
+			    << "/usr/sbin/lvchange " << tmp << std::endl;
+		    for (vector<string>::const_iterator cit = cmd.stderr_cbegin(); cit != cmd.stderr_cend(); cit++)
+			std::cerr << "lvchange err: " << *cit << std::endl;
+		    throw LvmImportTestsuiteException();
+		}
+	    }
+	    catch (const SimpleSystemCmdException &e)
+	    {
+		std::cerr << "SimpleSystemCmd(\"/usr/sbin/lvchange\", \"" << tmp << "\") failed" << std::endl;
+		throw;
+	    }
+	}
+
     } // lvm
 
 

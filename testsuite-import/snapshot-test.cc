@@ -9,7 +9,31 @@ namespace testsuiteimport
     void
     SnapshotTestClass::tc_snapshot_ctor()
     {
-	boost::scoped_ptr<GeneralFixture> fixture(new FSnapsotCtor(fixtures->ctor_fixture()));
+	boost::scoped_ptr<GeneralFixture> fixture(new FSnapshotCtor(fixtures->ctor_fixture()));
+	fixture->test_method();
+    }
+
+
+    void
+    SnapshotTestClass::tc_snapshot_get_import_policy()
+    {
+	boost::scoped_ptr<GeneralFixture> fixture(new FSnapshotGetImportPolicy(fixtures->get_import_policy_fixture()));
+	fixture->test_method();
+    }
+
+
+    void
+    SnapshotTestClass::tc_snapshot_get_snapshot_dir()
+    {
+	boost::scoped_ptr<GeneralFixture> fixture(new FSnapshotGetSnapshotDir(fixtures->get_snapshot_dir_fixture()));
+	fixture->test_method();
+    }
+
+
+    void
+    SnapshotTestClass::tc_snapshot_mount_filesystem()
+    {
+	boost::scoped_ptr<GeneralFixture> fixture(new FSnapshotMountFilesystem(fixtures->mount_filesystem_fixture()));
 	fixture->test_method();
     }
 
@@ -34,10 +58,20 @@ namespace testsuiteimport
 
 
     FSnapshotGetImportPolicy::FSnapshotGetImportPolicy(const GeneralGetImportPolicyFixture& gfix)
-	: f_sh_none(gfix.snapper, snapper::SnapshotType::SINGLE, 42, 1234554321),
-	f_sh_clone(gfix.snapper, snapper::SnapshotType::SINGLE, 43, 1234554321, gfix.clone_data),
-	f_sh_adopt(gfix.snapper, snapper::SnapshotType::SINGLE, 44, 1234554321, gfix.adopt_data),
-	f_sh_ack(gfix.snapper, snapper::SnapshotType::SINGLE, 44, 1234554321, gfix.ack_data)
+	: f(gfix), f_sh_none(f.snapper, snapper::SnapshotType::SINGLE, 42, 1234554321),
+	f_sh_clone(f.snapper, snapper::SnapshotType::SINGLE, 43, 1234554321, f.clone_data),
+	f_sh_adopt(f.snapper, snapper::SnapshotType::SINGLE, 44, 1234554321, f.adopt_data),
+	f_sh_ack(f.snapper, snapper::SnapshotType::SINGLE, 45, 1234554321, f.ack_data)
+    {
+    }
+
+
+    FSnapshotGetSnapshotDir::FSnapshotGetSnapshotDir(const GeneralGetSnapshotDirFixture& gfix)
+	: f(gfix),
+	f_sh_none(f.snapper, snapper::SnapshotType::SINGLE, f.num_none, 1234554321),
+	f_sh_clone(f.snapper, snapper::SnapshotType::SINGLE, f.num_clone, 1234554321, f.clone_data),
+	f_sh_adopt(f.snapper, snapper::SnapshotType::SINGLE, f.num_adopt, 1234554321, f.adopt_data),
+	f_sh_ack(f.snapper, snapper::SnapshotType::SINGLE, f.num_ack, 1234554321, f.ack_data)
     {
     }
 
@@ -75,14 +109,14 @@ namespace testsuiteimport
     {
 	boost::scoped_ptr<snapper::Snapshot> snapshot;
 
-	BOOST_REQUIRE_NO_THROW( snapshot.reset(new snapper::Snapshot(f_snapper, f_type, f_num, f_date)) );
+	BOOST_REQUIRE_NO_THROW( snapshot.reset(new snapper::Snapshot(f.snapper, f_type, f_num, f_date)) );
 	BOOST_CHECK_EQUAL( snapshot->getType(), f_type );
 	BOOST_CHECK_EQUAL( snapshot->getNum(), f_num );
 	BOOST_CHECK_EQUAL( snapshot->getDate(), f_date );
 	BOOST_CHECK_EQUAL( snapshot->getUid(), 0 );
 	BOOST_CHECK_EQUAL( snapshot->getPreNum(), 0 );
 
-	BOOST_REQUIRE_NO_THROW( snapshot.reset(new snapper::Snapshot(f_snapper, f_type, f_num, f_date, f_clone_data)) );
+	BOOST_REQUIRE_NO_THROW( snapshot.reset(new snapper::Snapshot(f.snapper, f_type, f_num, f_date, f.clone_data)) );
 	f_ctor_clone_passed = true;
 	BOOST_CHECK_EQUAL( snapshot->getType(), f_type );
 	BOOST_CHECK_EQUAL( snapshot->getNum(), f_num );
@@ -90,7 +124,7 @@ namespace testsuiteimport
 	BOOST_CHECK_EQUAL( snapshot->getUid(), 0 );
 	BOOST_CHECK_EQUAL( snapshot->getPreNum(), 0 );
 
-	BOOST_REQUIRE_NO_THROW( snapshot.reset(new snapper::Snapshot(f_snapper, f_type, f_num, f_date, f_adopt_data)) );
+	BOOST_REQUIRE_NO_THROW( snapshot.reset(new snapper::Snapshot(f.snapper, f_type, f_num, f_date, f.adopt_data)) );
 	f_ctor_adopt_passed = true;
 	BOOST_CHECK_EQUAL( snapshot->getType(), f_type );
 	BOOST_CHECK_EQUAL( snapshot->getNum(), f_num );
@@ -98,7 +132,7 @@ namespace testsuiteimport
 	BOOST_CHECK_EQUAL( snapshot->getUid(), 0 );
 	BOOST_CHECK_EQUAL( snapshot->getPreNum(), 0 );
 
-	BOOST_REQUIRE_NO_THROW( snapshot.reset(new snapper::Snapshot(f_snapper, f_type, f_num, f_date, f_ack_data)) );
+	BOOST_REQUIRE_NO_THROW( snapshot.reset(new snapper::Snapshot(f.snapper, f_type, f_num, f_date, f.ack_data)) );
 	f_ctor_ack_passed = true;
 	BOOST_CHECK_EQUAL( snapshot->getType(), f_type );
 	BOOST_CHECK_EQUAL( snapshot->getNum(), f_num );
@@ -147,7 +181,6 @@ namespace testsuiteimport
 	// ------------------- CLONE user
 	BOOST_REQUIRE_NO_THROW( f_sh_clone_user.mountFilesystemSnapshot(true) );
 	BOOST_CHECK_EQUAL( f.subvol_clone_user->is_mounted(), true );
-	BOOST_CHECK_EQUAL( f.subvol_clone_orig_user->is_mounted(), false );
 	BOOST_CHECK_NO_THROW( f_sh_clone_user.mountFilesystemSnapshot(true) );
 
 	// ------------------- ADOPT

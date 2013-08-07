@@ -66,6 +66,8 @@ namespace testsuiteimport
 
 	void modify_fs_uuid(const string& vg_name, const string& lv_name, const string& fs_type, const string& new_uuid = "");
 
+	void change_permission(const string& vg_name, const string& lv_name, bool ro);
+
 	struct LvmImportTestsuiteException : public ImportTestsuiteException
 	{
 	    explicit LvmImportTestsuiteException() throw() {}

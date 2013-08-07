@@ -10,9 +10,12 @@
 
 #include <iostream>
 #include <sstream>
+#include <vector>
 
+#include <boost/algorithm/string.hpp>
 #include <boost/test/unit_test.hpp>
 
+#include "testsuite-import/helpers.h"
 #include "testsuite-import/lvm-fixtures.h"
 #include "testsuite-import/helpers.h"
 
@@ -20,47 +23,61 @@ namespace testsuiteimport { namespace lvm
 {
     using std::cout;
     using std::cerr;
+    using std::string;
+    using std::vector;
 
     const string LvmSubvolumeWrapper::lvm_fs_type = "LVM2";
+
 
     LvmSubvolumeWrapper::LvmSubvolumeWrapper(const string& vg_name, const string& lv_orig_name, const string& lv_name, bool ro)
 	:  SubvolumeWrapper(NULL), vg_name(vg_name), lv_name(lv_name), lv_orig_name(lv_orig_name)
     {
 	lvcreate_thin_snapshot_wrapper(vg_name, lv_orig_name, lv_name, ro);
+	std::cout << "created LVM subvolume: " << devicepath() << std::endl;
     }
 
 
     LvmSubvolumeWrapper::LvmSubvolumeWrapper(const string& vg_name, const string& lv_name)
-	: SubvolumeWrapper(NULL)
+	: SubvolumeWrapper(NULL), vg_name(vg_name), lv_name(lv_name)
     {
 	lvcreate_non_thin_lv_wrapper(vg_name, lv_name);
+	std::cout << "created LVM subvolume: " << devicepath() << std::endl;
     }
 
 
     LvmSubvolumeWrapper::LvmSubvolumeWrapper(const string& vg_name, const string& lv_orig_name, unsigned int num, bool ro)
-	: SubvolumeWrapper(new InfoDirWithSnapshotDir(LvmGeneralFixture::f_conf_lvm_snapshots_prefix, num))
+	: SubvolumeWrapper(new InfoDirWithSnapshotDir(LvmGeneralFixture::f_conf_lvm_snapshots_prefix, num)),
+	vg_name(vg_name),	
+	lv_name(LvmGeneralFixture::f_conf_lvm_origin_lv_name + get_lv_snapshot_suffix(p_info_dir->f_num)),
+	lv_orig_name(lv_orig_name)
     {
-	std::ostringstream oss(std::ostringstream::ate);
-	oss << p_info_dir->f_num;
-
-	lvcreate_thin_snapshot_wrapper(vg_name, lv_orig_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name + "-snapshot" + oss.str(), ro);
+	lvcreate_thin_snapshot_wrapper(vg_name, lv_orig_name, lv_name, ro);
+	std::cout << "created LVM subvolume: " << devicepath() << std::endl;
     }
 
 
     LvmSubvolumeWrapper::LvmSubvolumeWrapper(const string& vg_name, const string& lv_orig_name, const string& lv_name, unsigned int num, bool ro)
-	: SubvolumeWrapper(new InfoDirWithSnapshotDir(LvmGeneralFixture::f_conf_lvm_snapshots_prefix, num))
+	: SubvolumeWrapper(new InfoDirWithSnapshotDir(LvmGeneralFixture::f_conf_lvm_snapshots_prefix, num)),
+	vg_name(vg_name),	
+	lv_name(lv_name),
+	lv_orig_name(lv_orig_name)
     {
 	lvcreate_thin_snapshot_wrapper(vg_name, lv_orig_name, lv_name, ro);
+	std::cout << "created LVM subvolume: " << devicepath() << std::endl;
     }
 
 
     LvmSubvolumeWrapper::~LvmSubvolumeWrapper()
     {
-	if (umount2(devicepath().c_str(), MNT_DETACH))
-	    std::cerr << "umount2( \"" << devicepath() << "\", MNT_DETACH) failed!" << std::endl;
+	try
+	{
+	    umount();
+	}
+	catch (const ImportTestsuiteException &e) {}
 	try
 	{
 	    lvremove_wrapper(vg_name, lv_name);
+	    std::cout << "delete LVM subvolume: " << devicepath() << ": success" << std::endl;
 	}
 	catch (const ImportTestsuiteException &e) {}
     }
@@ -78,118 +95,62 @@ namespace testsuiteimport { namespace lvm
     }
 
 
-    void InfoDirectory::infodir_init()
+    void LvmSubvolumeWrapper::umount() const
     {
-	std::cout << "CreateSnapshotEnvironment ctor" << std::endl;
+	string tmp = "-n -o TARGET " + devicepath();
 
-	int dirfd = open(infos_dir.c_str(), O_RDONLY | O_NOATIME | O_CLOEXEC | O_NOFOLLOW);
-	if (dirfd < 0)
-	    BOOST_FAIL( "Couldn't open " << infos_dir << " directory" );
+	vector<string> args;
+	boost::split(args, tmp, boost::is_any_of(" \t\n"), boost::token_compress_on);
 
-	std::ostringstream oss(std::ios_base::ate);
-	oss << f_num;
-
-	while (mkdirat(dirfd, oss.str().c_str(), 0755) && f_num < 100)
+	try
 	{
-	    f_num++;
+	    SimpleSystemCmd cmd("/usr/bin/findmnt", args);
 
-	    oss.str();
-	    oss.clear();
-	    oss << f_num;
+	    if (cmd.retcode())
+	    {
+		cerr << "findmnt " << devicepath() << " failed with ret_code: " << cmd.retcode() << std::endl;
+		for (vector<string>::const_iterator cit = cmd.stderr_cbegin(); cit != cmd.stderr_cend(); cit++)
+		    std::cerr << "findmnt stderr: " << *cit << std::endl;
+		for (vector<string>::const_iterator cit = cmd.stdout_cbegin(); cit != cmd.stdout_cend(); cit++)
+		    std::cerr << "findmnt stdout: " << *cit << std::endl;
+		throw LvmImportTestsuiteException();
+	    }
 
-	    if (errno == EEXIST)
-		continue;
-
-	    BOOST_FAIL( "Couldn't create the info directory" );
+	    for (vector<string>::const_iterator cit = cmd.stdout_cbegin(); cit != cmd.stdout_cend(); cit++)
+	    {
+		if (umount2(cit->c_str(), MNT_DETACH))
+		    std::cout << "umount2(" << *cit << ", MNT_DETACH) failed" << std::endl;
+	    }
 	}
-
-	if (f_num >= 100)
-	    BOOST_FAIL( "Something went terribly wrong" );
-
-	f_info_dir = infos_dir + "/" + oss.str();
-
-	f_dirfd = openat(dirfd, oss.str().c_str(), O_RDONLY | O_NOATIME | O_CLOEXEC | O_NOFOLLOW);
-
-	if (f_dirfd < 0)
-	    BOOST_FAIL( "Can't open: " << oss );
-
-	struct stat buff;
-
-	if (fstat(f_dirfd, &buff) || !S_ISDIR(buff.st_mode))
+	catch (const SimpleSystemCmdException &e)
 	{
-	    close(f_dirfd);
-	    BOOST_FAIL( "Can't stat dir: " << f_info_dir << " or the d-entry is not a directory" );
+	    std::cerr << "SimpleSystemCmd(\"/usr/sbin/findmnt\") failed" << std::endl;
+	    throw ImportTestsuiteException();
 	}
     }
 
-    InfoDirectory::InfoDirectory(const string& infos_dir_loc)
-	: f_num(0), f_info_dir(infos_dir_loc)
-    {
-	infodir_init();
-    }
 
-    InfoDirectory::InfoDirectory(const string& infos_dir_loc, unsigned int num)
-	: f_num(num), f_info_dir(infos_dir_loc)
+    string
+    LvmSubvolumeWrapper::get_lv_snapshot_suffix(unsigned int num)
     {
-	infodir_init();
-    }
+	std::ostringstream oss;
+	oss << "-snapshot" << num;
 
-    InfoDirectory::~InfoDirectory()
-    {
-	deep_rmdirat(f_dirfd);
-	close(f_dirfd);
-
-	if (rmdir(f_info_dir.c_str()))
-	{
-	    perror("rmdir");
-	    BOOST_TEST_MESSAGE( "Can't remove: " << f_info_dir );
-	}
-    }
-
-    void InfoDirWithSnapshotDir::init()
-    {
-	if (mkdirat(f_dirfd, "snapshot", 0755))
-	    BOOST_FAIL( "Can't create snapshot directory in test environment" );
-    }
-
-    InfoDirWithSnapshotDir::InfoDirWithSnapshotDir()
-	: InfoDirectory()
-    {
-	init();
+	return oss.str();
     }
 
 
-    InfoDirWithSnapshotDir::InfoDirWithSnapshotDir(unsigned int num)
-	: InfoDirectory(num)
+    CreateSnapshotEnvironment::CreateSnapshotEnvironment()
+	: f_valid_info_dir(LvmGeneralFixture::f_conf_lvm_snapshots_prefix),
+	f_info_snapshot_dir_exists(LvmGeneralFixture::f_conf_lvm_snapshots_prefix),
+	f_invalid_snapshot_dir(LvmGeneralFixture::f_conf_lvm_snapshots_prefix)
     {
-	init();
     }
 
 
-    InfoDirWithInvalidSnapshotDir::InfoDirWithInvalidSnapshotDir()
-	: InfoDirectory()
+    CreateSnapshotFailOnEnvironment::CreateSnapshotFailOnEnvironment()
+	: f_invalid_snap_dir(LvmGeneralFixture::f_conf_lvm_snapshots_prefix, 1)
     {
-	init();
-    }
-
-
-    InfoDirWithInvalidSnapshotDir::InfoDirWithInvalidSnapshotDir(unsigned int num)
-	: InfoDirectory(num)
-    {
-	init();
-    }
-
-
-    void
-    InfoDirWithInvalidSnapshotDir::init()
-    {
-	std::cout << "CreateSnapshotEnvironmentFailure ctor" << std::endl;
-
-	int fd = openat(f_dirfd, "snapshot", O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0755);
-	if (fd < 0)
-	    BOOST_FAIL( "Can't create 'snapshot' file");
-
-	close(fd);
     }
 
 
@@ -203,10 +164,18 @@ namespace testsuiteimport { namespace lvm
     }
 
 
+    RemoveSnapshotEnvironment::RemoveSnapshotEnvironment()
+	: f_snapshot_dir(LvmGeneralFixture::f_conf_lvm_snapshots_prefix)
+    {
+    }
+
+
     LvmCloneSnapshot::LvmCloneSnapshot()
 	: f_valid_subvolume(LvmGeneralFixture::f_conf_lvm_vg_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name, "tc_clone_snapshot_01", false),
 	f_missing_lv_vg(LvmGeneralFixture::f_conf_lvm_vg_name),
-	f_missing_lv_lv("ThiSiMissiNgLv"), f_info_dir_1(1), f_info_dir_2(1)
+	f_missing_lv_lv("ThiSiMissiNgLv"),
+	f_info_dir_1(LvmGeneralFixture::f_conf_lvm_snapshots_prefix, 1),
+	f_info_dir_2(LvmGeneralFixture::f_conf_lvm_snapshots_prefix, 1)
     {
     }
 
@@ -228,7 +197,8 @@ namespace testsuiteimport { namespace lvm
 
 
     LvmMountSnapshotBySubvolume::LvmMountSnapshotBySubvolume()
-	: f_snapshot_dir_1(1), f_snapshot_dir_2(1),
+	: f_snapshot_dir_1(LvmGeneralFixture::f_conf_lvm_snapshots_prefix, 1),
+	f_snapshot_dir_2(LvmGeneralFixture::f_conf_lvm_snapshots_prefix, 1),
 	f_mount_volume(LvmGeneralFixture::f_conf_lvm_vg_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name, "tc_mount_snapshot_by_device_01"),
 	f_missing_dev_path("/dev/mapper/missing_vg-missing_lv")
     {
@@ -246,7 +216,7 @@ namespace testsuiteimport { namespace lvm
 	f_current_subvolume_lv_name(LvmGeneralFixture::f_conf_lvm_origin_lv_name),
 	f_rw_wrong_fs_uuid_subvolume(LvmGeneralFixture::f_conf_lvm_vg_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name, "test_rw_snap_wrong_fs_uuid_01", false),
 	f_rw_subvolume(LvmGeneralFixture::f_conf_lvm_vg_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name, "test_rw_snap_01", false),
-	f_ro_wrong_fs_uuid_subvolume(LvmGeneralFixture::f_conf_lvm_vg_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name, "test_ro_snap_wrong_uuid_01"),
+	f_ro_wrong_fs_uuid_subvolume(LvmGeneralFixture::f_conf_lvm_vg_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name, "test_ro_snap_wrong_uuid_01", false),
 	f_ro_subvolume(LvmGeneralFixture::f_conf_lvm_vg_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name, "test_ro_snap_01")
     {
 	string::size_type open = f_lvm->fstype().find("(");
@@ -255,6 +225,10 @@ namespace testsuiteimport { namespace lvm
 
 	modify_fs_uuid(f_rw_wrong_fs_uuid_subvolume.vg_name, f_rw_wrong_fs_uuid_subvolume.lv_name, fstype);
 	modify_fs_uuid(f_ro_wrong_fs_uuid_subvolume.vg_name, f_ro_wrong_fs_uuid_subvolume.lv_name, fstype);
+
+	change_permission(f_ro_wrong_fs_uuid_subvolume.vg_name, f_ro_wrong_fs_uuid_subvolume.lv_name, true);
+
+	std::cout << "LvmCheckImportedSnapshot() ctor done" << std::endl;
     }
 
 

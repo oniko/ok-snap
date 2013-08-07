@@ -83,7 +83,7 @@ namespace testsuiteimport { namespace lvm
 	BOOST_CHECK_NE( S_ISDIR(buff.st_mode), 0 );
 
 	// file in place of Info dir
-	BOOST_CHECK_THROW( f_lvm->createSnapshotEnvironment(f_invalid_snapshot_dir.f_num), snapper::CreateSnapshotFailedException );
+	BOOST_CHECK_THROW( f_lvm->createSnapshotEnvironment(f_invalid_snapshot_dir.f_num), snapper::CreateSnapshotEnvirnomentException );
     }
 
 
@@ -122,8 +122,9 @@ namespace testsuiteimport { namespace lvm
     void
     FMountSnapshotBySubvolume::test_method()
     {
+	BOOST_REQUIRE_EQUAL( f_mount_volume.is_mounted(), false );
 	BOOST_REQUIRE_NO_THROW( f_lvm->mountSnapshot(f_snapshot_dir_1.f_num, f_mount_volume.devicepath()) );
-	BOOST_REQUIRE_EQUAL( check_is_mounted(f_mount_volume.vg_name, f_mount_volume.lv_name), true );
+	BOOST_REQUIRE_EQUAL( f_mount_volume.is_mounted(), true );
 
 	// test mounting already mounted snopshet
 	BOOST_REQUIRE_NO_THROW( f_lvm->mountSnapshot(f_snapshot_dir_1.f_num, f_mount_volume.devicepath()) );
