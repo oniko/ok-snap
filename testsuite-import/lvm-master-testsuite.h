@@ -17,17 +17,22 @@ namespace testsuiteimport { namespace lvm {
     // TODO: think about possibility of proper logging in testsuite.
     // Withou logging turned off, during testsuite teardown snapper destructor
     // ends with exception
-    static bool false_log_query(snapper::LogLevel, const string& component,
+    
+    static bool true_log_query(snapper::LogLevel, const string& component,
 			 const char* file, int line, const char* func,
 			 const string* content)
     {
-	return false;
+	return true;
     }
+
 
     struct LvmImportTestsuite : public boost::unit_test::test_suite
     {
 	LvmImportTestsuite();
 	~LvmImportTestsuite();
+
+	static void myTestLogDo(::snapper::LogLevel level, const string& component, const char* file, int line,
+				     const char* func, const string& text);
     };
 
 }}

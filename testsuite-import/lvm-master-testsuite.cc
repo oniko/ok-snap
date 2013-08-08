@@ -1,3 +1,7 @@
+#include <stdio.h>
+
+#include <string>
+
 #include <boost/shared_ptr.hpp>
 
 #include "testsuite-import/lvm-master-testsuite.h"
@@ -7,6 +11,7 @@
 #include "testsuite-import/import-helper-testsuite.h"
 #include "testsuite-import/lvm-ihelper-fixtures.h"
 
+#include "snapper/AppUtil.h"
 #include "snapper/Snapper.h"
 #include "snapper/Logger.h"
 
@@ -15,12 +20,22 @@
 namespace testsuiteimport { namespace lvm
 {
     using boost::unit_test::test_case;
+    using std::string;
+    
+    string filename = "/tmp/boost-import-test.log";
 
     LvmImportTestsuite::LvmImportTestsuite()
 	: test_suite("LVM Testsuite")
     {
-	snapper::setLogQuery((snapper::LogQuery) &false_log_query);
+	//TODO: get parameter from cmd line
+
+	std::cout << "vzz" << std::endl;
+	snapper::setLogQuery((snapper::LogQuery) &true_log_query);
+	std::cout << "dddd" << std::endl;
+	snapper::setLogDo((snapper::LogDo) &LvmImportTestsuite::myTestLogDo);
+	std::cout << "aaaa" << std::endl;
 	snapper::Snapper::createConfig("testsuite-import", "/testsuite-import", "lvm(ext4)", "default");
+	std::cout << "okok" << std::endl;
 
 	boost::shared_ptr<LvmImportMetadataTestClass> lvmimportmetadata_test(new LvmImportMetadataTestClass());
 
@@ -98,10 +113,10 @@ namespace testsuiteimport { namespace lvm
 	add(tc_snapshot_get_snapshot_dir);
 	add(tc_snapshot_mount_filesystem);
 
-	test_suite* ts_import_helper_testsuite = new ImportCheckerTestSuite("lvm", NULL);
+	test_suite* ts_import_helper_testsuite = new ImportHelperTestSuite("lvm", new LvmImportHelperFixFactory());
 
 	// TODO: add lot of dependencies here
-	ts_import_helper_testsuite->depends_on(tc_clone_snapshot);
+	//ts_import_helper_testsuite->depends_on(tc_clone_snapshot);
 
 	add(ts_import_helper_testsuite);
     }
@@ -111,4 +126,39 @@ namespace testsuiteimport { namespace lvm
     {
 	snapper::Snapper::deleteConfig("testsuite-import");
     }
+
+
+    void
+    LvmImportTestsuite::myTestLogDo(::snapper::LogLevel level, const string& component, const char* file, int line,
+		  const char* func, const string& text)
+    {
+	static const char* ln[4] = { "DEB", "MIL", "WAR", "ERR" };
+
+	string prefix = ::snapper::sformat("%s %s libsnapper(%d) %s(%s):%d", ::snapper::datetime(time(0), false, true).c_str(),
+				ln[level], getpid(), file, func, line);
+
+	FILE* f = fopen(filename.c_str(), "ae");
+	if (f)
+	{
+	    string tmp = text;
+
+	    string::size_type pos1 = 0;
+
+	    while (true)
+	    {
+		string::size_type pos2 = tmp.find('\n', pos1);
+
+		if (pos2 != string::npos || pos1 != tmp.length())
+		    fprintf(f, "%s - %s\n", prefix.c_str(), tmp.substr(pos1, pos2 - pos1).c_str());
+
+		if (pos2 == string::npos)
+		    break;
+
+		pos1 = pos2 + 1;
+	    }
+
+	    fclose(f);
+	}
+    }
+
 }}

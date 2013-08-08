@@ -92,11 +92,10 @@ namespace testsuiteimport
     };
 
 
-    class ImportCheckerFixture
+    struct ImportHelperFixtures
     {
-    public:
-	ImportCheckerFixture(const ::snapper::Snapper* snapper) : snapper(snapper) {}
-	virtual ~ImportCheckerFixture() {}
+	ImportHelperFixtures(const ::snapper::Snapper* snapper) : snapper(snapper) {}
+	virtual ~ImportHelperFixtures() {}
 
 	virtual ValidImportCheckFixtures import_valid_fixs() const = 0;
 	virtual ImportOriginCheckFixtures import_origin_fixs(::snapper::ImportPolicy origin) const = 0;
@@ -198,11 +197,11 @@ namespace testsuiteimport
     };
 
 
-    class ImportCheckerTestSuite : public boost::unit_test::test_suite
+    class ImportHelperTestSuite : public boost::unit_test::test_suite
     {
     public:
-	ImportCheckerTestSuite(const string& fs_type, const ImportCheckerFixture* fix_fact);
-	~ImportCheckerTestSuite() { delete fix_fact; }
+	ImportHelperTestSuite(const string& fs_type, const ImportHelperFixtures* fix_fact);
+	~ImportHelperTestSuite() { delete fix_fact; }
 
 	void tc_import_valid();
 
@@ -224,7 +223,7 @@ namespace testsuiteimport
 	void tc_import_adopt_classical_snapshot();
 	void tc_import_ack_classical_snapshot();
     private:
-	const ImportCheckerFixture* fix_fact;
+	const ImportHelperFixtures* fix_fact;
     };
 }
 #endif // IMPORT_CHECKER_TESTSUITE_H

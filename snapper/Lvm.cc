@@ -421,10 +421,38 @@ namespace snapper
     bool
     Lvm::checkImportedSnapshot(const string& vg_name, const string& lv_name, bool check_ro) const
     {
-	return (vg_name != this->vg_name || lv_name != this->lv_name) &&
-	       get_fs_uuid("/dev/" + vg_name + "/" + lv_name) == this->fs_uuid &&
-	       detectThinVolumeNames(vg_name, lv_name) &&
-	       (!check_ro || is_subvolume_ro(vg_name, lv_name));
+	if (vg_name == this->vg_name && lv_name == this->lv_name)
+	{
+	    y2deb("trying to import origin volume");
+	    return false;
+	}
+
+	if (!detectThinVolumeNames(vg_name, lv_name))
+	    return false;
+
+	y2deb("query for fs uuid on dev: " << "/dev/" << vg_name << "/" << lv_name);
+
+	string s1(get_fs_uuid("/dev/" + vg_name + "/" + lv_name));
+
+	if (s1 != this->fs_uuid)
+	{
+	    y2deb("fsuuid mismatch: s1 '" << s1 << "' != '" << this->fs_uuid << "'");
+	    return false;
+	}
+
+
+	if (check_ro && !is_subvolume_ro(vg_name, lv_name))
+	{
+	    y2deb("snapshot is not read-only");
+	    return false;
+	}
+
+	return true;
+
+// 	return (vg_name != this->vg_name || lv_name != this->lv_name) &&
+// 	       detectThinVolumeNames(vg_name, lv_name) &&
+// 	       (get_fs_uuid("/dev/" + vg_name + "/" + lv_name) == this->fs_uuid) &&
+// 	       (!check_ro || is_subvolume_ro(vg_name, lv_name));
     }
 
 

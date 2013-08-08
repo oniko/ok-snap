@@ -1,4 +1,5 @@
 #include <memory>
+#include <iostream>
 
 #include "snapper/LvmImportMetadata.h"
 
@@ -12,6 +13,7 @@ namespace testsuiteimport { namespace lvm
     ValidImportCheckFixtures
     LvmImportHelperFixFactory::import_valid_fixs() const
     {
+	std::cout << "LvmImportHelperFixFactory entering" << std::endl;
 	const shared_clvmsubv sv_clone_orig(new LvmSubvolumeWrapper(LvmGeneralFixture::f_conf_lvm_vg_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name, "lvm-import-helper-clone-orig-01", 1, false));
 	const shared_clvmsubv sv_adopt(new LvmSubvolumeWrapper(LvmGeneralFixture::f_conf_lvm_vg_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name, "lvm-import-helper-adopt-01", 1, true));
 	const shared_clvmsubv sv_ack(new LvmSubvolumeWrapper(LvmGeneralFixture::f_conf_lvm_vg_name, LvmGeneralFixture::f_conf_lvm_origin_lv_name, "lvm-import-helper-ack-01", 1, true));
@@ -19,6 +21,8 @@ namespace testsuiteimport { namespace lvm
 	std::auto_ptr<const ::snapper::ImportMetadata> im_clone(new ::snapper::LvmImportMetadata(sv_clone_orig.get()->subvolume(), ::snapper::ImportPolicy::CLONE, f_lvm));
 	std::auto_ptr<const ::snapper::ImportMetadata> im_adopt(new ::snapper::LvmImportMetadata(sv_adopt.get()->subvolume(), ::snapper::ImportPolicy::ADOPT, f_lvm));
 	std::auto_ptr<const ::snapper::ImportMetadata> im_ack(new ::snapper::LvmImportMetadata(sv_ack.get()->subvolume(), ::snapper::ImportPolicy::ACKNOWLEDGE, f_lvm));
+
+	std::cout << "LvmImportHelperFixFactory exiting" << std::endl;
 
 	return ValidImportCheckFixtures(snapper, sv_clone_orig, sv_adopt, sv_ack, im_clone.release(), im_adopt.release(), im_ack.release());
     }

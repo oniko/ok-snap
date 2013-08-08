@@ -324,6 +324,8 @@ namespace snapper
 
 	const char* tmp = udev_device_get_property_value(p_device, "ID_FS_UUID");
 	string ret_str(tmp ? tmp : "");
+	
+	std::cout << "get_fs_uuid_from_udevdb " << ret_str << std::endl;
 
 	udev_device_unref(p_device);
 	udev_unref(p_udev);
@@ -338,7 +340,10 @@ namespace snapper
 	struct stat buf;
 
 	if (stat(device_path.c_str(), &buf))
+	{
+	    y2war("can't stat device_path: " << device_path << ":" << stringerror(errno));
 	    return string();
+	}
 
 	if (!S_ISBLK(buf.st_mode))
 	    return string();

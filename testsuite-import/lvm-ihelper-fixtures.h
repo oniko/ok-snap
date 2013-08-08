@@ -5,10 +5,10 @@
 
 namespace testsuiteimport { namespace lvm
 {
-    class LvmImportHelperFixFactory : public LvmGeneralFixture, ImportCheckerFixture
+    struct LvmImportHelperFixFactory : public LvmGeneralFixture, ImportHelperFixtures
     {
-    public:
-	LvmImportHelperFixFactory() : LvmGeneralFixture(), ImportCheckerFixture(f_snapper) {}
+//    public:
+	LvmImportHelperFixFactory() : LvmGeneralFixture(), ImportHelperFixtures(f_snapper) {}
 
 	virtual ValidImportCheckFixtures import_valid_fixs() const;
 	virtual ImportOriginCheckFixtures import_origin_fixs(snapper::ImportPolicy origin) const;
