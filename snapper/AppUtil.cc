@@ -324,8 +324,6 @@ namespace snapper
 
 	const char* tmp = udev_device_get_property_value(p_device, "ID_FS_UUID");
 	string ret_str(tmp ? tmp : "");
-	
-	std::cout << "get_fs_uuid_from_udevdb " << ret_str << std::endl;
 
 	udev_device_unref(p_device);
 	udev_unref(p_udev);

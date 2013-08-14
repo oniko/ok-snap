@@ -101,7 +101,7 @@ namespace snapper
     static bool
     simple_log_query(LogLevel level, const string& component)
     {
-	return level != DEBUG;
+	return true;
     }
 
 

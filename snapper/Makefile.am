@@ -49,7 +49,8 @@ endif
 if ENABLE_LVM
 libsnapper_la_SOURCES +=				\
 	Lvm.cc			Lvm.h			\
-	LvmImportMetadata.cc	LvmImportMetadata.h
+	LvmImportMetadata.cc	LvmImportMetadata.h	\
+	LvmCache.cc		LvmCache.h
 endif
 
 

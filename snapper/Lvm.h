@@ -26,6 +26,7 @@
 #include <boost/noncopyable.hpp>
 
 #include "snapper/Filesystem.h"
+#include "snapper/LvmCache.h"
 
 
 namespace snapper
@@ -117,6 +118,7 @@ namespace snapper
 
 	const string mount_type;
 	const LvmCapabilities* caps;
+	LvmCache* cache;
 
 	bool detectThinVolumeNames(const MtabData& mtab_data);
 	bool detectThinVolumeNames(const string& vg_name, const string& lv_name) const;

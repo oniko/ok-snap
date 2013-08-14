@@ -1410,8 +1410,8 @@ Client::import_post_snapshot(DBus::Connection& conn, DBus::Message& msg)
     snap2->setUserdata(userdata);
     snap2->flushInfo();
 
-    map<string, string>::const_iterator pos = it->config_info.raw.find("BACKGROUND_COMPARISON");
-    if (pos == it->config_info.raw.end() || pos->second == "yes")
+    bool tmp;
+    if (it->getConfigInfo().getValue("BACKGROUND_COMPARISON", tmp) && tmp)
 	backgrounds.add_task(it, snap1, snap2);
 
     DBus::MessageMethodReturn reply(msg);

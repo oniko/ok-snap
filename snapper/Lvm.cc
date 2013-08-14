@@ -60,7 +60,8 @@ namespace snapper
 
     Lvm::Lvm(const string& subvolume, const string& mount_type)
 	: Filesystem(subvolume), mount_type(mount_type),
-	caps(LvmCapabilities::get_lvm_capabilities())
+	caps(LvmCapabilities::get_lvm_capabilities()),
+	cache(LvmCache::get_lvm_cache())
     {
 	if (access(LVCREATEBIN, X_OK) != 0)
 	{
@@ -91,6 +92,8 @@ namespace snapper
 
 	if (!detectThinVolumeNames(mtab_data))
 	    throw InvalidConfigException();
+
+	cache->add(vg_name);
 
 	mount_options = filter_mount_options(mtab_data.options);
 	if (mount_type == "xfs")
@@ -207,6 +210,8 @@ namespace snapper
 	// NOTE: we don't have to remove snapshot environment on failure (createHelper will do so)
 	if (cmd.retcode() != 0)
 	    throw CreateSnapshotFailedException();
+
+	cache->add(vg_name, snapshotLvName(num));
     }
 
 
@@ -322,6 +327,8 @@ namespace snapper
 	// NOTE: we don't have to remove snapshot environment on failure (createHelper will do so)
 	if (cmd.retcode() != 0)
 	    throw ImportSnapshotFailedException();
+
+	cache->add(snapshotLvName(num));
     }
 
 
@@ -331,6 +338,7 @@ namespace snapper
 	SystemCmd cmd(LVREMOVEBIN " --force " + quote(vg_name + "/" + lv_name));
 	if (cmd.retcode() != 0)
 	    throw DeleteSnapshotFailedException();
+	cache->remove(vg_name, lv_name);
     }
 
 
@@ -421,7 +429,10 @@ namespace snapper
     bool
     Lvm::checkImportedSnapshot(const string& vg_name, const string& lv_name, bool check_ro) const
     {
-	if (vg_name == this->vg_name && lv_name == this->lv_name)
+	if (this->vg_name != vg_name)
+	    return false;
+
+	if (this->lv_name == lv_name)
 	{
 	    y2deb("trying to import origin volume");
 	    return false;
@@ -430,15 +441,17 @@ namespace snapper
 	if (!detectThinVolumeNames(vg_name, lv_name))
 	    return false;
 
-	y2deb("query for fs uuid on dev: " << "/dev/" << vg_name << "/" << lv_name);
+	cache->add(vg_name, lv_name);
 
-	string s1(get_fs_uuid("/dev/" + vg_name + "/" + lv_name));
-
-	if (s1 != this->fs_uuid)
-	{
-	    y2deb("fsuuid mismatch: s1 '" << s1 << "' != '" << this->fs_uuid << "'");
-	    return false;
-	}
+// 	y2deb("query for fs uuid on dev: " << "/dev/" << vg_name << "/" << lv_name);
+// 
+// 	string s1(get_fs_uuid("/dev/" + vg_name + "/" + lv_name));
+// 
+// 	if (s1 != this->fs_uuid)
+// 	{
+// 	    y2deb("fsuuid mismatch: s1 '" << s1 << "' != '" << this->fs_uuid << "'");
+// 	    return false;
+// 	}
 
 
 	if (check_ro && !is_subvolume_ro(vg_name, lv_name))
@@ -488,8 +501,10 @@ namespace snapper
     bool
     Lvm::detectInactiveSnapshot(const string& vg_name, const string& lv_name) const
     {
-	SystemCmd cmd(LVSBIN " " + quote(vg_name + "/" + lv_name));
-	return cmd.retcode() == 0;
+	bool ret = cache->in_cache(vg_name, lv_name);
+	y2deb("lvm cache " << (ret ? "hit" : " miss") << " for " << vg_name << "/" << lv_name);
+
+	return ret;
     }
 
 
