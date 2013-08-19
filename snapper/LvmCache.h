@@ -24,60 +24,110 @@
 #include <map>
 #include <set>
 #include <string>
+#include <vector>
 
 #include <boost/noncopyable.hpp>
 #include <boost/thread.hpp>
 
+
 namespace snapper
 {
-     using std::map;
-     using std::set;
-     using std::string;
+    using std::map;
+    using std::set;
+    using std::string;
+    using std::vector;
 
-    // FIXME: !!! this is utterly broken. Only for testing purposes !!!
+    class LvmCapabilities;
+
+    typedef map<string, vector<string>> vg_content_raw;
+
+    struct LvAttrs
+    {
+	static bool extractActive(const string& raw);
+	static bool extractReadOnly(const string& raw);
+
+	LvAttrs(const vector<string>& raw);
+	LvAttrs() : active(false), readonly(false), thin(false) {}
+
+	bool active;
+	bool readonly;
+	bool thin;
+	string pool;
+    };
+
 
     class VolGroup : boost::noncopyable
     {
     public:
-	typedef set<string> vg_content_set;
 
-	VolGroup(const vg_content_set& input) : lvs_in_vg(input) {}
+	// store pointer: LvInfo can be modified
+	typedef map<string, LvAttrs> vg_content_t;
+	typedef vg_content_t::iterator iterator;
+	typedef vg_content_t::const_iterator const_iterator;
 
-	bool contains(const string& lv_name) const; // req. shared lock
-	void add(const string& lv_name); // req. exclusive lock
-	void remove(const string& lv_name); // req. exclusive lock
+	VolGroup(vg_content_raw& input, const LvmCapabilities* caps);
+
+	bool active(const string& lv_name) const; // shared locking
+
+	void activate(const string& vg_name, const string& lv_name); // upg lock -> excl
+	void deactivate(const string& vg_name, const string& lv_name); // upg lock -> excl
+
+	bool contains(const string& lv_name) const; // shared lock
+	bool contains_thin(const string& lv_name) const; // shared lock
+
+	bool read_only(const string& lv_name) const; // shared lock
+
+	void add(const string& lv_name, const LvAttrs& attrs); // excl lock
+	void add_update(const string& vg_name, const string& lv_name); // excl lock
+
+	void remove(const string& lv_name); // excl lock
+	void rename(const string& old_name, const string& new_name); // upg lock -> excl
 
     private:
-	// TODO: locking maybe useless
-	boost::mutex _mutex;
+	const LvmCapabilities* caps;
 
-	vg_content_set lvs_in_vg;
+	mutable boost::shared_mutex vg_mutex;
+
+	vg_content_t lv_info_map;
     };
 
 
     class LvmCache : public boost::noncopyable
     {
     public:
-	~LvmCache();
-
 	static LvmCache* get_lvm_cache();
 
-	typedef map<string, VolGroup>::const_iterator const_iterator;
-	typedef map<string, VolGroup>::iterator iterator;
+	~LvmCache();
 
-	bool in_cache(const string& vg_name, const string& lv_name) const;
-	void add(const string& vg_name, const string& lv_name);
-	void add(const string& vg_name);
+	// storing pointers in case we will need locking (mutex is noncopyable)
+	typedef map<string, VolGroup*>::const_iterator const_iterator;
+	typedef map<string, VolGroup*>::iterator iterator;
+
+	bool active(const string& vg_name, const string& lv_name) const;
+
+	void activate(const string& vg_name, const string& lv_name) const;
+	void deactivate(const string& vg_name, const string& lv_name) const;
+
+	bool contains(const string& vg_name, const string& lv_name) const;
+	bool contains_thin(const string& vg_name, const string& lv_name) const;
+	bool read_only(const string& vg_name, const string& lv_name) const;
+
+	// add snapshot owned by snapper
+	void add(const string& vg_name, const string& lv_name) const;
+	void add_update(const string& vg_name, const string& lv_name);
+	// load all lvs in vg
+	
+	// remove snapshot owned by snapper
 	void remove(const string& vg_name, const string& lv_name);
 
     private:
-	LvmCache() {}
+	LvmCache();
 
-	void create_new_vg(const string& vg_name);
+	bool find_vg(const string& vg_name, const_iterator &cit) const;
+	void add(const string& vg_name, boost::upgrade_lock<boost::shared_mutex>& upg_lock);
 
-	map<string, VolGroup*> m_caches;
+	const LvmCapabilities* caps;
+	map<string, VolGroup*> vgroups;
     };
 }
-
-
 #endif // SNAPPER_LVM_CACHE_H

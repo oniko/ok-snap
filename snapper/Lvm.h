@@ -71,6 +71,8 @@ namespace snapper
 	string ignoreactivationskip;
 	// true if lvm2 supports time info stored in metadata
 	bool time_support;
+	// capability to convert non-thin lv to thin lv
+	bool thin_covert;
     };
 
 
@@ -79,7 +81,6 @@ namespace snapper
     public:
 
 	static Filesystem* create(const string& fstype, const string& subvolume);
-	static bool is_subvolume_ro(const string& vg_name, const string& lv_name);
 	virtual ImportMetadata* createImportMetadata(const string &raw_data, ImportPolicy ipolicy) const;
 
 	Lvm(const string& subvolume, const string& mount_type);
@@ -122,15 +123,15 @@ namespace snapper
 
 	bool detectThinVolumeNames(const MtabData& mtab_data);
 	bool detectThinVolumeNames(const string& vg_name, const string& lv_name) const;
-	void activateSnapshot(const string& vg_name, const string& lv_name) const;
-	void deactivateSnapshot(const string& vg_name, const string& lv_name) const;
-	bool detectInactiveSnapshot(const string& vg_name, const string& lv_name) const;
+	void activateSnapshot(const string& vg_name, const string& lv_name, bool use_cache) const;
+	void deactivateSnapshot(const string& vg_name, const string& lv_name, bool use_cache) const;
+	bool detectInactiveSnapshot(const string& vg_name, const string& lv_name, bool use_cache) const;
 
 	string getDevice(unsigned int num) const;
 
 	string vg_name;
 	string lv_name;
-	string fs_uuid;
+	//string fs_uuid;
 
 	vector<string> mount_options;
 
