@@ -29,8 +29,6 @@
 #include "snapper/LvmCache.h"
 #include "snapper/SystemCmd.h"
 
-boost::shared_mutex lvm_cache_mutex;
-
 namespace snapper
 {
     using std::make_pair;
@@ -58,8 +56,8 @@ namespace snapper
     }
 
 
-    VolGroup::VolGroup(vg_content_raw& input, const LvmCapabilities* caps)
-	: caps(caps)
+    VolGroup::VolGroup(vg_content_raw& input)
+	: caps(LvmCapabilities::get_lvm_capabilities())
     {
 	for (vg_content_raw::const_iterator cit = input.begin(); cit != input.end(); cit++)
 	    lv_info_map.insert(make_pair(cit->first, LvAttrs(cit->second)));
@@ -80,6 +78,16 @@ namespace snapper
     void
     VolGroup::activate(const string& vg_name, const string& lv_name)
     {
+	/*
+	 * FIXME: There is bug in LVM causing lvs and lvchange commands
+	 *	 may fail in certain situations.
+	 *	 Concurrent lvs only commands are fine:
+	 *	 https://bugzilla.redhat.com/show_bug.cgi?id=922568
+	 *
+	 *	 Upgrade lock is used to protect concurrent lvs/lvchange
+	 *	 in scope of volume group.
+	 */
+
 	boost::upgrade_lock<boost::shared_mutex> upg_lock(vg_mutex);
 
 	iterator it = lv_info_map.find(lv_name);
@@ -91,14 +99,14 @@ namespace snapper
 
 	if (!it->second.active)
 	{
-	    boost::upgrade_to_unique_lock<boost::shared_mutex> unique_lock(upg_lock);
-
 	    SystemCmd cmd(LVCHANGEBIN + caps->get_ignoreactivationskip() + " -ay " + quote(vg_name + "/" + lv_name));
 	    if (cmd.retcode() != 0)
 	    {
 		y2err("Couldn't activate snapshot " << vg_name << "/" << lv_name);
 		throw LvmActivationException();
 	    }
+
+	    boost::upgrade_to_unique_lock<boost::shared_mutex> unique_lock(upg_lock);
 
 	    it->second.active = true;
 	}
@@ -108,6 +116,16 @@ namespace snapper
     void
     VolGroup::deactivate(const string& vg_name, const string& lv_name)
     {
+	/*
+	 * FIXME: There is bug in LVM causing lvs and lvchange commands
+	 *	 may fail in certain situations.
+	 *	 Concurrent lvs only commands are fine:
+	 *	 https://bugzilla.redhat.com/show_bug.cgi?id=922568
+	 *
+	 *	 Upgrade lock is used to protect concurrent lvs/lvchange
+	 *	 in scope of volume group.
+	 */
+
 	boost::upgrade_lock<boost::shared_mutex> upg_lock(vg_mutex);
 
 	iterator it = lv_info_map.find(lv_name);
@@ -119,14 +137,14 @@ namespace snapper
 
 	if (it->second.active)
 	{
-	    boost::upgrade_to_unique_lock<boost::shared_mutex> unique_lock(upg_lock);
-
 	    SystemCmd cmd(LVCHANGEBIN " -an " + quote(vg_name + "/" + lv_name));
 	    if (cmd.retcode() != 0)
 	    {
 		y2err("Couldn't activate snapshot " << vg_name << "/" << lv_name);
 		throw LvmDeactivatationException();
 	    }
+
+	    boost::upgrade_to_unique_lock<boost::shared_mutex> unique_lock(upg_lock);
 
 	    it->second.active = false;
 	}
@@ -165,11 +183,17 @@ namespace snapper
 
 
     void
-    VolGroup::add(const string& lv_name, const LvAttrs& attrs)
+    VolGroup::add(const string& lv_name)
     {
+	LvAttrs lv_attrs;
+
+	lv_attrs.thin = true;
+	lv_attrs.active = caps->get_ignoreactivationskip().empty();
+	lv_attrs.readonly = true;
+
 	boost::unique_lock<boost::shared_mutex> lock(vg_mutex);
 
-	if (!lv_info_map.insert(make_pair(lv_name, attrs)).second)
+	if (!lv_info_map.insert(make_pair(lv_name, lv_attrs)).second)
 	{
 	    y2err(lv_name << " already in cache");
 	    // TODO: proper exception
@@ -179,8 +203,10 @@ namespace snapper
 
 
     void
-    VolGroup::add_update(const string& vg_name, const string& lv_name)
+    VolGroup::add_or_update(const string& vg_name, const string& lv_name)
     {
+	boost::upgrade_lock<boost::shared_mutex> upg_lock(vg_mutex);
+
 	SystemCmd cmd(LVSBIN " --noheadings -o lv_name,lv_attr,segtype,pool_lv " + quote(vg_name + "/" + lv_name));
 	if (cmd.retcode() != 0 || cmd.numLines() < 1)
 	{
@@ -195,12 +221,14 @@ namespace snapper
 	if (args.size() < 1)
 	{
 	    // TODO: proper exception
-	    y2err("Couldn't get cache data for: " << vg_name << "/" lv_name);
+	    y2err("Couldn't get cache data for: " << vg_name << "/" << lv_name);
 	    throw std::exception();
 	}
-	LvAttrs attrs((args.begin() + 1, args.end()));
 
-	boost::unique_lock<boost::shared_mutex> lock(vg_mutex);
+	LvAttrs attrs(vector<string>(args.begin() + 1, args.end()));
+
+	boost::upgrade_to_unique_lock<boost::shared_mutex> lock(upg_lock);
+
 	lv_info_map[lv_name] = attrs;
     }
 
@@ -253,12 +281,6 @@ namespace snapper
     }
 
 
-    LvmCache::LvmCache()
-	: caps(LvmCapabilities::get_lvm_capabilities())
-    {
-    }
-
-
     LvmCache::~LvmCache()
     {
 	for (const_iterator cit = vgroups.begin(); cit != vgroups.end(); cit++)
@@ -267,31 +289,20 @@ namespace snapper
 
 
     bool
-    LvmCache::find_vg(const string& vg_name, const_iterator& cit)
-    {
-	boost::shared_lock<boost::shared_mutex> lock(lvm_cache_mutex);
-
-	cit = vgroups.find(vg_name);
-
-	return cit != vgroups.end();
-    }
-
-
-    bool
     LvmCache::active(const string& vg_name, const string& lv_name) const
     {
-	const_iterator cit;
+	const_iterator cit = vgroups.find(vg_name);
 
-	find_vg(vg_name, cit) && cit->second->active(lv_name);
+	return cit != vgroups.end() && cit->second->active(lv_name);
     }
 
 
     void
     LvmCache::activate(const string& vg_name, const string& lv_name) const
     {
-	const_iterator cit;
+	const_iterator cit = vgroups.find(vg_name);
 
-	if (!find_vg(vg_name, cit))
+	if (cit == vgroups.end())
 	{
 	    // TODO: proper exception
 	    throw std::exception();
@@ -304,9 +315,9 @@ namespace snapper
     void
     LvmCache::deactivate(const string& vg_name, const string& lv_name) const
     {
-	const_iterator cit;
+	const_iterator cit = vgroups.find(vg_name);
 
-	if (!find_vg(vg_name, cit))
+	if (cit == vgroups.end())
 	{
 	    // TODO: proper exception
 	    throw std::exception();
@@ -319,42 +330,39 @@ namespace snapper
     bool
     LvmCache::read_only(const string& vg_name, const string& lv_name) const
     {
-	const_iterator cit;
+	const_iterator cit = vgroups.find(vg_name);
 
-	return find_vg(vg_name, cit) && cit->second->read_only(lv_name);
+	return cit != vgroups.end() && cit->second->read_only(lv_name);
     }
 
 
     bool
     LvmCache::contains(const string& vg_name, const string& lv_name) const
     {
-	const_iterator cit;
+	const_iterator cit = vgroups.find(vg_name);
 
-	return find_vg(vg_name, cit) && cit->second->contains(lv_name);
+	return cit != vgroups.end() && cit->second->contains(lv_name);
     }
 
 
     bool
     LvmCache::contains_thin(const string& vg_name, const string& lv_name) const
     {
-	const_iterator cit;
+	const_iterator cit = vgroups.find(vg_name);
 
-	return find_vg(vg_name, cit) && cit->second->contains_thin(lv_name);
+	return cit != vgroups.end() && cit->second->contains_thin(lv_name);
     }
 
 
     void
-    LvmCache::add_update(const string& vg_name, const string& lv_name) const
+    LvmCache::add_or_update(const string& vg_name, const string& lv_name)
     {
-	boost::upgrade_lock<boost::shared_mutex> upgrade_lock(lvm_cache_mutex);
-
 	const_iterator cit = vgroups.find(vg_name);
 	if (cit == vgroups.end())
-	    add(vg_name, upgrade_lock);
+	    add(vg_name);
 	else
 	{
-	    upgrade_lock.unlock();
-	    cit->second->add_update(lv_name);
+	    cit->second->add_or_update(vg_name, lv_name);
 	}
     }
 
@@ -362,39 +370,20 @@ namespace snapper
     void
     LvmCache::add(const string& vg_name, const string& lv_name) const
     {
-	boost::upgrade_lock<boost::shared_mutex> upgrade_lock(lvm_cache_mutex);
-
 	const_iterator cit = vgroups.find(vg_name);
-	if (cit != vgroups.end())
+	if (cit == vgroups.end())
 	{
-	    upgrade_lock.unlock();
-
-	    LvAttrs lv_attrs;
-
-	    lv_attrs.thin = true;
-	    lv_attrs.active = caps->get_ignoreactivationskip().empty();
-	    lv_attrs.readonly = true;
-
-	    cit->second->add(lv_name, lv_attrs);
+	    // TODO: proper exception
+	    throw std::exception();
 	}
-	else
-	{
-	}
+
+	cit->second->add(lv_name);
     }
 
 
     void
-    LvmCache::add(const string& vg_name, boost::upgrade_lock<boost::shared_mutex>& upg_lock)
+    LvmCache::add(const string& vg_name)
     {
-	/*
-	* FIXME: There is bug in LVM causing lvs and lvchange commands
-	* 	  may fail in certain situations.
-	* 	  Concurrent lvs only commands are fine.
-	*
-	*	  https://bugzilla.redhat.com/show_bug.cgi?id=922568
-	*
-	* TODO: Add LVS and LVCHANGE wrappers with read/write locks.
-	*/
 	SystemCmd cmd(LVSBIN " --noheadings -o lv_name,lv_attr,segtype,pool_lv " + quote(vg_name));
 	if (cmd.retcode() != 0)
 	{
@@ -413,19 +402,18 @@ namespace snapper
 		new_content.insert(make_pair(args.front(), vector<string>(args.begin() + 1, args.end())));
 	}
 
-	VolGroup *p_vg = new VolGroup(new_content, caps);
+	VolGroup *p_vg = new VolGroup(new_content);
 
-	boost::upgrade_to_unique_lock<boost::shared_mutex> uniq_lock(upg_lock);
 	vgroups.insert(std::make_pair(vg_name, p_vg));
     }
 
 
     void
-    LvmCache::remove(const string& vg_name, const string& lv_name)
+    LvmCache::remove(const string& vg_name, const string& lv_name) const
     {
-	const_iterator cit;
+	const_iterator cit = vgroups.find(vg_name);
 
-	if (find_vg(vg_name, cit))
+	if (cit != vgroups.end())
 	    cit->second->remove(lv_name);
     }
 

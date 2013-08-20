@@ -299,7 +299,7 @@ namespace snapper
 	vg_name = boost::replace_all_copy(rx.cap(1), "--", "-");
 	lv_name = boost::replace_all_copy(rx.cap(2), "--", "-");
 
-	cache->add(vg_name, lv_name);
+	cache->add_or_update(vg_name, lv_name);
 
 	return cache->contains_thin(vg_name, lv_name);
     }

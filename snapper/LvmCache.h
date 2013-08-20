@@ -65,7 +65,7 @@ namespace snapper
 	typedef vg_content_t::iterator iterator;
 	typedef vg_content_t::const_iterator const_iterator;
 
-	VolGroup(vg_content_raw& input, const LvmCapabilities* caps);
+	VolGroup(vg_content_raw& input);
 
 	bool active(const string& lv_name) const; // shared locking
 
@@ -77,8 +77,8 @@ namespace snapper
 
 	bool read_only(const string& lv_name) const; // shared lock
 
-	void add(const string& lv_name, const LvAttrs& attrs); // excl lock
-	void add_update(const string& vg_name, const string& lv_name); // excl lock
+	void add(const string& lv_name); // excl lock
+	void add_or_update(const string& vg_name, const string& lv_name); // upg lock -> excl
 
 	void remove(const string& lv_name); // excl lock
 	void rename(const string& old_name, const string& new_name); // upg lock -> excl
@@ -103,30 +103,28 @@ namespace snapper
 	typedef map<string, VolGroup*>::const_iterator const_iterator;
 	typedef map<string, VolGroup*>::iterator iterator;
 
-	bool active(const string& vg_name, const string& lv_name) const;
+	bool active(const string& vg_name, const string& lv_name) const; // shared lock 
 
-	void activate(const string& vg_name, const string& lv_name) const;
-	void deactivate(const string& vg_name, const string& lv_name) const;
+	void activate(const string& vg_name, const string& lv_name) const; // shared lock 
+	void deactivate(const string& vg_name, const string& lv_name) const; // shared lock 
 
-	bool contains(const string& vg_name, const string& lv_name) const;
-	bool contains_thin(const string& vg_name, const string& lv_name) const;
-	bool read_only(const string& vg_name, const string& lv_name) const;
+	bool contains(const string& vg_name, const string& lv_name) const; // shared lock 
+	bool contains_thin(const string& vg_name, const string& lv_name) const; // shared lock 
+	bool read_only(const string& vg_name, const string& lv_name) const; // shared lock 
 
 	// add snapshot owned by snapper
-	void add(const string& vg_name, const string& lv_name) const;
-	void add_update(const string& vg_name, const string& lv_name);
+	void add(const string& vg_name, const string& lv_name) const; // shared lock 
+	void add_or_update(const string& vg_name, const string& lv_name); // upg lock -> excl (load whole new vg)
 	// load all lvs in vg
-	
+
 	// remove snapshot owned by snapper
-	void remove(const string& vg_name, const string& lv_name);
+	void remove(const string& vg_name, const string& lv_name) const; // shared lock
 
     private:
-	LvmCache();
+	LvmCache() {}
 
-	bool find_vg(const string& vg_name, const_iterator &cit) const;
-	void add(const string& vg_name, boost::upgrade_lock<boost::shared_mutex>& upg_lock);
+	void add(const string& vg_name);
 
-	const LvmCapabilities* caps;
 	map<string, VolGroup*> vgroups;
     };
 }
