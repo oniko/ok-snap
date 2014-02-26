@@ -101,6 +101,9 @@ namespace snapper
 		   const string& mount_data) const;
 	bool umount(const string& mount_point) const;
 
+	void syncfilecon(const string& name, char* con) const;
+	void synccon(char* con) const;
+
     private:
 
 	XaAttrsStatus xastatus;
@@ -133,6 +136,8 @@ namespace snapper
 
 	ssize_t listxattr(char* list, size_t size) const;
 	ssize_t getxattr(const char* name, void* value, size_t size) const;
+
+	void synccon(char* con) const;
 
     private:
 

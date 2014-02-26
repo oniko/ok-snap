@@ -58,6 +58,9 @@
 #ifdef ENABLE_ROLLBACK
 #include "snapper/MntTable.h"
 #endif
+#ifdef ENABLE_SELINUX
+#include "snapper/Selinux.h"
+#endif
 
 
 namespace snapper
@@ -133,9 +136,22 @@ namespace snapper
 	}
 
 	SFile x(subvolume_dir, ".snapshots");
+#ifdef ENABLE_SELINUX
+	try
+	{
+	    SnapperContexts scontexts;
+
+	    x.synccon(scontexts.subvolume_context());
+	}
+	catch (const SelinuxException& e)
+	{
+	    y2war("Failed to load snapperd selinux contexts file.");
+	}
+#endif
 	struct stat stat;
 	if (x.stat(&stat, 0) == 0)
 	    x.chmod(stat.st_mode & ~0027, 0);
+
     }
 
 
@@ -265,6 +281,19 @@ namespace snapper
 	    y2err(".snapshots must not be world-writable");
 	    SN_THROW(IOErrorException(".snapshots must not be world-writable"));
 	}
+
+#ifdef ENABLE_SELINUX
+	try
+	{
+	    SnapperContexts scons;
+
+	    infos_dir.synccon(scons.subvolume_context());
+	}
+	catch (const SelinuxException& e)
+	{
+	    y2war("Failed to load snapperd selinux contexts file.");
+	}
+#endif
 
 	return infos_dir;
     }

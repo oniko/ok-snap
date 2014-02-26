@@ -34,12 +34,18 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <assert.h>
+#ifdef ENABLE_SELINUX
+#include <selinux/selinux.h>
+#endif
 #include <algorithm>
 
 #include "snapper/FileUtils.h"
 #include "snapper/AppUtil.h"
 #include "snapper/Log.h"
 #include "snapper/Exception.h"
+#ifdef ENABLE_SELINUX
+#include "snapper/Selinux.h"
+#endif
 
 
 namespace snapper
@@ -567,6 +573,96 @@ namespace snapper
     }
 
 
+    void
+    SDir::syncfilecon(const string& name, char* con) const
+    {
+	assert(name.find('/') == string::npos);
+	assert(name != "..");
+
+#ifdef ENABLE_SELINUX
+	if (is_selinux_enabled() > 0)
+	{
+	    char *src_con = NULL;
+
+	    int fd = ::openat(dirfd, name.c_str(), O_RDONLY | O_NOFOLLOW | O_NOATIME
+			      | O_NONBLOCK | O_CLOEXEC);
+	    if (fd < 0)
+	    {
+		// symlink, detached dev node?
+		if (errno != ELOOP && errno != ENXIO && errno != EWOULDBLOCK)
+		{
+		    y2err("open failed errno: " << errno << " (" << stringerror(errno) << ")");
+		}
+
+		boost::lock_guard<boost::mutex> lock(cwd_mutex);
+
+		if (fchdir(dirfd) < 0)
+		{
+		    y2err("fchdir failed errno: " << errno << " (" << stringerror(errno) << ")");
+		}
+
+		if (lgetfilecon(name.c_str(), &src_con) < 0 || selinux_file_context_cmp(src_con, con))
+		{
+		    y2deb("setting new SELinux context on " << fullname() << "/" << name);
+		    if (lsetfilecon(name.c_str(), con))
+		    {
+			y2err("lsetfilecon on " << fullname() << "/" << name << " failed errno: " << errno << " (" << stringerror(errno) << ")");
+		    }
+		}
+
+		chdir("/");
+	    }
+	    else
+	    {
+		if (fgetfilecon(fd, &src_con) < 0 || selinux_file_context_cmp(src_con, con))
+		{
+		    y2deb("setting new SELinux context on " << fullname() << "/" << name);
+		    if (fsetfilecon(fd, con))
+		    {
+			y2err("fsetfilecon on " << fullname() << "/" << name << " failed errno: " << errno << " (" << stringerror(errno) << ")");
+		    }
+		}
+
+		::close(fd);
+	    }
+
+	    freecon(src_con);
+	}
+	else
+	{
+	    y2deb("selinux disabled");
+	}
+#endif
+    }
+
+
+    void
+    SDir::synccon(char* con) const
+    {
+#ifdef ENABLE_SELINUX
+	if (is_selinux_enabled() > 0)
+	{
+	    char* src_con = NULL;
+
+	    if (fgetfilecon(fd(), &src_con) < 0 || selinux_file_context_cmp(src_con, con))
+	    {
+		y2deb("setting new SELinux context on " << fullname());
+		if (fsetfilecon(fd(), con))
+		{
+		    y2err("fsetfilecon on " << fullname() << " failed errno: " << errno << " (" << stringerror(errno) << ")");
+		}
+	    }
+
+	    freecon(src_con);
+	}
+	else
+	{
+	    y2deb("selinux disabled");
+	}
+#endif
+    }
+
+
     SFile::SFile(const SDir& dir, const string& name)
 	: dir(dir), name(name)
     {
@@ -628,6 +724,13 @@ namespace snapper
     SFile::getxattr(const char* name, void* value, size_t size) const
     {
 	return dir.getxattr(SFile::name, name, value, size);
+    }
+
+
+    void
+    SFile::synccon(char* con) const
+    {
+	dir.syncfilecon(name, con);
     }
 
 
