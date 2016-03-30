@@ -32,6 +32,8 @@
 
 #include "snapper/Exception.h"
 
+// this is hack until I get hands on proper libselinux API
+static inline const char *selinux_snapperd_contexts_path() { return "/etc/selinux/targeted/contexts/snapperd_contexts"; }
 
 namespace snapper {
 

@@ -141,7 +141,7 @@ AM_CONDITIONAL(ENABLE_SELINUX, [test "x$enable_selinux" = "xyes"])
 if test "x$with_selinux" = "xyes"; then
 	AC_DEFINE(ENABLE_SELINUX, 1, [Enable SELinux support])
 	AC_CHECK_HEADER(selinux/selinux.h,[],[AC_MSG_ERROR([Cannot find libselinux headers. Please install libselinux-devel])])
-	AC_CHECK_LIB(selinux, selinux_snapperd_contexts_path, [], [AC_MSG_ERROR([selinux library does not provide selinux_snapperd_contexts_path symbol])])
+	AC_CHECK_LIB(selinux, is_selinux_enabled)
 fi
 
 PKG_CHECK_MODULES(DBUS, dbus-1)
