@@ -176,6 +176,8 @@ namespace snapper
 
 	void syncAcl(const vector<uid_t>& uids, const vector<gid_t>& gids) const;
 
+	void syncSelinuxContexts() const;
+
 	ConfigInfo* config_info;
 
 	Filesystem* filesystem;

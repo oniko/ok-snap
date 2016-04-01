@@ -48,6 +48,9 @@
 #include "snapper/Hooks.h"
 #include "snapper/Btrfs.h"
 #include "snapper/BtrfsUtils.h"
+#ifdef ENABLE_SELINUX
+#include "snapper/Selinux.h"
+#endif
 
 
 namespace snapper
@@ -98,6 +101,8 @@ namespace snapper
 	}
 
 	filesystem = Filesystem::create(*config_info, root_prefix);
+
+	syncSelinuxContexts();
 
 	bool sync_acl;
 	if (config_info->getValue(KEY_SYNC_ACL, sync_acl) && sync_acl == true)
@@ -758,6 +763,25 @@ namespace snapper
 	SN_THROW(QuotaException("not implemented"));
 	__builtin_unreachable();
 
+#endif
+    }
+
+
+    void
+    Snapper::syncSelinuxContexts() const
+    {
+#ifdef ENABLE_SELINUX
+	try
+	{
+	    SnapperContexts scons;
+	    SDir infos_dir = openInfosDir();
+
+	    infos_dir.synccon(scons.subvolume_context());
+	}
+	catch (const SelinuxException& e)
+	{
+	    y2war("Failed to load snapperd selinux contexts file.");
+	}
 #endif
     }
 

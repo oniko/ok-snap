@@ -282,19 +282,6 @@ namespace snapper
 	    SN_THROW(IOErrorException(".snapshots must not be world-writable"));
 	}
 
-#ifdef ENABLE_SELINUX
-	try
-	{
-	    SnapperContexts scons;
-
-	    infos_dir.synccon(scons.subvolume_context());
-	}
-	catch (const SelinuxException& e)
-	{
-	    y2war("Failed to load snapperd selinux contexts file.");
-	}
-#endif
-
 	return infos_dir;
     }
 
