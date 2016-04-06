@@ -42,6 +42,7 @@ namespace snapper
 	XA_SUPPORTED
     };
 
+    class SelinuxLabelHandle;
 
     /*
      * The member functions of SDir and SFile are secure (avoid race
@@ -101,8 +102,10 @@ namespace snapper
 		   const string& mount_data) const;
 	bool umount(const string& mount_point) const;
 
-	void syncfilecon(const string& name, char* con) const;
-	void synccon(char* con) const;
+	bool fsetfilecon(const string& name, char* con) const;
+	bool fsetfilecon(char* con) const;
+	bool restorecon(SelinuxLabelHandle* sh) const;
+	bool restorecon(const string& name, SelinuxLabelHandle* sh) const;
 
     private:
 
@@ -137,7 +140,8 @@ namespace snapper
 	ssize_t listxattr(char* list, size_t size) const;
 	ssize_t getxattr(const char* name, void* value, size_t size) const;
 
-	void synccon(char* con) const;
+	void fsetfilecon(char* con) const;
+	void restorecon(SelinuxLabelHandle* sh) const;
 
     private:
 

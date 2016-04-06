@@ -25,6 +25,10 @@
 
 #include <string>
 #include <selinux/context.h>
+#include <selinux/label.h>
+#include <selinux/selinux.h>
+
+#include <boost/noncopyable.hpp>
 
 #include "snapper/Exception.h"
 
@@ -40,6 +44,8 @@ namespace snapper {
 
     const static string selinux_snapperd_data = "snapperd_data";
 
+    int _is_selinux_enabled();
+
     class SnapperContexts
     {
     public:
@@ -48,6 +54,28 @@ namespace snapper {
 	~SnapperContexts() { context_free(subvolume_ctx); }
     private:
 	context_t subvolume_ctx;
+    };
+
+    class DefaultSelinuxFileContext : private boost::noncopyable
+    {
+    public:
+	DefaultSelinuxFileContext(char* context);
+	~DefaultSelinuxFileContext();
+    };
+
+
+    class SelinuxLabelHandle : public boost::noncopyable
+    {
+    public:
+	static SelinuxLabelHandle* get_selinux_handle();
+
+	char* selabel_lookup(const string& path, int mode);
+
+	~SelinuxLabelHandle() { selabel_close(handle); }
+    private:
+	SelinuxLabelHandle();
+
+	struct selabel_handle* handle;
     };
 
 }

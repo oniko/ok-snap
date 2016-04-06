@@ -39,6 +39,7 @@ namespace snapper
 
     class Filesystem;
     class SDir;
+    class SelinuxLabelHandle;
 
 
     class ConfigInfo : public SysconfigFile
@@ -177,6 +178,8 @@ namespace snapper
 	void syncAcl(const vector<uid_t>& uids, const vector<gid_t>& gids) const;
 
 	void syncSelinuxContexts() const;
+	void syncSelinuxContextsInInfosDir() const;
+	void syncInfoDir(SDir& dir) const;
 
 	ConfigInfo* config_info;
 
@@ -185,6 +188,8 @@ namespace snapper
 	vector<string> ignore_patterns;
 
 	Snapshots snapshots;
+
+	SelinuxLabelHandle* selabel_handle;
 
     };
 

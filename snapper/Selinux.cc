@@ -19,11 +19,12 @@
  * find current contact information at www.novell.com.
  */
 
-
+#include <cerrno>
 #include <map>
 
 #include <boost/algorithm/string.hpp>
 
+#include "snapper/AppUtil.h"
 #include "snapper/AsciiFile.h"
 #include "snapper/Log.h"
 #include "snapper/Selinux.h"
@@ -77,6 +78,83 @@ namespace snapper
 	{
 	    throw SelinuxException();
 	}
+    }
+
+
+    DefaultSelinuxFileContext::DefaultSelinuxFileContext(char* context)
+    {
+	if (setfscreatecon(context) < 0)
+	{
+	    y2err("Failed to set default file system objects context '" << context << "'");
+	    throw SelinuxException();
+	}
+    }
+
+
+    DefaultSelinuxFileContext::~DefaultSelinuxFileContext()
+    {
+	if (setfscreatecon(NULL))
+	    y2err("Failed to reset default file system objects context");
+    }
+
+
+    SelinuxLabelHandle::SelinuxLabelHandle()
+	: handle(selabel_open(SELABEL_CTX_FILE, NULL, 0))
+    {
+	if (!handle)
+	{
+	    y2err("Failed to open SELinux labeling handle: " << stringerror(errno));
+	    throw SelinuxException();
+	}
+    }
+
+
+    char*
+    SelinuxLabelHandle::selabel_lookup(const string& path, int mode)
+    {
+	char *con;
+
+	if (!::selabel_lookup(handle, &con, path.c_str(), mode))
+	{
+	    y2deb("found label for path " << path << ": " << con);
+	    return con;
+	}
+	else
+	{
+	    if (errno == ENOENT)
+		y2deb("Selinux context not defined for path " << path);
+
+	    return NULL;
+	}
+    }
+
+
+    int
+    _is_selinux_enabled()
+    {
+	static int selinux_checked = 0, selinux_enabled = 0;
+
+	if (!selinux_checked)
+	{
+	    selinux_enabled = is_selinux_enabled();
+	    selinux_checked = 1;
+	    y2mil("Selinux support " << (selinux_enabled ? "en" : "dis") << "abled");
+	}
+
+	return selinux_enabled;
+    }
+
+
+    SelinuxLabelHandle*
+    SelinuxLabelHandle::get_selinux_handle()
+    {
+	if (_is_selinux_enabled())
+	{
+	    static SelinuxLabelHandle handle;
+	    return &handle;
+	}
+
+	return NULL;
     }
 
 }

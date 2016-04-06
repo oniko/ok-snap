@@ -573,14 +573,16 @@ namespace snapper
     }
 
 
-    void
-    SDir::syncfilecon(const string& name, char* con) const
+    bool
+    SDir::fsetfilecon(const string& name, char* con) const
     {
 	assert(name.find('/') == string::npos);
 	assert(name != "..");
 
+	bool retval = true;
+
 #ifdef ENABLE_SELINUX
-	if (is_selinux_enabled() > 0)
+	if (_is_selinux_enabled())
 	{
 	    char *src_con = NULL;
 
@@ -592,6 +594,7 @@ namespace snapper
 		if (errno != ELOOP && errno != ENXIO && errno != EWOULDBLOCK)
 		{
 		    y2err("open failed errno: " << errno << " (" << stringerror(errno) << ")");
+		    return false;
 		}
 
 		boost::lock_guard<boost::mutex> lock(cwd_mutex);
@@ -599,6 +602,7 @@ namespace snapper
 		if (fchdir(dirfd) < 0)
 		{
 		    y2err("fchdir failed errno: " << errno << " (" << stringerror(errno) << ")");
+		    return false;
 		}
 
 		if (lgetfilecon(name.c_str(), &src_con) < 0 || selinux_file_context_cmp(src_con, con))
@@ -607,19 +611,22 @@ namespace snapper
 		    if (lsetfilecon(name.c_str(), con))
 		    {
 			y2err("lsetfilecon on " << fullname() << "/" << name << " failed errno: " << errno << " (" << stringerror(errno) << ")");
+			retval = false;
 		    }
 		}
 
 		chdir("/");
+
 	    }
 	    else
 	    {
 		if (fgetfilecon(fd, &src_con) < 0 || selinux_file_context_cmp(src_con, con))
 		{
 		    y2deb("setting new SELinux context on " << fullname() << "/" << name);
-		    if (fsetfilecon(fd, con))
+		    if (::fsetfilecon(fd, con))
 		    {
 			y2err("fsetfilecon on " << fullname() << "/" << name << " failed errno: " << errno << " (" << stringerror(errno) << ")");
+			retval = false;
 		    }
 		}
 
@@ -628,38 +635,106 @@ namespace snapper
 
 	    freecon(src_con);
 	}
-	else
-	{
-	    y2deb("selinux disabled");
-	}
 #endif
+	return retval;
     }
 
 
-    void
-    SDir::synccon(char* con) const
+    bool
+    SDir::restorecon(const string& name, SelinuxLabelHandle* sh) const
     {
+	assert(name.find('/') == string::npos);
+	assert(name != "..");
+
+	bool retval = true;
 #ifdef ENABLE_SELINUX
-	if (is_selinux_enabled() > 0)
+	if (_is_selinux_enabled())
+	{
+	    assert(sh);
+
+	    struct stat buf;
+	    if (stat(name, &buf, AT_SYMLINK_NOFOLLOW))
+	    {
+		y2err("Failed to stat " << fullname() << "/" << name);
+		return false;
+	    }
+
+	    char* con = sh->selabel_lookup(fullname() + "/" + name, buf.st_mode);
+	    if (con)
+	    {
+		retval = fsetfilecon(name, con);
+	    }
+	    else
+	    {
+		retval = false;
+	    }
+
+	    freecon(con);
+	}
+#endif
+	return retval;
+    }
+
+
+    bool
+    SDir::fsetfilecon(char* con) const
+    {
+	bool retval = true;
+
+#ifdef ENABLE_SELINUX
+	if (_is_selinux_enabled())
 	{
 	    char* src_con = NULL;
 
 	    if (fgetfilecon(fd(), &src_con) < 0 || selinux_file_context_cmp(src_con, con))
 	    {
 		y2deb("setting new SELinux context on " << fullname());
-		if (fsetfilecon(fd(), con))
+		if (::fsetfilecon(fd(), con))
 		{
 		    y2err("fsetfilecon on " << fullname() << " failed errno: " << errno << " (" << stringerror(errno) << ")");
+		    retval = false;
 		}
 	    }
 
 	    freecon(src_con);
 	}
-	else
+#endif
+	return retval;
+    }
+
+
+    bool
+    SDir::restorecon(SelinuxLabelHandle* sh) const
+    {
+	bool retval = true;
+#ifdef ENABLE_SELINUX
+	if (_is_selinux_enabled())
 	{
-	    y2deb("selinux disabled");
+	    assert(sh);
+
+	    struct stat buf;
+
+	    if (stat(&buf))
+	    {
+		y2err("Failed to stat " << fullname());
+		return false;
+	    }
+
+	    char* con = sh->selabel_lookup(fullname(), buf.st_mode);
+	    if (con)
+	    {
+		retval = fsetfilecon(con);
+	    }
+	    else
+	    {
+		y2war("can't get proper label for path:" << fullname());
+		retval = false;
+	    }
+
+	    freecon(con);
 	}
 #endif
+	return retval;
     }
 
 
@@ -728,9 +803,15 @@ namespace snapper
 
 
     void
-    SFile::synccon(char* con) const
+    SFile::fsetfilecon(char* con) const
     {
-	dir.syncfilecon(name, con);
+	dir.fsetfilecon(name, con);
+    }
+
+    void
+    SFile::restorecon(SelinuxLabelHandle* sh) const
+    {
+	dir.restorecon(name, sh);
     }
 
 

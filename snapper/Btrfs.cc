@@ -141,7 +141,7 @@ namespace snapper
 	{
 	    SnapperContexts scontexts;
 
-	    x.synccon(scontexts.subvolume_context());
+	    x.fsetfilecon(scontexts.subvolume_context());
 	}
 	catch (const SelinuxException& e)
 	{
@@ -151,7 +151,6 @@ namespace snapper
 	struct stat stat;
 	if (x.stat(&stat, 0) == 0)
 	    x.chmod(stat.st_mode & ~0027, 0);
-
     }
 
 
