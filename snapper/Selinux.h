@@ -38,6 +38,7 @@ namespace snapper {
     struct SelinuxException : public Exception
     {
 	explicit SelinuxException() : Exception("SELinux error") {}
+	explicit SelinuxException(const std::string& msg) : Exception(msg) {}
     };
 
     using std::string;

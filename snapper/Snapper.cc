@@ -93,7 +93,14 @@ namespace snapper
 	y2mil("config_name:" << config_name << " disable_filters:" << disable_filters);
 
 #ifdef ENABLE_SELINUX
-	selabel_handle = SelinuxLabelHandle::get_selinux_handle();
+	try
+	{
+	    selabel_handle = SelinuxLabelHandle::get_selinux_handle();
+	}
+	catch (const SelinuxException& e)
+	{
+	    SN_RETHROW(e);
+	}
 #endif
 
 	try
@@ -795,7 +802,8 @@ namespace snapper
 	}
 	catch (const SelinuxException& e)
 	{
-	    y2war("Failed to load snapperd selinux contexts file.");
+	    SN_CAUGHT(e);
+	    // fall through intentional
 	}
 #endif
     }

@@ -55,28 +55,26 @@ namespace snapper
 
 		if (!snapperd_contexts.insert(make_pair(boost::trim_copy(line.substr(0, pos)), boost::trim_copy(line.substr(pos + 1)))).second)
 		{
-		    y2err("Duplicate key found in snapperd contexts file");
-		    throw SelinuxException();
+		    SN_THROW(SelinuxException("Duplicate key in contexts file"));
 		}
 	    }
 	}
 	catch (const FileNotFoundException& e)
 	{
-	    y2err("Failed to parse snapperd contexts file");
-	    throw SelinuxException();
+	    SN_CAUGHT(e);
+	    SN_THROW(SelinuxException("Failed to parse contexts file"));
 	}
 
 	std::map<string,string>::const_iterator cit = snapperd_contexts.find(selinux_snapperd_data);
 	if (cit == snapperd_contexts.end())
 	{
-	    y2err("Snapperd data context not found");
-	    throw SelinuxException();
+	    SN_THROW(SelinuxException("Snapperd data context not found"));
 	}
 
 	subvolume_ctx = context_new(cit->second.c_str());
 	if (!subvolume_ctx)
 	{
-	    throw SelinuxException();
+	    SN_THROW(SelinuxException());
 	}
     }
 
@@ -85,8 +83,7 @@ namespace snapper
     {
 	if (setfscreatecon(context) < 0)
 	{
-	    y2err("Failed to set default file system objects context '" << context << "'");
-	    throw SelinuxException();
+	    SN_THROW(SelinuxException(string("setfscreatecon(") + context + ") failed"));
 	}
     }
 
@@ -103,8 +100,7 @@ namespace snapper
     {
 	if (!handle)
 	{
-	    y2err("Failed to open SELinux labeling handle: " << stringerror(errno));
-	    throw SelinuxException();
+	    SN_THROW(SelinuxException("Failed to open SELinux labeling handle: " + stringerror(errno)));
 	}
     }
 

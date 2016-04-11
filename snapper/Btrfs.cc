@@ -145,7 +145,8 @@ namespace snapper
 	}
 	catch (const SelinuxException& e)
 	{
-	    y2war("Failed to load snapperd selinux contexts file.");
+	    SN_CAUGHT(e);
+	    // fall through intentional
 	}
 #endif
 	struct stat stat;

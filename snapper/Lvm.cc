@@ -103,7 +103,14 @@ namespace snapper
 	}
 
 #ifdef ENABLE_SELINUX
-	sh = SelinuxLabelHandle::get_selinux_handle();
+	try
+	{
+	    sh = SelinuxLabelHandle::get_selinux_handle();
+	}
+	catch (const SelinuxException& e)
+	{
+	    SN_RETHROW(e);
+	}
 #endif
 
     }
@@ -116,7 +123,7 @@ namespace snapper
 	if (r1 != 0 && errno != EEXIST)
 	{
 	    y2err("mkdir failed errno:" << errno << " (" << strerror(errno) << ")");
-	    throw CreateConfigFailedException("mkdir failed");
+	    SN_THROW(CreateConfigFailedException("mkdir failed"));
 	}
     }
 
@@ -163,14 +170,14 @@ namespace snapper
 	    }
 	    catch (const SelinuxException& e)
 	    {
+		SN_CAUGHT(e);
 		freecon(con);
-		y2war("Failed to properly process Selinux context.");
 		// fall through intentional
 	    }
 	    catch (const CreateConfigFailedException& e)
 	    {
 		freecon(con);
-		throw;
+		SN_RETHROW(e);
 	    }
 	}
 #endif
